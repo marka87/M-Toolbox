@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "M-Toolbox starten",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": ".\\dev.cmd",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
