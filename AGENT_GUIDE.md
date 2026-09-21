@@ -60,8 +60,8 @@ Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler
 | **Modul 4** | **Driver Center** | `v1.3.1` | ✅ Fertig | Geräte- & OEM-Treiberinventar, Problemcode-Diagnose, 1-Klick Export, GPU-Check, Windows Update Treibersuche |
 | **Modul 5** | **Cleanup Center** | `v1.4.0` | ✅ Fertig | Temp-Files, Windows Update Cache, Crash Dumps, Browser Caches, Papierkorb, Speicher-Analyse |
 | **Modul 6** | **Repair Center** | `v1.5.0` | ✅ Fertig | SFC /scannow, DISM Health Restore, Win Update Reset, Print Spooler Repair, Network Stack Reset, AppX Re-Register |
-| **Modul 7** | **Tweaks** | `v1.6.0` | ⏳ **NÄCHSTES** | Windows 11 Explorer Tweaks, Telemetrie reduzieren, Kontextmenü klassisch, Gaming Tweaks |
-| **Modul 8** | **Netzwerk Toolkit**| `v1.7.0` | 📋 Geplant | Ping/Latency Test, DNS Benchmark, Adapter Speed/IP, Port Scanner, Flush DNS |
+| **Modul 7** | **Tweaks** | `v1.6.0` | ✅ Fertig | Windows 11 Explorer Tweaks, Telemetrie minimieren, Kontextmenü klassisch, Gaming Tweaks, Taskbar-Ausrichtung |
+| **Modul 8** | **Netzwerk Toolkit**| `v1.7.0` | ⏳ **NÄCHSTES** | Ping/Latency Test, DNS Benchmark, Adapter Speed/IP, Port Scanner, Flush DNS |
 | **Modul 9** | **Advanced Tools** | `v1.8.0` | 📋 Geplant | God Mode Shortcuts, Windows Tools Launcher, Startup Manager, Hosts File Editor |
 | **Modul 10**| **Settings** | `v1.9.0` | 📋 Geplant | Theme (Dark/Light/System), Autostart M-Toolbox, Update-Check, Log-Dateien, Über |
 
@@ -108,7 +108,8 @@ A:\M-Toolbox\
 │   │       ├── backup.service.ts
 │   │       ├── driver.service.ts
 │   │       ├── cleanup.service.ts
-│   │       └── repair.service.ts
+│   │       ├── repair.service.ts
+│   │       └── tweak.service.ts
 │   ├── preload\               # Preload-Skript (Sichere ContextBridge)
 │   │   └── index.ts           # Exponiert window.mToolbox.*
 │   ├── shared\                # Gemeinsam genutzter Code
@@ -119,9 +120,9 @@ A:\M-Toolbox\
 │           ├── assets\        # CSS, Schriftarten
 │           ├── components\    # Wiederverwendbare UI-Komponenten
 │           │   ├── layout\    # Titlebar, Sidebar
-│           │   └── ui\        # Card, DeviceCard, DriverDetailsModal, etc.
-│           ├── hooks\         # Custom Hooks (useDashboard, useSoftware, useBackup, useDriver, useCleanup, useRepair)
-│           ├── pages\         # Seiten (DashboardPage, SoftwarePage, BackupPage, DriverPage, CleanupPage, RepairPage)
+│           │   └── ui\        # Card, DeviceCard, TweakToggleCard, ExplorerRestartBanner, etc.
+│           ├── hooks\         # Custom Hooks (useDashboard, useSoftware, useBackup, useDriver, useCleanup, useRepair, useTweaks)
+│           ├── pages\         # Seiten (DashboardPage, SoftwarePage, BackupPage, DriverPage, CleanupPage, RepairPage, TweaksPage)
 │           ├── App.tsx        # Routing / Modulwechsel
 │           └── main.tsx       # React Root
 ├── package.json
@@ -140,6 +141,8 @@ A:\M-Toolbox\
 - **`window.mToolbox.driver`:** `getData()`, `exportDrivers()`, `selectExportDir()`, `scanHardware()`, `openDeviceManager()`, `restartDevice()`, `getGpuInfo()`, `checkWindowsUpdate()`, `searchOnline()`
 - **`window.mToolbox.cleanup`:** `scan()`, `clean()`, `getDiskSpace()`
 - **`window.mToolbox.repair`:** `getSystemHealth()`, `executeAction()`, `isElevated()`, `restartAsAdmin()`, `onRepairLog()`
+- **`window.mToolbox.tweaks`:** `getAll()`, `setTweak()`, `applyRecommended()`, `restartExplorer()`
 - **`window.mToolbox.system`:** `minimize()`, `maximize()`, `close()`, `openExternal()`
+
 
 

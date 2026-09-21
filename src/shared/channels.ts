@@ -49,6 +49,12 @@ export const IPC_CHANNELS = {
     RESTART_AS_ADMIN: 'repair:restart-as-admin',
     PROGRESS_EVENT: 'repair:progress-event',
   },
+  TWEAKS: {
+    GET_ALL: 'tweaks:get-all',
+    SET_TWEAK: 'tweaks:set-tweak',
+    APPLY_RECOMMENDED: 'tweaks:apply-recommended',
+    RESTART_EXPLORER: 'tweaks:restart-explorer',
+  },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',
     MINIMIZE_WINDOW: 'system:minimize-window',

@@ -6,6 +6,7 @@ import { BackupService } from '../services/backup.service'
 import { driverService } from '../services/driver.service'
 import { cleanupService } from '../services/cleanup.service'
 import { repairService, REPAIR_ACTIONS } from '../services/repair.service'
+import { tweakService } from '../services/tweak.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -245,6 +246,23 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.REPAIR.RESTART_AS_ADMIN, async () => {
     await repairService.restartAsAdmin()
+  })
+
+  // Tweaks IPC
+  ipcMain.handle(IPC_CHANNELS.TWEAKS.GET_ALL, async () => {
+    return await tweakService.getAllTweaks()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TWEAKS.SET_TWEAK, async (_, tweakId: string, value: boolean) => {
+    return await tweakService.setTweak(tweakId, value)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TWEAKS.APPLY_RECOMMENDED, async () => {
+    return await tweakService.applyRecommended()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TWEAKS.RESTART_EXPLORER, async () => {
+    return await tweakService.restartExplorer()
   })
 }
 

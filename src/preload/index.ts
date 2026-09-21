@@ -23,7 +23,10 @@ import type {
   SystemHealthStatus,
   RepairActionItem,
   RepairLogEvent,
-  RepairResult
+  RepairResult,
+  TweakItem,
+  TweakApplyResult,
+  BatchTweakResult
 } from '../shared/types'
 
 export interface MToolboxAPI {
@@ -75,6 +78,12 @@ export interface MToolboxAPI {
     runAction: (actionId: string) => Promise<RepairResult>
     restartAsAdmin: () => Promise<void>
     onProgress: (callback: (event: RepairLogEvent) => void) => () => void
+  }
+  tweaks: {
+    getAll: () => Promise<TweakItem[]>
+    setTweak: (tweakId: string, value: boolean) => Promise<TweakApplyResult>
+    applyRecommended: () => Promise<BatchTweakResult>
+    restartExplorer: () => Promise<{ success: boolean; message: string }>
   }
   system: {
     minimize: () => Promise<void>
@@ -195,6 +204,13 @@ const api: MToolboxAPI = {
         ipcRenderer.removeListener(IPC_CHANNELS.REPAIR.PROGRESS_EVENT, listener)
       }
     }
+  },
+  tweaks: {
+    getAll: () => ipcRenderer.invoke(IPC_CHANNELS.TWEAKS.GET_ALL),
+    setTweak: (tweakId: string, value: boolean) =>
+      ipcRenderer.invoke(IPC_CHANNELS.TWEAKS.SET_TWEAK, tweakId, value),
+    applyRecommended: () => ipcRenderer.invoke(IPC_CHANNELS.TWEAKS.APPLY_RECOMMENDED),
+    restartExplorer: () => ipcRenderer.invoke(IPC_CHANNELS.TWEAKS.RESTART_EXPLORER)
   },
   system: {
     minimize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MINIMIZE_WINDOW),

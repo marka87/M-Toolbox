@@ -432,7 +432,41 @@ export interface RepairResult {
   durationMs: number
 }
 
+// -------------------------------------------------------------
+// Modul 7: Tweaks Typen
+// -------------------------------------------------------------
 
+export type TweakCategory =
+  | 'all'
+  | 'explorer'
+  | 'taskbar'
+  | 'privacy'
+  | 'gaming'
+  | 'system'
 
+export interface TweakItem {
+  id: string
+  title: string
+  description: string
+  category: 'explorer' | 'taskbar' | 'privacy' | 'gaming' | 'system'
+  value: boolean
+  recommendedValue: boolean
+  requiresRestart: 'explorer' | 'pc' | 'none'
+  requiresAdmin: boolean
+  dangerLevel: 'safe' | 'caution'
+}
 
+export interface TweakApplyResult {
+  tweakId: string
+  success: boolean
+  newValue: boolean
+  message: string
+  requiresRestart: 'explorer' | 'pc' | 'none'
+}
 
+export interface BatchTweakResult {
+  success: boolean
+  updatedCount: number
+  requiresRestart: boolean
+  failedIds: string[]
+}
