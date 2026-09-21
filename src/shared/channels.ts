@@ -16,6 +16,15 @@ export const IPC_CHANNELS = {
     SEARCH: 'software:search',
     OPERATION_PROGRESS: 'software:operation-progress',
   },
+  BACKUP: {
+    CREATE_BACKUP: 'backup:create',
+    RESTORE_BACKUP: 'backup:restore',
+    PREVIEW_BACKUP: 'backup:preview',
+    SELECT_BACKUP_FILE: 'backup:select-file',
+    SAVE_BACKUP_DIALOG: 'backup:save-dialog',
+    LIST_LOCAL_BACKUPS: 'backup:list-local',
+    PROGRESS_EVENT: 'backup:progress-event',
+  },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',
     MINIMIZE_WINDOW: 'system:minimize-window',

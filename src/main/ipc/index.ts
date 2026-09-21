@@ -1,7 +1,8 @@
-import { ipcMain, BrowserWindow, shell } from 'electron'
+import { ipcMain, BrowserWindow, shell, dialog } from 'electron'
 import { IPC_CHANNELS } from '../../shared/channels'
 import { DashboardService } from '../services/dashboard.service'
 import { SoftwareService } from '../services/software.service'
+import { BackupService } from '../services/backup.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -95,6 +96,61 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
         mainWindow.webContents.send(IPC_CHANNELS.SOFTWARE.OPERATION_PROGRESS, event)
       }
     })
+  })
+
+  // Backup & Restore IPC
+  const backupService = BackupService.getInstance()
+
+  ipcMain.handle(IPC_CHANNELS.BACKUP.CREATE_BACKUP, async (_, customFilePath?: string) => {
+    return await backupService.createBackup(customFilePath, (event) => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(IPC_CHANNELS.BACKUP.PROGRESS_EVENT, event)
+      }
+    })
+  })
+
+  ipcMain.handle(
+    IPC_CHANNELS.BACKUP.RESTORE_BACKUP,
+    async (_, filePathOrPayload: any, selection: any) => {
+      return await backupService.restoreBackup(filePathOrPayload, selection, (event) => {
+        if (!mainWindow.isDestroyed()) {
+          mainWindow.webContents.send(IPC_CHANNELS.BACKUP.PROGRESS_EVENT, event)
+        }
+      })
+    }
+  )
+
+  ipcMain.handle(IPC_CHANNELS.BACKUP.PREVIEW_BACKUP, async (_, filePath: string) => {
+    return await backupService.previewBackup(filePath)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BACKUP.LIST_LOCAL_BACKUPS, async () => {
+    return await backupService.listLocalBackups()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BACKUP.SELECT_BACKUP_FILE, async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'M-Toolbox Backup-Datei auswählen',
+      properties: ['openFile'],
+      filters: [{ name: 'M-Toolbox Backup (*.json)', extensions: ['json'] }]
+    })
+    if (result.canceled || result.filePaths.length === 0) {
+      return null
+    }
+    return result.filePaths[0]
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BACKUP.SAVE_BACKUP_DIALOG, async () => {
+    const dateStr = new Date().toISOString().slice(0, 10)
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'M-Toolbox Backup speichern unter',
+      defaultPath: `M-Toolbox-Backup-${dateStr}.json`,
+      filters: [{ name: 'M-Toolbox Backup (*.json)', extensions: ['json'] }]
+    })
+    if (result.canceled || !result.filePath) {
+      return null
+    }
+    return result.filePath
   })
 }
 

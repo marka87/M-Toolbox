@@ -1,6 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC_CHANNELS } from '../shared/channels'
-import type { SystemInfo, LiveMetrics, SoftwarePackage, InstalledPackage, PackageUpdate, OperationLogEvent } from '../shared/types'
+import type {
+  SystemInfo,
+  LiveMetrics,
+  SoftwarePackage,
+  InstalledPackage,
+  PackageUpdate,
+  OperationLogEvent,
+  BackupPayload,
+  BackupSummary,
+  RestoreSelection
+} from '../shared/types'
 
 export interface MToolboxAPI {
   dashboard: {
@@ -17,6 +27,15 @@ export interface MToolboxAPI {
     uninstall: (packageId: string) => Promise<{ success: boolean; error?: string }>
     upgrade: (packageId: string) => Promise<{ success: boolean; error?: string }>
     upgradeAll: () => Promise<{ success: boolean; error?: string }>
+    onProgress: (callback: (event: OperationLogEvent) => void) => () => void
+  }
+  backup: {
+    createBackup: (customFilePath?: string) => Promise<{ success: boolean; filePath: string; payload: BackupPayload; error?: string }>
+    restoreBackup: (filePathOrPayload: string | BackupPayload, selection: RestoreSelection) => Promise<{ success: boolean; error?: string }>
+    previewBackup: (filePath: string) => Promise<BackupSummary>
+    listLocalBackups: () => Promise<BackupSummary[]>
+    selectBackupFile: () => Promise<string | null>
+    saveBackupDialog: () => Promise<string | null>
     onProgress: (callback: (event: OperationLogEvent) => void) => () => void
   }
   system: {
@@ -63,6 +82,29 @@ const api: MToolboxAPI = {
       ipcRenderer.on(IPC_CHANNELS.SOFTWARE.OPERATION_PROGRESS, listener)
       return () => {
         ipcRenderer.removeListener(IPC_CHANNELS.SOFTWARE.OPERATION_PROGRESS, listener)
+      }
+    }
+  },
+  backup: {
+    createBackup: (customFilePath?: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP.CREATE_BACKUP, customFilePath),
+    restoreBackup: (filePathOrPayload: any, selection: any) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP.RESTORE_BACKUP, filePathOrPayload, selection),
+    previewBackup: (filePath: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP.PREVIEW_BACKUP, filePath),
+    listLocalBackups: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP.LIST_LOCAL_BACKUPS),
+    selectBackupFile: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP.SELECT_BACKUP_FILE),
+    saveBackupDialog: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP.SAVE_BACKUP_DIALOG),
+    onProgress: (callback: (event: OperationLogEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, event: OperationLogEvent) => {
+        callback(event)
+      }
+      ipcRenderer.on(IPC_CHANNELS.BACKUP.PROGRESS_EVENT, listener)
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.BACKUP.PROGRESS_EVENT, listener)
       }
     }
   },

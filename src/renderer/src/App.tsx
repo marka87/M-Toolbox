@@ -3,6 +3,7 @@ import { Titlebar } from './components/layout/Titlebar'
 import { Sidebar } from './components/layout/Sidebar'
 import { DashboardPage } from './pages/DashboardPage'
 import { SoftwarePage } from './pages/SoftwarePage'
+import { BackupPage } from './pages/BackupPage'
 import type { NavigationModule } from '@shared/types'
 import { Card } from './components/ui/Card'
 import { Wrench } from 'lucide-react'
@@ -16,6 +17,8 @@ export const App: React.FC = () => {
         return <DashboardPage />
       case 'software':
         return <SoftwarePage />
+      case 'backup':
+        return <BackupPage />
       default: {
         const moduleTitles: Record<NavigationModule, string> = {
           dashboard: 'Dashboard',

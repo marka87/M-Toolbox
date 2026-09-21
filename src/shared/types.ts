@@ -166,3 +166,73 @@ export interface OperationLogEvent {
   exitCode?: number
 }
 
+export interface BackupWingetPackage {
+  id: string
+  name: string
+  version: string
+  source?: string
+}
+
+export interface BackupExplorerSettings {
+  Hidden?: number
+  HideFileExt?: number
+  ShowSuperHidden?: number
+  LaunchTo?: number
+  TaskbarAl?: number
+  TaskbarMn?: number
+  TaskbarDa?: number
+  ShowTaskViewButton?: number
+  [key: string]: any
+}
+
+export interface BackupFont {
+  fileName: string
+  fontName?: string
+  dataBase64?: string
+}
+
+export interface BackupWallpaper {
+  originalPath: string
+  style: string
+  tile: string
+  mimeType: string
+  dataBase64?: string
+}
+
+export interface BackupPowerShellModule {
+  name: string
+  version: string
+}
+
+export interface BackupPayload {
+  version: string
+  createdAt: string
+  computerName: string
+  osVersion: string
+  winget: BackupWingetPackage[]
+  explorer: BackupExplorerSettings
+  fonts: BackupFont[]
+  wallpaper: BackupWallpaper | null
+  powershellModules: BackupPowerShellModule[]
+}
+
+export interface RestoreSelection {
+  winget: boolean
+  explorer: boolean
+  fonts: boolean
+  wallpaper: boolean
+  powershellModules: boolean
+}
+
+export interface BackupSummary {
+  filePath?: string
+  createdAt: string
+  computerName: string
+  osVersion: string
+  wingetCount: number
+  explorerSettingsCount: number
+  fontsCount: number
+  hasWallpaper: boolean
+  powershellModulesCount: number
+}
+
