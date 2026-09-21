@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Titlebar } from './components/layout/Titlebar'
 import { Sidebar } from './components/layout/Sidebar'
 import { DashboardPage } from './pages/DashboardPage'
+import { SoftwarePage } from './pages/SoftwarePage'
 import type { NavigationModule } from '@shared/types'
 import { Card } from './components/ui/Card'
 import { Wrench } from 'lucide-react'
@@ -13,6 +14,8 @@ export const App: React.FC = () => {
     switch (activeModule) {
       case 'dashboard':
         return <DashboardPage />
+      case 'software':
+        return <SoftwarePage />
       default: {
         const moduleTitles: Record<NavigationModule, string> = {
           dashboard: 'Dashboard',

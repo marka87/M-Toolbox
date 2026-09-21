@@ -1,6 +1,7 @@
 import { ipcMain, BrowserWindow, shell } from 'electron'
 import { IPC_CHANNELS } from '../../shared/channels'
 import { DashboardService } from '../services/dashboard.service'
+import { SoftwareService } from '../services/software.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -49,10 +50,51 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.SYSTEM.OPEN_EXTERNAL, async (_, url: string) => {
-    if (url.startsWith('https://') || url.startsWith('http://')) {
-      await shell.openExternal(url)
-    }
+  // Software Center IPC
+  const softwareService = SoftwareService.getInstance()
+
+  ipcMain.handle(IPC_CHANNELS.SOFTWARE.GET_CATALOG, async () => {
+    return await softwareService.getCatalog()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SOFTWARE.GET_INSTALLED, async () => {
+    return await softwareService.getInstalledPackages()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SOFTWARE.GET_UPDATES, async () => {
+    return await softwareService.getAvailableUpdates()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SOFTWARE.INSTALL, async (_, packageId: string) => {
+    return await softwareService.installPackage(packageId, (event) => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(IPC_CHANNELS.SOFTWARE.OPERATION_PROGRESS, event)
+      }
+    })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SOFTWARE.UNINSTALL, async (_, packageId: string) => {
+    return await softwareService.uninstallPackage(packageId, (event) => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(IPC_CHANNELS.SOFTWARE.OPERATION_PROGRESS, event)
+      }
+    })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SOFTWARE.UPGRADE, async (_, packageId: string) => {
+    return await softwareService.upgradePackage(packageId, (event) => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(IPC_CHANNELS.SOFTWARE.OPERATION_PROGRESS, event)
+      }
+    })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SOFTWARE.UPGRADE_ALL, async () => {
+    return await softwareService.upgradeAll((event) => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(IPC_CHANNELS.SOFTWARE.OPERATION_PROGRESS, event)
+      }
+    })
   })
 }
 

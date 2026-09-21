@@ -114,3 +114,55 @@ export type NavigationModule =
   | 'advanced'
   | 'settings'
 
+export type SoftwareCategory =
+  | 'all'
+  | 'browser'
+  | 'dev'
+  | 'utilities'
+  | 'media'
+  | 'communication'
+  | 'runtimes'
+  | 'gaming'
+
+export type SoftwareStatus =
+  | 'not_installed'
+  | 'installed'
+  | 'update_available'
+  | 'installing'
+  | 'uninstalling'
+  | 'upgrading'
+
+export interface SoftwarePackage {
+  id: string
+  name: string
+  description: string
+  category: SoftwareCategory
+  publisher?: string
+  installedVersion?: string
+  latestVersion?: string
+  status: SoftwareStatus
+}
+
+export interface InstalledPackage {
+  id: string
+  name: string
+  version: string
+  availableVersion?: string
+  source?: string
+}
+
+export interface PackageUpdate {
+  id: string
+  name: string
+  currentVersion: string
+  availableVersion: string
+  source?: string
+}
+
+export interface OperationLogEvent {
+  type: 'stdout' | 'stderr' | 'info' | 'exit'
+  line: string
+  packageId?: string
+  exitCode?: number
+}
+
