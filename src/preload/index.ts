@@ -16,7 +16,10 @@ import type {
   DriverExportResult,
   DriverOperationResult,
   GpuInfo,
-  WindowsUpdateDriver
+  WindowsUpdateDriver,
+  CleanupScanResult,
+  CleanupProgressEvent,
+  CleanupResult
 } from '../shared/types'
 
 export interface MToolboxAPI {
@@ -56,6 +59,12 @@ export interface MToolboxAPI {
     checkWindowsUpdate: () => Promise<WindowsUpdateDriver[]>
     searchOnline: (query: string) => Promise<string>
     onProgress: (callback: (log: string) => void) => () => void
+  }
+  cleanup: {
+    scan: () => Promise<CleanupScanResult>
+    clean: (categoryIds: string[]) => Promise<CleanupResult>
+    openStorageSense: () => Promise<void>
+    onProgress: (callback: (event: CleanupProgressEvent) => void) => () => void
   }
   system: {
     minimize: () => Promise<void>
@@ -146,6 +155,20 @@ const api: MToolboxAPI = {
       ipcRenderer.on(IPC_CHANNELS.DRIVER.PROGRESS_EVENT, listener)
       return () => {
         ipcRenderer.removeListener(IPC_CHANNELS.DRIVER.PROGRESS_EVENT, listener)
+      }
+    }
+  },
+  cleanup: {
+    scan: () => ipcRenderer.invoke(IPC_CHANNELS.CLEANUP.SCAN),
+    clean: (categoryIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.CLEANUP.CLEAN, categoryIds),
+    openStorageSense: () => ipcRenderer.invoke(IPC_CHANNELS.CLEANUP.OPEN_STORAGE_SENSE),
+    onProgress: (callback: (event: CleanupProgressEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, event: CleanupProgressEvent) => {
+        callback(event)
+      }
+      ipcRenderer.on(IPC_CHANNELS.CLEANUP.PROGRESS_EVENT, listener)
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.CLEANUP.PROGRESS_EVENT, listener)
       }
     }
   },

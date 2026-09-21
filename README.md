@@ -2,7 +2,7 @@
 
 > Moderne Windows 11 Desktop System-Utility-Suite auf Basis von Electron, React, TypeScript und Windows-Bordmitteln.
 
-[![Version](https://img.shields.io/badge/Version-1.3.1-blue.svg)](https://github.com/marka87/M-Toolbox)
+[![Version](https://img.shields.io/badge/Version-1.4.0-blue.svg)](https://github.com/marka87/M-Toolbox)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2011-0078d4.svg)](https://microsoft.com/windows)
 
@@ -16,8 +16,8 @@ M-Toolbox besteht aus 10 aufeinander abgestimmten Modulen für Wartung, Bereinig
 2. **Software Center** (`v1.1.0`) – Grafischer Paketmanager auf Basis von `winget` mit kuratiertem Software-Katalog und Batch-Installationen.
 3. **Backup & Restore** (`v1.2.0`) – Granulare Sicherung & Wiederherstellung von Winget-Paketen, Explorer-Einstellungen, User-Fonts, Wallpaper und PowerShell-Modulen.
 4. **Driver Center** (`v1.3.1`) – Geräte- & OEM-Treiber-Inventar, Problem-Diagnose, 1-Klick Treiber-Export, GPU-Aktualitätsprüfung und Online-Treibersuche (Microsoft Update-Katalog & Windows Update).
-5. **Cleanup Center** (`In Planung, v1.4.0`) – Temporäre Dateien, Update-Cache, Crash Dumps und Speicherplatz-Analyse.
-6. **Repair Center** (`Geplant, v1.5.0`) – Windows-Systemreparaturen (SFC, DISM, Netzwerk-Stack, Windows Update Reset).
+5. **Cleanup Center** (`v1.4.0`) – Temporäre Dateien, Update-Cache, Crash Dumps, Browser-Caches, Papierkorb & Speicherplatz-Analyse.
+6. **Repair Center** (`In Planung, v1.5.0`) – Windows-Systemreparaturen (SFC, DISM, Netzwerk-Stack, Windows Update Reset).
 7. **Tweaks** (`Geplant, v1.6.0`) – Windows 11 Oberflächen- & Leistungsoptimierungen.
 8. **Netzwerk Toolkit** (`Geplant, v1.7.0`) – Latenzmessung, DNS-Benchmark, Port-Scanner, Adapter-Übersicht.
 9. **Advanced Tools** (`Geplant, v1.8.0`) – Schneller Zugriff auf Windows-Tools, God-Mode und System-Dienste.
@@ -45,3 +45,4 @@ npm run dev
 npm run typecheck
 npm run build:renderer
 ```
+

@@ -37,6 +37,12 @@ export const IPC_CHANNELS = {
     SEARCH_ONLINE: 'driver:search-online',
     PROGRESS_EVENT: 'driver:progress-event',
   },
+  CLEANUP: {
+    SCAN: 'cleanup:scan',
+    CLEAN: 'cleanup:clean',
+    OPEN_STORAGE_SENSE: 'cleanup:open-storage-sense',
+    PROGRESS_EVENT: 'cleanup:progress-event',
+  },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',
     MINIMIZE_WINDOW: 'system:minimize-window',

@@ -330,5 +330,57 @@ export interface OnlineDriverScanResult {
   scannedAt: string
 }
 
+// -------------------------------------------------------------
+// Modul 5: Cleanup Center Typen
+// -------------------------------------------------------------
+
+export type CleanupGroupId = 'system' | 'browsers' | 'dumps' | 'cache'
+
+export interface CleanupCategoryItem {
+  id: string
+  name: string
+  description: string
+  group: CleanupGroupId
+  sizeBytes: number
+  fileCount: number
+  paths: string[]
+  riskLevel: 'safe' | 'normal'
+  selected: boolean
+}
+
+export interface DiskStorageInfo {
+  drive: string
+  volumeName: string
+  totalBytes: number
+  freeBytes: number
+  usedBytes: number
+  usagePercent: number
+}
+
+export interface CleanupScanResult {
+  categories: CleanupCategoryItem[]
+  totalSizeBytes: number
+  totalFileCount: number
+  disks: DiskStorageInfo[]
+  scannedAt: string
+}
+
+export interface CleanupProgressEvent {
+  categoryId: string
+  currentAction: string
+  freedBytes: number
+  percent: number
+}
+
+export interface CleanupResult {
+  success: boolean
+  freedBytes: number
+  deletedFilesCount: number
+  skippedFilesCount: number
+  cleanedCategories: string[]
+  durationMs: number
+}
+
+
 
 

@@ -58,8 +58,8 @@ Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler
 | **Modul 2** | **Software Center** | `v1.1.0` | ✅ Fertig | Kuratierter Katalog (7 Kategorien), Winget Package List, Update-Erkennung, Silent Batch Install/Uninstall |
 | **Modul 3** | **Backup & Restore** | `v1.2.0` | ✅ Fertig | Winget-Paketliste, Explorer-Settings, User-Fonts (Base64), Wallpaper (SPI), PowerShell-Module |
 | **Modul 4** | **Driver Center** | `v1.3.1` | ✅ Fertig | Geräte- & OEM-Treiberinventar, Problemcode-Diagnose, 1-Klick Export, GPU-Check, Windows Update Treibersuche |
-| **Modul 5** | **Cleanup Center** | `v1.4.0` | ⏳ **NÄCHSTES** | Temp-Files, Windows Update Cache, Crash Dumps, Browser Caches, Papierkorb, Speicher-Analyse |
-| **Modul 6** | **Repair Center** | `v1.5.0` | 📋 Geplant | SFC /scannow, DISM Health Restore, Win Update Reset, Print Spooler Repair, Network Stack Reset |
+| **Modul 5** | **Cleanup Center** | `v1.4.0` | ✅ Fertig | Temp-Files, Windows Update Cache, Crash Dumps, Browser Caches, Papierkorb, Speicher-Analyse |
+| **Modul 6** | **Repair Center** | `v1.5.0` | ⏳ **NÄCHSTES** | SFC /scannow, DISM Health Restore, Win Update Reset, Print Spooler Repair, Network Stack Reset |
 | **Modul 7** | **Tweaks** | `v1.6.0` | 📋 Geplant | Windows 11 Explorer Tweaks, Telemetrie reduzieren, Kontextmenü klassisch, Gaming Tweaks |
 | **Modul 8** | **Netzwerk Toolkit**| `v1.7.0` | 📋 Geplant | Ping/Latency Test, DNS Benchmark, Adapter Speed/IP, Port Scanner, Flush DNS |
 | **Modul 9** | **Advanced Tools** | `v1.8.0` | 📋 Geplant | God Mode Shortcuts, Windows Tools Launcher, Startup Manager, Hosts File Editor |
@@ -137,3 +137,4 @@ A:\M-Toolbox\
 - **`window.mToolbox.backup`:** `createBackup()`, `restoreBackup()`, `previewBackup()`, `listLocalBackups()`, `selectBackupFile()`, `saveBackupDialog()`
 - **`window.mToolbox.driver`:** `getData()`, `exportDrivers()`, `selectExportDir()`, `scanHardware()`, `openDeviceManager()`, `restartDevice()`, `getGpuInfo()`, `checkWindowsUpdate()`, `searchOnline()`
 - **`window.mToolbox.system`:** `minimize()`, `maximize()`, `close()`, `openExternal()`
+

@@ -4,6 +4,7 @@ import { DashboardService } from '../services/dashboard.service'
 import { SoftwareService } from '../services/software.service'
 import { BackupService } from '../services/backup.service'
 import { driverService } from '../services/driver.service'
+import { cleanupService } from '../services/cleanup.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -205,6 +206,23 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     const url = driverService.getDriverSearchUrl(query)
     await shell.openExternal(url)
     return url
+  })
+
+  // Cleanup Center IPC
+  ipcMain.handle(IPC_CHANNELS.CLEANUP.SCAN, async () => {
+    return await cleanupService.scan()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.CLEANUP.CLEAN, async (_, categoryIds: string[]) => {
+    return await cleanupService.clean(categoryIds, (event) => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(IPC_CHANNELS.CLEANUP.PROGRESS_EVENT, event)
+      }
+    })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.CLEANUP.OPEN_STORAGE_SENSE, async () => {
+    cleanupService.openStorageSense()
   })
 }
 
