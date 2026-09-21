@@ -20,7 +20,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo [2/3] Kompiliere Vite & Electron Bundle...
+echo [2/3] Kompiliere Vite und Electron Bundle...
 call npx vite build
 if %ERRORLEVEL% NEQ 0 (
     echo [FEHLER] Vite Build fehlgeschlagen! Abbruch.
