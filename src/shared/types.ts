@@ -381,6 +381,58 @@ export interface CleanupResult {
   durationMs: number
 }
 
+// -------------------------------------------------------------
+// Modul 6: Repair Center Typen
+// -------------------------------------------------------------
+
+export type RepairCategory =
+  | 'all'
+  | 'system'
+  | 'update'
+  | 'network'
+  | 'spooler'
+  | 'explorer'
+  | 'store'
+
+export interface RepairActionItem {
+  id: string
+  title: string
+  description: string
+  category: RepairCategory
+  requiresAdmin: boolean
+  estimatedDuration: string
+  riskLevel: 'safe' | 'caution'
+}
+
+export interface ServiceHealthItem {
+  name: string
+  displayName: string
+  status: 'running' | 'stopped' | 'unknown'
+}
+
+export interface SystemHealthStatus {
+  isAdmin: boolean
+  services: ServiceHealthItem[]
+  networkConnected: boolean
+  computerName: string
+  osVersion: string
+}
+
+export interface RepairLogEvent {
+  actionId: string
+  text: string
+  type: 'stdout' | 'stderr' | 'info' | 'error' | 'success'
+}
+
+export interface RepairResult {
+  actionId: string
+  success: boolean
+  message: string
+  exitCode: number
+  durationMs: number
+}
+
+
 
 
 

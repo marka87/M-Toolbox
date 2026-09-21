@@ -5,6 +5,7 @@ import { SoftwareService } from '../services/software.service'
 import { BackupService } from '../services/backup.service'
 import { driverService } from '../services/driver.service'
 import { cleanupService } from '../services/cleanup.service'
+import { repairService, REPAIR_ACTIONS } from '../services/repair.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -223,6 +224,27 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.CLEANUP.OPEN_STORAGE_SENSE, async () => {
     cleanupService.openStorageSense()
+  })
+
+  // Repair Center IPC
+  ipcMain.handle(IPC_CHANNELS.REPAIR.GET_HEALTH, async () => {
+    const health = await repairService.getSystemHealth()
+    return {
+      health,
+      actions: REPAIR_ACTIONS
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.REPAIR.RUN_ACTION, async (_, actionId: string) => {
+    return await repairService.runAction(actionId, (event) => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(IPC_CHANNELS.REPAIR.PROGRESS_EVENT, event)
+      }
+    })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.REPAIR.RESTART_AS_ADMIN, async () => {
+    await repairService.restartAsAdmin()
   })
 }
 

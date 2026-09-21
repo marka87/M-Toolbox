@@ -43,6 +43,12 @@ export const IPC_CHANNELS = {
     OPEN_STORAGE_SENSE: 'cleanup:open-storage-sense',
     PROGRESS_EVENT: 'cleanup:progress-event',
   },
+  REPAIR: {
+    GET_HEALTH: 'repair:get-health',
+    RUN_ACTION: 'repair:run-action',
+    RESTART_AS_ADMIN: 'repair:restart-as-admin',
+    PROGRESS_EVENT: 'repair:progress-event',
+  },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',
     MINIMIZE_WINDOW: 'system:minimize-window',

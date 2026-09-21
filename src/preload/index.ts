@@ -19,7 +19,11 @@ import type {
   WindowsUpdateDriver,
   CleanupScanResult,
   CleanupProgressEvent,
-  CleanupResult
+  CleanupResult,
+  SystemHealthStatus,
+  RepairActionItem,
+  RepairLogEvent,
+  RepairResult
 } from '../shared/types'
 
 export interface MToolboxAPI {
@@ -65,6 +69,12 @@ export interface MToolboxAPI {
     clean: (categoryIds: string[]) => Promise<CleanupResult>
     openStorageSense: () => Promise<void>
     onProgress: (callback: (event: CleanupProgressEvent) => void) => () => void
+  }
+  repair: {
+    getHealth: () => Promise<{ health: SystemHealthStatus; actions: RepairActionItem[] }>
+    runAction: (actionId: string) => Promise<RepairResult>
+    restartAsAdmin: () => Promise<void>
+    onProgress: (callback: (event: RepairLogEvent) => void) => () => void
   }
   system: {
     minimize: () => Promise<void>
@@ -169,6 +179,20 @@ const api: MToolboxAPI = {
       ipcRenderer.on(IPC_CHANNELS.CLEANUP.PROGRESS_EVENT, listener)
       return () => {
         ipcRenderer.removeListener(IPC_CHANNELS.CLEANUP.PROGRESS_EVENT, listener)
+      }
+    }
+  },
+  repair: {
+    getHealth: () => ipcRenderer.invoke(IPC_CHANNELS.REPAIR.GET_HEALTH),
+    runAction: (actionId: string) => ipcRenderer.invoke(IPC_CHANNELS.REPAIR.RUN_ACTION, actionId),
+    restartAsAdmin: () => ipcRenderer.invoke(IPC_CHANNELS.REPAIR.RESTART_AS_ADMIN),
+    onProgress: (callback: (event: RepairLogEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, event: RepairLogEvent) => {
+        callback(event)
+      }
+      ipcRenderer.on(IPC_CHANNELS.REPAIR.PROGRESS_EVENT, listener)
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.REPAIR.PROGRESS_EVENT, listener)
       }
     }
   },

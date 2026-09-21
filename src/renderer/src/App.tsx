@@ -6,6 +6,7 @@ import { SoftwarePage } from './pages/SoftwarePage'
 import { BackupPage } from './pages/BackupPage'
 import { DriverPage } from './pages/DriverPage'
 import { CleanupPage } from './pages/CleanupPage'
+import { RepairPage } from './pages/RepairPage'
 import type { NavigationModule } from '@shared/types'
 import { Card } from './components/ui/Card'
 import { Wrench } from 'lucide-react'
@@ -25,6 +26,8 @@ export const App: React.FC = () => {
         return <DriverPage />
       case 'cleanup':
         return <CleanupPage />
+      case 'repair':
+        return <RepairPage />
       default: {
         const moduleTitles: Record<NavigationModule, string> = {
           dashboard: 'Dashboard',

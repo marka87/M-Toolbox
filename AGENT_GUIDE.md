@@ -59,8 +59,8 @@ Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler
 | **Modul 3** | **Backup & Restore** | `v1.2.0` | ✅ Fertig | Winget-Paketliste, Explorer-Settings, User-Fonts (Base64), Wallpaper (SPI), PowerShell-Module |
 | **Modul 4** | **Driver Center** | `v1.3.1` | ✅ Fertig | Geräte- & OEM-Treiberinventar, Problemcode-Diagnose, 1-Klick Export, GPU-Check, Windows Update Treibersuche |
 | **Modul 5** | **Cleanup Center** | `v1.4.0` | ✅ Fertig | Temp-Files, Windows Update Cache, Crash Dumps, Browser Caches, Papierkorb, Speicher-Analyse |
-| **Modul 6** | **Repair Center** | `v1.5.0` | ⏳ **NÄCHSTES** | SFC /scannow, DISM Health Restore, Win Update Reset, Print Spooler Repair, Network Stack Reset |
-| **Modul 7** | **Tweaks** | `v1.6.0` | 📋 Geplant | Windows 11 Explorer Tweaks, Telemetrie reduzieren, Kontextmenü klassisch, Gaming Tweaks |
+| **Modul 6** | **Repair Center** | `v1.5.0` | ✅ Fertig | SFC /scannow, DISM Health Restore, Win Update Reset, Print Spooler Repair, Network Stack Reset, AppX Re-Register |
+| **Modul 7** | **Tweaks** | `v1.6.0` | ⏳ **NÄCHSTES** | Windows 11 Explorer Tweaks, Telemetrie reduzieren, Kontextmenü klassisch, Gaming Tweaks |
 | **Modul 8** | **Netzwerk Toolkit**| `v1.7.0` | 📋 Geplant | Ping/Latency Test, DNS Benchmark, Adapter Speed/IP, Port Scanner, Flush DNS |
 | **Modul 9** | **Advanced Tools** | `v1.8.0` | 📋 Geplant | God Mode Shortcuts, Windows Tools Launcher, Startup Manager, Hosts File Editor |
 | **Modul 10**| **Settings** | `v1.9.0` | 📋 Geplant | Theme (Dark/Light/System), Autostart M-Toolbox, Update-Check, Log-Dateien, Über |
@@ -106,7 +106,9 @@ A:\M-Toolbox\
 │   │       ├── dashboard.service.ts
 │   │       ├── software.service.ts
 │   │       ├── backup.service.ts
-│   │       └── driver.service.ts
+│   │       ├── driver.service.ts
+│   │       ├── cleanup.service.ts
+│   │       └── repair.service.ts
 │   ├── preload\               # Preload-Skript (Sichere ContextBridge)
 │   │   └── index.ts           # Exponiert window.mToolbox.*
 │   ├── shared\                # Gemeinsam genutzter Code
@@ -118,8 +120,8 @@ A:\M-Toolbox\
 │           ├── components\    # Wiederverwendbare UI-Komponenten
 │           │   ├── layout\    # Titlebar, Sidebar
 │           │   └── ui\        # Card, DeviceCard, DriverDetailsModal, etc.
-│           ├── hooks\         # Custom Hooks (useDashboard, useSoftware, useBackup, useDriver)
-│           ├── pages\         # Seiten (DashboardPage, SoftwarePage, BackupPage, DriverPage)
+│           ├── hooks\         # Custom Hooks (useDashboard, useSoftware, useBackup, useDriver, useCleanup, useRepair)
+│           ├── pages\         # Seiten (DashboardPage, SoftwarePage, BackupPage, DriverPage, CleanupPage, RepairPage)
 │           ├── App.tsx        # Routing / Modulwechsel
 │           └── main.tsx       # React Root
 ├── package.json
@@ -136,5 +138,8 @@ A:\M-Toolbox\
 - **`window.mToolbox.software`:** `getCatalog()`, `getInstalled()`, `getUpdates()`, `install()`, `uninstall()`, `upgrade()`, `upgradeAll()`
 - **`window.mToolbox.backup`:** `createBackup()`, `restoreBackup()`, `previewBackup()`, `listLocalBackups()`, `selectBackupFile()`, `saveBackupDialog()`
 - **`window.mToolbox.driver`:** `getData()`, `exportDrivers()`, `selectExportDir()`, `scanHardware()`, `openDeviceManager()`, `restartDevice()`, `getGpuInfo()`, `checkWindowsUpdate()`, `searchOnline()`
+- **`window.mToolbox.cleanup`:** `scan()`, `clean()`, `getDiskSpace()`
+- **`window.mToolbox.repair`:** `getSystemHealth()`, `executeAction()`, `isElevated()`, `restartAsAdmin()`, `onRepairLog()`
 - **`window.mToolbox.system`:** `minimize()`, `maximize()`, `close()`, `openExternal()`
+
 
