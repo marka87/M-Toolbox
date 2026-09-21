@@ -55,6 +55,16 @@ export const IPC_CHANNELS = {
     APPLY_RECOMMENDED: 'tweaks:apply-recommended',
     RESTART_EXPLORER: 'tweaks:restart-explorer',
   },
+  NETWORK: {
+    GET_DIAGNOSTICS: 'network:get-diagnostics',
+    GET_WAN_IP: 'network:get-wan-ip',
+    PING_TARGETS: 'network:ping-targets',
+    BENCHMARK_DNS: 'network:benchmark-dns',
+    SCAN_PORTS: 'network:scan-ports',
+    FLUSH_DNS: 'network:flush-dns',
+    RENEW_IP: 'network:renew-ip',
+    OPEN_NETWORK_CONNECTIONS: 'network:open-connections'
+  },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',
     MINIMIZE_WINDOW: 'system:minimize-window',

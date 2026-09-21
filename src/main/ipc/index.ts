@@ -7,6 +7,7 @@ import { driverService } from '../services/driver.service'
 import { cleanupService } from '../services/cleanup.service'
 import { repairService, REPAIR_ACTIONS } from '../services/repair.service'
 import { tweakService } from '../services/tweak.service'
+import { networkService } from '../services/network.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -264,5 +265,39 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.TWEAKS.RESTART_EXPLORER, async () => {
     return await tweakService.restartExplorer()
   })
+
+  // Network Toolkit IPC
+  ipcMain.handle(IPC_CHANNELS.NETWORK.GET_DIAGNOSTICS, async () => {
+    return await networkService.getDiagnostics()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.NETWORK.GET_WAN_IP, async () => {
+    return await networkService.getWanIp()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.NETWORK.PING_TARGETS, async (_, customHost?: string) => {
+    return await networkService.pingTargets(customHost)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.NETWORK.BENCHMARK_DNS, async (_, domain?: string) => {
+    return await networkService.benchmarkDns(domain)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.NETWORK.SCAN_PORTS, async (_, target: string, ports: number[]) => {
+    return await networkService.scanPorts(target, ports)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.NETWORK.FLUSH_DNS, async () => {
+    return await networkService.flushDns()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.NETWORK.RENEW_IP, async () => {
+    return await networkService.renewIp()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.NETWORK.OPEN_NETWORK_CONNECTIONS, async () => {
+    await networkService.openNetworkConnections()
+  })
 }
+
 

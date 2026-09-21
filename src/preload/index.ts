@@ -26,7 +26,12 @@ import type {
   RepairResult,
   TweakItem,
   TweakApplyResult,
-  BatchTweakResult
+  BatchTweakResult,
+  NetworkDiagnosticsData,
+  WanIpInfo,
+  PingResultItem,
+  DnsBenchmarkItem,
+  PortScanReport
 } from '../shared/types'
 
 export interface MToolboxAPI {
@@ -84,6 +89,16 @@ export interface MToolboxAPI {
     setTweak: (tweakId: string, value: boolean) => Promise<TweakApplyResult>
     applyRecommended: () => Promise<BatchTweakResult>
     restartExplorer: () => Promise<{ success: boolean; message: string }>
+  }
+  network: {
+    getDiagnostics: () => Promise<NetworkDiagnosticsData>
+    getWanIp: () => Promise<WanIpInfo>
+    pingTargets: (customHost?: string) => Promise<PingResultItem[]>
+    benchmarkDns: (domain?: string) => Promise<DnsBenchmarkItem[]>
+    scanPorts: (target: string, ports: number[]) => Promise<PortScanReport>
+    flushDns: () => Promise<{ success: boolean; message: string }>
+    renewIp: () => Promise<{ success: boolean; message: string }>
+    openNetworkConnections: () => Promise<void>
   }
   system: {
     minimize: () => Promise<void>
@@ -211,6 +226,20 @@ const api: MToolboxAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.TWEAKS.SET_TWEAK, tweakId, value),
     applyRecommended: () => ipcRenderer.invoke(IPC_CHANNELS.TWEAKS.APPLY_RECOMMENDED),
     restartExplorer: () => ipcRenderer.invoke(IPC_CHANNELS.TWEAKS.RESTART_EXPLORER)
+  },
+  network: {
+    getDiagnostics: () => ipcRenderer.invoke(IPC_CHANNELS.NETWORK.GET_DIAGNOSTICS),
+    getWanIp: () => ipcRenderer.invoke(IPC_CHANNELS.NETWORK.GET_WAN_IP),
+    pingTargets: (customHost?: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.NETWORK.PING_TARGETS, customHost),
+    benchmarkDns: (domain?: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.NETWORK.BENCHMARK_DNS, domain),
+    scanPorts: (target: string, ports: number[]) =>
+      ipcRenderer.invoke(IPC_CHANNELS.NETWORK.SCAN_PORTS, target, ports),
+    flushDns: () => ipcRenderer.invoke(IPC_CHANNELS.NETWORK.FLUSH_DNS),
+    renewIp: () => ipcRenderer.invoke(IPC_CHANNELS.NETWORK.RENEW_IP),
+    openNetworkConnections: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.NETWORK.OPEN_NETWORK_CONNECTIONS)
   },
   system: {
     minimize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MINIMIZE_WINDOW),

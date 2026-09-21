@@ -470,3 +470,72 @@ export interface BatchTweakResult {
   requiresRestart: boolean
   failedIds: string[]
 }
+
+// -------------------------------------------------------------
+// Modul 8: Netzwerk Toolkit Typen
+// -------------------------------------------------------------
+
+export interface NetworkAdapterInfo {
+  id: string
+  name: string
+  description: string
+  status: 'Up' | 'Down' | 'Unknown'
+  linkSpeed: string
+  macAddress: string
+  ipv4Address: string
+  ipv6Address: string
+  gateway: string
+  dnsServers: string[]
+  isPrimary: boolean
+}
+
+export interface WanIpInfo {
+  ip: string | null
+  city?: string
+  region?: string
+  country?: string
+  org?: string
+  isOnline: boolean
+}
+
+export interface PingResultItem {
+  target: string
+  name: string
+  isAlive: boolean
+  latencyMs: number
+  minMs?: number
+  maxMs?: number
+  packetLossPercent: number
+  status: 'excellent' | 'good' | 'moderate' | 'high' | 'offline'
+}
+
+export interface DnsBenchmarkItem {
+  id: string
+  name: string
+  server: string
+  latencyMs: number
+  status: 'success' | 'timeout' | 'error'
+  errorMessage?: string
+}
+
+export interface PortScanItem {
+  port: number
+  service: string
+  isOpen: boolean
+  status: 'open' | 'closed' | 'timeout'
+}
+
+export interface PortScanReport {
+  target: string
+  openCount: number
+  scannedCount: number
+  durationMs: number
+  results: PortScanItem[]
+}
+
+export interface NetworkDiagnosticsData {
+  adapters: NetworkAdapterInfo[]
+  wan: WanIpInfo
+  defaultGateway: string | null
+}
+
