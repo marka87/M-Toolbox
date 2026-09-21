@@ -21,9 +21,14 @@ const copyScriptsPlugin = {
   }
 }
 
+const packageJson = JSON.parse(fs.readFileSync(path.resolve(projectRoot, 'package.json'), 'utf8'))
+
 export default defineConfig({
   root: path.resolve(projectRoot, 'src/renderer'),
   publicDir: path.resolve(projectRoot, 'public'),
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
   server: {
     fs: {
       allow: [projectRoot],

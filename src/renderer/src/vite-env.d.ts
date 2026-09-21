@@ -6,5 +6,6 @@ declare global {
   interface Window {
     mToolbox: MToolboxAPI
   }
+  const __APP_VERSION__: string
 }
 

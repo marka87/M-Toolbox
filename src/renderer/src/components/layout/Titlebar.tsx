@@ -22,7 +22,7 @@ export const Titlebar: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-100 tracking-wide">M-TOOLBOX</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-fluent-border text-fluent-muted font-medium">v1.0</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-fluent-border text-fluent-muted font-medium">v{__APP_VERSION__}</span>
         </div>
       </div>
 
