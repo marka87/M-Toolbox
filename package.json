@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
+    "build:setup": "tsc && vite build && electron-builder --win nsis",
+    "build:portable": "tsc && vite build && electron-builder --win portable",
     "build:renderer": "tsc && vite build",
     "typecheck": "tsc --noEmit",
     "postinstall": "electron-rebuild -f -w better-sqlite3"

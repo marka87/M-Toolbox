@@ -5,13 +5,23 @@
     "output": "release"
   },
   "files": [
-    "dist",
-    "dist-electron"
+    "dist/**/*",
+    "dist-electron/**/*"
+  ],
+  "asar": true,
+  "asarUnpack": [
+    "**/*.node"
   ],
   "win": {
     "target": [
       {
         "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      },
+      {
+        "target": "portable",
         "arch": [
           "x64"
         ]
@@ -23,7 +33,11 @@
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
     "createDesktopShortcut": true,
-    "createStartMenuShortcut": true
+    "createStartMenuShortcut": true,
+    "shortcutName": "M-Toolbox",
+    "artifactName": "${productName}-Setup-${version}.${ext}"
+  },
+  "portable": {
+    "artifactName": "${productName}-${version}-portable.${ext}"
   }
 }
-
