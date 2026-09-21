@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 echo ========================================================
-echo   M-Toolbox - Setup & Portable EXE Builder
+echo   M-Toolbox - Setup und Portable EXE Builder
 echo ========================================================
 echo.
 
