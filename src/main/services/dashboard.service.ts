@@ -44,7 +44,9 @@ export class DashboardService {
     // Path to Get-SystemInfo.ps1
     let scriptPath = path.join(__dirname, '../scripts/Get-SystemInfo.ps1')
     if (!fs.existsSync(scriptPath)) {
-      // In dev or packaged mode fallback
+      scriptPath = path.join(process.resourcesPath || '', 'scripts/Get-SystemInfo.ps1')
+    }
+    if (!fs.existsSync(scriptPath)) {
       scriptPath = path.join(app.getAppPath(), 'src/main/scripts/Get-SystemInfo.ps1')
     }
 
@@ -62,7 +64,7 @@ export class DashboardService {
           $cs = Get-CimInstance Win32_ComputerSystem | Select-Object Name, Domain, PartOfDomain
           $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 Name, Manufacturer, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed
           $gpus = @(Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, AdapterRAM, Status)
-          $memChips = @(Get-CimInstance Win32_PhysicalMemory | Select-Object Capacity, Speed, DeviceLocator)
+          $memChips = @(Get-CimInstance Win32_PhysicalMemory | Select-Object Capacity, Speed, DeviceLocator, SMBIOSMemoryType, MemoryType, ConfiguredClockSpeed)
           $bios = Get-CimInstance Win32_BIOS | Select-Object Manufacturer, SMBIOSBIOSVersion, ReleaseDate, SerialNumber
           $tpmPresent = $false; $tpmEnabled = $false; $tpmVersion = "N/A"
           try {

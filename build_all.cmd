@@ -50,3 +50,4 @@ if exist "release\" (
 )
 
 pause
+
