@@ -44,6 +44,9 @@ export const DriverPage: React.FC = () => {
     stats,
     loading,
     error,
+    gpuInfo,
+    windowsUpdateDrivers,
+    isCheckingWindowsUpdate,
     selectedCategory,
     setSelectedCategory,
     searchQuery,
@@ -67,7 +70,11 @@ export const DriverPage: React.FC = () => {
     handleExportSingle,
     handleScanHardware,
     handleOpenDeviceManager,
-    handleRestartDevice
+    handleRestartDevice,
+    handleCheckWindowsUpdate,
+    handleSearchOnline,
+    handleOpenVendorPortal,
+    handleOpenWindowsUpdateSettings
   } = useDriver()
 
   return (
@@ -141,6 +148,93 @@ export const DriverPage: React.FC = () => {
         <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/40 text-xs text-red-200 flex items-center gap-2.5">
           <XCircle className="w-4 h-4 text-red-400 shrink-0" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {/* GPU & Online Driver Check Banner */}
+      {gpuInfo && (
+        <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border relative overflow-hidden backdrop-blur-sm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="p-3 rounded-xl bg-fluent-accent/15 border border-fluent-accent/30 text-fluent-accent shrink-0">
+                <Monitor className="w-6 h-6" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-semibold text-fluent-text truncate">
+                    {gpuInfo.name}
+                  </h3>
+                  {gpuInfo.isOutdated ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      Möglicherweise veraltet ({gpuInfo.ageYears} Jahre alt)
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Aktueller Treiber
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-fluent-muted mt-0.5 truncate">
+                  Treiber-Version: <span className="font-mono text-fluent-text">{gpuInfo.driverVersion}</span>
+                  {gpuInfo.driverDate && (
+                    <> • Stand: <span className="text-fluent-text">{gpuInfo.driverDate}</span></>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+              <button
+                onClick={() => handleOpenVendorPortal(gpuInfo.vendorDownloadUrl)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-text transition-colors"
+                title="Offizielle Treiberseite des Herstellers aufrufen"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-fluent-accent" />
+                {gpuInfo.vendorToolName}
+              </button>
+
+              <button
+                onClick={handleCheckWindowsUpdate}
+                disabled={isCheckingWindowsUpdate}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-fluent-accent/20 border border-fluent-accent/40 text-fluent-accent hover:bg-fluent-accent hover:text-white transition-all disabled:opacity-50"
+                title="Online-Suche über Windows Update nach zertifizierten Treibern starten"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isCheckingWindowsUpdate ? 'animate-spin' : ''}`} />
+                Windows Update Treiber-Scan
+              </button>
+
+              <button
+                onClick={handleOpenWindowsUpdateSettings}
+                className="p-1.5 rounded-xl bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-muted hover:text-fluent-text transition-colors"
+                title="Windows Update Einstellungen öffnen"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Pending Windows Update Drivers if found */}
+          {windowsUpdateDrivers.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-fluent-border/60 space-y-1.5">
+              <span className="text-xs font-semibold text-emerald-400 block">
+                Gefundene Windows Update Treiber-Aktualisierungen:
+              </span>
+              {windowsUpdateDrivers.map((upd, idx) => (
+                <div
+                  key={idx}
+                  className="text-xs text-fluent-text p-2 rounded-lg bg-fluent-card-subtle/80 flex items-center justify-between"
+                >
+                  <span className="font-medium truncate">{upd.title}</span>
+                  <button
+                    onClick={handleOpenWindowsUpdateSettings}
+                    className="text-[11px] text-fluent-accent hover:underline ml-2 shrink-0"
+                  >
+                    In Einstellungen installieren
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -314,6 +408,7 @@ export const DriverPage: React.FC = () => {
               onShowDetails={(d) => setSelectedDeviceForDetails(d)}
               onExport={(inf) => handleExportSingle(inf)}
               onRestart={(id) => handleRestartDevice(id)}
+              onSearchOnline={(q) => handleSearchOnline(q)}
               isExporting={isExporting}
             />
           ))}
@@ -361,6 +456,7 @@ export const DriverPage: React.FC = () => {
         onClose={() => setSelectedDeviceForDetails(null)}
         onExport={(inf) => handleExportSingle(inf)}
         onRestart={(id) => handleRestartDevice(id)}
+        onSearchOnline={(q) => handleSearchOnline(q)}
         isExporting={isExporting}
       />
     </div>

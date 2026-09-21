@@ -5,7 +5,9 @@ import type {
   DriverStats,
   DriverCategory,
   DriverExportResult,
-  DriverOperationResult
+  DriverOperationResult,
+  GpuInfo,
+  WindowsUpdateDriver
 } from '@shared/types'
 
 export function useDriver() {
@@ -26,14 +28,22 @@ export function useDriver() {
   const [selectedDeviceForDetails, setSelectedDeviceForDetails] = useState<DeviceItem | null>(null)
   const [operationMessage, setOperationMessage] = useState<string | null>(null)
 
+  const [gpuInfo, setGpuInfo] = useState<GpuInfo | null>(null)
+  const [windowsUpdateDrivers, setWindowsUpdateDrivers] = useState<WindowsUpdateDriver[]>([])
+  const [isCheckingWindowsUpdate, setIsCheckingWindowsUpdate] = useState<boolean>(false)
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await window.mToolbox.driver.getData()
+      const [data, gpu] = await Promise.all([
+        window.mToolbox.driver.getData(),
+        window.mToolbox.driver.getGpuInfo().catch(() => null)
+      ])
       setDevices(data.devices || [])
       setPackages(data.packages || [])
       setStats(data.stats || null)
+      setGpuInfo(gpu)
     } catch (err: any) {
       console.error('[useDriver] Fehler beim Laden:', err)
       setError(err?.message || 'Fehler beim Laden der Geräte und Treiber.')
@@ -199,12 +209,61 @@ export function useDriver() {
     }
   }
 
+  // Windows Update Treiber suchen
+  const handleCheckWindowsUpdate = async () => {
+    setIsCheckingWindowsUpdate(true)
+    setOperationMessage('Prüfe Windows Update auf zertifizierte Treiber-Aktualisierungen...')
+    try {
+      const updates = await window.mToolbox.driver.checkWindowsUpdate()
+      setWindowsUpdateDrivers(updates)
+      if (updates.length === 0) {
+        setOperationMessage('Windows Update: Keine ausstehenden Treiber-Updates gefunden. Treiber sind aktuell!')
+      } else {
+        setOperationMessage(`Windows Update: ${updates.length} Treiber-Update(s) verfügbar!`)
+      }
+    } catch (err: any) {
+      setOperationMessage(`Windows Update Suche fehlgeschlagen: ${err?.message || 'Fehler'}`)
+    } finally {
+      setIsCheckingWindowsUpdate(false)
+    }
+  }
+
+  // Online im Microsoft Update-Katalog suchen
+  const handleSearchOnline = async (query: string) => {
+    try {
+      await window.mToolbox.driver.searchOnline(query)
+    } catch (err: any) {
+      console.error('[useDriver] Online-Suche Fehler:', err)
+    }
+  }
+
+  // Hersteller-Downloadportal öffnen
+  const handleOpenVendorPortal = async (url: string) => {
+    try {
+      await window.mToolbox.system.openExternal(url)
+    } catch (err: any) {
+      console.error('[useDriver] Fehler beim Öffnen des Herstellerportals:', err)
+    }
+  }
+
+  // Windows Update Einstellungen öffnen
+  const handleOpenWindowsUpdateSettings = async () => {
+    try {
+      await window.mToolbox.system.openExternal('ms-settings:windowsupdate')
+    } catch (err: any) {
+      console.error('[useDriver] Fehler beim Öffnen von Windows Update:', err)
+    }
+  }
+
   return {
     devices,
     packages,
     stats,
     loading,
     error,
+    gpuInfo,
+    windowsUpdateDrivers,
+    isCheckingWindowsUpdate,
     selectedCategory,
     setSelectedCategory,
     searchQuery,
@@ -228,6 +287,11 @@ export function useDriver() {
     handleExportSingle,
     handleScanHardware,
     handleOpenDeviceManager,
-    handleRestartDevice
+    handleRestartDevice,
+    handleCheckWindowsUpdate,
+    handleSearchOnline,
+    handleOpenVendorPortal,
+    handleOpenWindowsUpdateSettings
   }
 }
+

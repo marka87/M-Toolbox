@@ -192,5 +192,19 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.DRIVER.RESTART_DEVICE, async (_, instanceId: string) => {
     return await driverService.restartDevice(instanceId)
   })
+
+  ipcMain.handle(IPC_CHANNELS.DRIVER.GET_GPU_INFO, async () => {
+    return await driverService.getGpuInfo()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DRIVER.CHECK_WINDOWS_UPDATE, async () => {
+    return await driverService.checkWindowsUpdateDrivers()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DRIVER.SEARCH_ONLINE, async (_, query: string) => {
+    const url = driverService.getDriverSearchUrl(query)
+    await shell.openExternal(url)
+    return url
+  })
 }
 

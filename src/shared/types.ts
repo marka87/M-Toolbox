@@ -303,4 +303,32 @@ export interface DriverOperationResult {
   message: string
 }
 
+export type GpuVendor = 'nvidia' | 'amd' | 'intel' | 'other'
+
+export interface GpuInfo {
+  name: string
+  driverVersion: string
+  driverDate: string
+  vendor: GpuVendor
+  isOutdated: boolean
+  ageYears: number
+  vendorDownloadUrl: string
+  vendorToolName: string
+}
+
+export interface WindowsUpdateDriver {
+  title: string
+  description?: string
+  driverModel?: string
+  driverProvider?: string
+  driverDate?: string
+}
+
+export interface OnlineDriverScanResult {
+  gpu: GpuInfo | null
+  availableUpdates: WindowsUpdateDriver[]
+  scannedAt: string
+}
+
+
 

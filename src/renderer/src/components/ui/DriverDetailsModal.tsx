@@ -7,7 +7,8 @@ import {
   RotateCcw,
   ShieldCheck,
   AlertTriangle,
-  Cpu
+  Cpu,
+  Globe
 } from 'lucide-react'
 import type { DeviceItem } from '@shared/types'
 
@@ -16,6 +17,7 @@ interface DriverDetailsModalProps {
   onClose: () => void
   onExport: (infName: string) => void
   onRestart: (instanceId: string) => void
+  onSearchOnline?: (query: string) => void
   isExporting?: boolean
 }
 
@@ -24,6 +26,7 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
   onClose,
   onExport,
   onRestart,
+  onSearchOnline,
   isExporting
 }) => {
   const [copied, setCopied] = useState(false)
@@ -207,6 +210,21 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
               <RotateCcw className="w-4 h-4 text-fluent-muted" />
               Gerät neu starten
             </button>
+
+            {onSearchOnline && (
+              <button
+                onClick={() =>
+                  onSearchOnline(
+                    device.deviceDescription || device.driverName || device.instanceId
+                  )
+                }
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-muted hover:text-fluent-text transition-colors"
+                title="Im Microsoft Update-Katalog nach zertifizierten Treibern suchen"
+              >
+                <Globe className="w-4 h-4 text-fluent-accent" />
+                Microsoft-Katalog
+              </button>
+            )}
           </div>
 
           <button

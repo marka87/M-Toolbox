@@ -32,6 +32,9 @@ export const IPC_CHANNELS = {
     SCAN_HARDWARE: 'driver:scan-hardware',
     OPEN_DEVICE_MANAGER: 'driver:open-device-manager',
     RESTART_DEVICE: 'driver:restart-device',
+    GET_GPU_INFO: 'driver:get-gpu-info',
+    CHECK_WINDOWS_UPDATE: 'driver:check-windows-update',
+    SEARCH_ONLINE: 'driver:search-online',
     PROGRESS_EVENT: 'driver:progress-event',
   },
   SYSTEM: {

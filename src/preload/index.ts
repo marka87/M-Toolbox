@@ -14,7 +14,9 @@ import type {
   DriverPackage,
   DriverStats,
   DriverExportResult,
-  DriverOperationResult
+  DriverOperationResult,
+  GpuInfo,
+  WindowsUpdateDriver
 } from '../shared/types'
 
 export interface MToolboxAPI {
@@ -50,6 +52,9 @@ export interface MToolboxAPI {
     scanHardware: () => Promise<DriverOperationResult>
     openDeviceManager: () => Promise<void>
     restartDevice: (instanceId: string) => Promise<DriverOperationResult>
+    getGpuInfo: () => Promise<GpuInfo | null>
+    checkWindowsUpdate: () => Promise<WindowsUpdateDriver[]>
+    searchOnline: (query: string) => Promise<string>
     onProgress: (callback: (log: string) => void) => () => void
   }
   system: {
@@ -131,6 +136,9 @@ const api: MToolboxAPI = {
     openDeviceManager: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.OPEN_DEVICE_MANAGER),
     restartDevice: (instanceId: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.DRIVER.RESTART_DEVICE, instanceId),
+    getGpuInfo: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.GET_GPU_INFO),
+    checkWindowsUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.CHECK_WINDOWS_UPDATE),
+    searchOnline: (query: string) => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.SEARCH_ONLINE, query),
     onProgress: (callback: (log: string) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, log: string) => {
         callback(log)

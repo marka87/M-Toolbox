@@ -13,7 +13,8 @@ import {
   Download,
   Info,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Globe
 } from 'lucide-react'
 import type { DeviceItem, DriverCategory } from '@shared/types'
 
@@ -22,6 +23,7 @@ interface DeviceCardProps {
   onShowDetails: (device: DeviceItem) => void
   onExport: (infName: string) => void
   onRestart: (instanceId: string) => void
+  onSearchOnline?: (query: string) => void
   isExporting?: boolean
 }
 
@@ -51,6 +53,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   onShowDetails,
   onExport,
   onRestart,
+  onSearchOnline,
   isExporting
 }) => {
   const isProblem = device.status === 'Problem' || Boolean(device.problemCode)
@@ -161,6 +164,20 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             </button>
           )}
 
+          {onSearchOnline && (
+            <button
+              onClick={() =>
+                onSearchOnline(
+                  device.deviceDescription || device.driverName || device.instanceId
+                )
+              }
+              className="p-1.5 rounded-lg text-fluent-muted hover:text-fluent-accent hover:bg-fluent-card-hover transition-colors"
+              title="Online im Microsoft Update-Katalog nach zertifizierten Treibern suchen"
+            >
+              <Globe className="w-3.5 h-3.5" />
+            </button>
+          )}
+
           <button
             onClick={() => onRestart(device.instanceId)}
             className="p-1.5 rounded-lg text-fluent-muted hover:text-fluent-accent hover:bg-fluent-card-hover transition-colors"
@@ -173,3 +190,4 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
     </div>
   )
 }
+

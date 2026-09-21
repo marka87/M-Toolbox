@@ -9,7 +9,10 @@ import type {
   DriverStats,
   DriverExportResult,
   DriverOperationResult,
-  DeviceStatus
+  DeviceStatus,
+  GpuInfo,
+  GpuVendor,
+  WindowsUpdateDriver
 } from '../../shared/types'
 
 const execAsync = promisify(exec)
@@ -408,6 +411,124 @@ export class DriverService {
       }
     }
   }
+
+  /**
+   * Erkennt die verbaute GPU, Treiberversion, Datum und prüft auf Aktualität
+   */
+  async getGpuInfo(): Promise<GpuInfo | null> {
+    try {
+      const psCommand = `Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, @{Name='DriverDateStr';Expression={$_.DriverDate.ToString('yyyy-MM-dd')}} | ConvertTo-Json -Compress`
+      const { stdout } = await execAsync(`powershell -NoProfile -Command "${psCommand}"`, { timeout: 10000 })
+      if (!stdout || !stdout.trim()) return null
+
+      let data: any
+      try {
+        data = JSON.parse(stdout.trim())
+      } catch {
+        return null
+      }
+
+      const rawGpu = Array.isArray(data)
+        ? (data.find((g: any) => /nvidia|amd|radeon|geforce|quadro/i.test(g.Name)) || data[0])
+        : data
+
+      if (!rawGpu || !rawGpu.Name) return null
+
+      const name = String(rawGpu.Name || '').trim()
+      const driverVersion = String(rawGpu.DriverVersion || '').trim()
+      const driverDate = String(rawGpu.DriverDateStr || '').trim()
+
+      const nameLower = name.toLowerCase()
+      let vendor: GpuVendor = 'other'
+      let vendorDownloadUrl = `https://www.catalog.update.microsoft.com/Search.aspx?q=${encodeURIComponent(name)}`
+      let vendorToolName = 'Microsoft Update-Katalog'
+
+      if (nameLower.includes('nvidia') || nameLower.includes('geforce') || nameLower.includes('quadro')) {
+        vendor = 'nvidia'
+        vendorDownloadUrl = 'https://www.nvidia.com/Download/index.aspx'
+        vendorToolName = 'NVIDIA Treiber-Portal & NVIDIA App'
+      } else if (nameLower.includes('amd') || nameLower.includes('radeon')) {
+        vendor = 'amd'
+        vendorDownloadUrl = 'https://www.amd.com/en/support'
+        vendorToolName = 'AMD Software: Adrenalin Edition'
+      } else if (
+        nameLower.includes('intel') ||
+        nameLower.includes('arc') ||
+        nameLower.includes('iris') ||
+        nameLower.includes('uhd')
+      ) {
+        vendor = 'intel'
+        vendorDownloadUrl = 'https://www.intel.com/content/www/us/en/support/detect.html'
+        vendorToolName = 'Intel Driver & Support Assistant'
+      }
+
+      let ageYears = 0
+      let isOutdated = false
+      if (driverDate) {
+        const parts = driverDate.split('-')
+        if (parts.length === 3) {
+          const year = parseInt(parts[0], 10)
+          const currentYear = new Date().getFullYear()
+          ageYears = Math.max(0, currentYear - year)
+          if (ageYears >= 1) {
+            isOutdated = true
+          }
+        }
+      }
+
+      return {
+        name,
+        driverVersion,
+        driverDate,
+        vendor,
+        isOutdated,
+        ageYears,
+        vendorDownloadUrl,
+        vendorToolName
+      }
+    } catch (err) {
+      console.error('[DriverService] Fehler beim Auslesen der GPU-Info:', err)
+      return null
+    }
+  }
+
+  /**
+   * Sucht nach anstehenden Treiber-Updates über die Microsoft Windows Update API
+   */
+  async checkWindowsUpdateDrivers(): Promise<WindowsUpdateDriver[]> {
+    try {
+      const psCmd = `$session = New-Object -ComObject Microsoft.Update.Session; $searcher = $session.CreateUpdateSearcher(); $res = $searcher.Search("IsInstalled=0 and Type=''Driver''"); $updates = @(); foreach ($item in $res.Updates) { $updates += @{ title = $item.Title; description = $item.Description } }; $updates | ConvertTo-Json -Compress`
+      const { stdout } = await execAsync(`powershell -NoProfile -Command "${psCmd}"`, { timeout: 45000 })
+      if (!stdout || !stdout.trim()) return []
+
+      const parsed = JSON.parse(stdout.trim())
+      if (Array.isArray(parsed)) {
+        return parsed.map((item: any) => ({
+          title: item.title || 'Unbekanntes Treiber-Update',
+          description: item.description || ''
+        }))
+      } else if (parsed && parsed.title) {
+        return [
+          {
+            title: parsed.title,
+            description: parsed.description || ''
+          }
+        ]
+      }
+      return []
+    } catch (err) {
+      console.warn('[DriverService] Fehler oder Timeout bei Windows Update Treiber-Suche:', err)
+      return []
+    }
+  }
+
+  /**
+   * Erzeugt die Such-URL für den Microsoft Update-Katalog
+   */
+  getDriverSearchUrl(query: string): string {
+    return `https://www.catalog.update.microsoft.com/Search.aspx?q=${encodeURIComponent(query)}`
+  }
 }
 
 export const driverService = new DriverService()
+
