@@ -8,6 +8,11 @@ export function useDashboard() {
   const [error, setError] = useState<string | null>(null)
 
   const fetchSystemInfo = useCallback(async (force = false) => {
+    if (!window.mToolbox?.dashboard) {
+      setError('Elektronische Schnittstelle (IPC) wird initialisiert...')
+      setIsLoading(false)
+      return
+    }
     try {
       setIsLoading(true)
       setError(null)
@@ -22,6 +27,8 @@ export function useDashboard() {
   }, [])
 
   useEffect(() => {
+    if (!window.mToolbox?.dashboard) return
+
     // Initial fetch
     fetchSystemInfo(false)
 
@@ -34,7 +41,7 @@ export function useDashboard() {
 
     return () => {
       unsubscribe()
-      window.mToolbox.dashboard.stopMetricsStream()
+      window.mToolbox?.dashboard?.stopMetricsStream()
     }
   }, [fetchSystemInfo])
 

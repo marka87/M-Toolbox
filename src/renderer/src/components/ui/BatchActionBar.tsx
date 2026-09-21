@@ -58,3 +58,4 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
     </div>
   )
 }
+

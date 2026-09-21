@@ -1,5 +1,6 @@
 import { app, BrowserWindow, nativeTheme } from 'electron'
 import path from 'node:path'
+import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { registerIpcHandlers } from './ipc'
 import { DatabaseService } from './services/database.service'
@@ -30,6 +31,10 @@ let mainWindow: BrowserWindow | null = null
 function createWindow() {
   nativeTheme.themeSource = 'dark'
 
+  const preloadJs = path.join(__dirname, '../preload/index.js')
+  const preloadMjs = path.join(__dirname, '../preload/index.mjs')
+  const preloadPath = fs.existsSync(preloadMjs) ? preloadMjs : preloadJs
+
   mainWindow = new BrowserWindow({
     title: 'M-Toolbox',
     width: 1280,
@@ -40,11 +45,19 @@ function createWindow() {
     frame: false, // Frameless for modern Windows 11 Fluent look
     titleBarStyle: 'hidden',
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: preloadPath,
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false
     },
+  })
+
+  mainWindow.webContents.on('did-fail-load', (_, errorCode, errorDescription, validatedURL) => {
+    console.error(`[Renderer Load Error] ${errorCode}: ${errorDescription} (${validatedURL})`)
+  })
+
+  mainWindow.webContents.on('console-message', (_, level, message, line, sourceId) => {
+    console.log(`[Renderer Console] [Level ${level}] ${message} (${sourceId}:${line})`)
   })
 
   // Register all typed IPC handlers
@@ -52,6 +65,7 @@ function createWindow() {
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL)
+    mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
     mainWindow.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }

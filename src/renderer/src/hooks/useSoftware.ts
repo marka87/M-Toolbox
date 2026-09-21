@@ -17,6 +17,10 @@ export function useSoftware() {
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set())
 
   const loadData = useCallback(async () => {
+    if (!window.mToolbox?.software) {
+      setIsLoading(false)
+      return
+    }
     setIsLoading(true)
     try {
       const [cat, inst, upd] = await Promise.all([
@@ -36,6 +40,8 @@ export function useSoftware() {
 
   useEffect(() => {
     loadData()
+
+    if (!window.mToolbox?.software) return
 
     const unsubscribe = window.mToolbox.software.onProgress((event: OperationLogEvent) => {
       setOperationLogs((prev) => [...prev, event.line])
@@ -165,3 +171,4 @@ export function useSoftware() {
     installBatch
   }
 }
+
