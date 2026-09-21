@@ -236,3 +236,71 @@ export interface BackupSummary {
   powershellModulesCount: number
 }
 
+// -------------------------------------------------------------
+// Modul 4: Driver Center Typen
+// -------------------------------------------------------------
+
+export type DriverCategory =
+  | 'all'
+  | 'problems'
+  | 'display'
+  | 'net'
+  | 'media'
+  | 'input'
+  | 'storage'
+  | 'usb'
+  | 'system'
+  | 'other'
+
+export type DeviceStatus = 'Started' | 'Problem' | 'Disabled' | 'Stopped' | 'Unknown'
+
+export interface DeviceItem {
+  instanceId: string
+  deviceDescription: string
+  className: string
+  classGuid: string
+  manufacturerName: string
+  status: DeviceStatus
+  problemCode: string
+  problemDescription?: string
+  driverName: string
+  driverVersion?: string
+  driverDate?: string
+  driverProvider?: string
+  signerName?: string
+  category: DriverCategory
+  isThirdParty: boolean
+}
+
+export interface DriverPackage {
+  driverName: string
+  originalName: string
+  providerName: string
+  className: string
+  classGuid?: string
+  driverVersion: string
+  driverDate: string
+  signerName: string
+  catalogAttributes: string
+}
+
+export interface DriverStats {
+  totalDevices: number
+  problemDevices: number
+  thirdPartyDrivers: number
+  whqlDrivers: number
+}
+
+export interface DriverExportResult {
+  success: boolean
+  exportedCount: number
+  targetDirectory: string
+  error?: string
+}
+
+export interface DriverOperationResult {
+  success: boolean
+  message: string
+}
+
+

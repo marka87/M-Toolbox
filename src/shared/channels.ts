@@ -25,6 +25,15 @@ export const IPC_CHANNELS = {
     LIST_LOCAL_BACKUPS: 'backup:list-local',
     PROGRESS_EVENT: 'backup:progress-event',
   },
+  DRIVER: {
+    GET_DATA: 'driver:get-data',
+    EXPORT_DRIVERS: 'driver:export',
+    SELECT_EXPORT_DIR: 'driver:select-export-dir',
+    SCAN_HARDWARE: 'driver:scan-hardware',
+    OPEN_DEVICE_MANAGER: 'driver:open-device-manager',
+    RESTART_DEVICE: 'driver:restart-device',
+    PROGRESS_EVENT: 'driver:progress-event',
+  },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',
     MINIMIZE_WINDOW: 'system:minimize-window',

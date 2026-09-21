@@ -9,7 +9,12 @@ import type {
   OperationLogEvent,
   BackupPayload,
   BackupSummary,
-  RestoreSelection
+  RestoreSelection,
+  DeviceItem,
+  DriverPackage,
+  DriverStats,
+  DriverExportResult,
+  DriverOperationResult
 } from '../shared/types'
 
 export interface MToolboxAPI {
@@ -37,6 +42,15 @@ export interface MToolboxAPI {
     selectBackupFile: () => Promise<string | null>
     saveBackupDialog: () => Promise<string | null>
     onProgress: (callback: (event: OperationLogEvent) => void) => () => void
+  }
+  driver: {
+    getData: () => Promise<{ devices: DeviceItem[]; packages: DriverPackage[]; stats: DriverStats }>
+    exportDrivers: (targetDir: string, infName?: string) => Promise<DriverExportResult>
+    selectExportDir: () => Promise<string | null>
+    scanHardware: () => Promise<DriverOperationResult>
+    openDeviceManager: () => Promise<void>
+    restartDevice: (instanceId: string) => Promise<DriverOperationResult>
+    onProgress: (callback: (log: string) => void) => () => void
   }
   system: {
     minimize: () => Promise<void>
@@ -105,6 +119,25 @@ const api: MToolboxAPI = {
       ipcRenderer.on(IPC_CHANNELS.BACKUP.PROGRESS_EVENT, listener)
       return () => {
         ipcRenderer.removeListener(IPC_CHANNELS.BACKUP.PROGRESS_EVENT, listener)
+      }
+    }
+  },
+  driver: {
+    getData: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.GET_DATA),
+    exportDrivers: (targetDir: string, infName?: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.DRIVER.EXPORT_DRIVERS, targetDir, infName),
+    selectExportDir: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.SELECT_EXPORT_DIR),
+    scanHardware: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.SCAN_HARDWARE),
+    openDeviceManager: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.OPEN_DEVICE_MANAGER),
+    restartDevice: (instanceId: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.DRIVER.RESTART_DEVICE, instanceId),
+    onProgress: (callback: (log: string) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, log: string) => {
+        callback(log)
+      }
+      ipcRenderer.on(IPC_CHANNELS.DRIVER.PROGRESS_EVENT, listener)
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.DRIVER.PROGRESS_EVENT, listener)
       }
     }
   },

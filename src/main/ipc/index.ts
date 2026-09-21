@@ -3,6 +3,7 @@ import { IPC_CHANNELS } from '../../shared/channels'
 import { DashboardService } from '../services/dashboard.service'
 import { SoftwareService } from '../services/software.service'
 import { BackupService } from '../services/backup.service'
+import { driverService } from '../services/driver.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -151,6 +152,45 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
       return null
     }
     return result.filePath
+  })
+
+  // Driver Center IPC
+  ipcMain.handle(IPC_CHANNELS.DRIVER.GET_DATA, async () => {
+    return await driverService.getDevicesAndDrivers()
+  })
+
+  ipcMain.handle(
+    IPC_CHANNELS.DRIVER.EXPORT_DRIVERS,
+    async (_, targetDir: string, infName?: string) => {
+      return await driverService.exportDrivers(targetDir, infName, (log) => {
+        if (!mainWindow.isDestroyed()) {
+          mainWindow.webContents.send(IPC_CHANNELS.DRIVER.PROGRESS_EVENT, log)
+        }
+      })
+    }
+  )
+
+  ipcMain.handle(IPC_CHANNELS.DRIVER.SELECT_EXPORT_DIR, async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Zielordner für Treiber-Export auswählen',
+      properties: ['openDirectory', 'createDirectory']
+    })
+    if (result.canceled || result.filePaths.length === 0) {
+      return null
+    }
+    return result.filePaths[0]
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DRIVER.SCAN_HARDWARE, async () => {
+    return await driverService.scanHardware()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DRIVER.OPEN_DEVICE_MANAGER, async () => {
+    driverService.openDeviceManager()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DRIVER.RESTART_DEVICE, async (_, instanceId: string) => {
+    return await driverService.restartDevice(instanceId)
   })
 }
 
