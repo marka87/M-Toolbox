@@ -1,6 +1,6 @@
 {
   "name": "m-toolbox",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "M-Toolbox - Modern Windows 11 System Utility",
   "main": "dist-electron/main/index.js",
   "scripts": {

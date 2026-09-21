@@ -62,8 +62,8 @@ Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler
 | **Modul 6** | **Repair Center** | `v1.5.0` | ✅ Fertig | SFC /scannow, DISM Health Restore, Win Update Reset, Print Spooler Repair, Network Stack Reset, AppX Re-Register |
 | **Modul 7** | **Tweaks** | `v1.6.0` | ✅ Fertig | Windows 11 Explorer Tweaks, Telemetrie minimieren, Kontextmenü klassisch, Gaming Tweaks, Taskbar-Ausrichtung |
 | **Modul 8** | **Netzwerk Toolkit**| `v1.7.0` | ✅ Fertig | Adapter & WAN-IP, Ping/Latency Matrix, DNS Benchmark, TCP Port-Scanner, Flush DNS |
-| **Modul 9** | **Advanced Tools** | `v1.8.0` | ⏳ **NÄCHSTES** | God Mode Shortcuts, Windows Tools Launcher, Startup Manager, Hosts File Editor |
-| **Modul 10**| **Settings** | `v1.9.0` | 📋 Geplant | Theme (Dark/Light/System), Autostart M-Toolbox, Update-Check, Log-Dateien, Über |
+| **Modul 9** | **Advanced Tools** | `v1.8.0` | ✅ Fertig | God Mode Shortcuts, Windows Tools Launcher, Startup Manager, Hosts File Editor |
+| **Modul 10**| **Settings** | `v1.9.0` | ⏳ **NÄCHSTES** | Theme (Dark/Light/System), Autostart M-Toolbox, Update-Check, Log-Dateien, Über |
 
 ---
 
@@ -110,7 +110,8 @@ A:\M-Toolbox\
 │   │       ├── cleanup.service.ts
 │   │       ├── repair.service.ts
 │   │       ├── tweak.service.ts
-│   │       └── network.service.ts
+│   │       ├── network.service.ts
+│   │       └── advanced.service.ts
 │   ├── preload\               # Preload-Skript (Sichere ContextBridge)
 │   │   └── index.ts           # Exponiert window.mToolbox.*
 │   ├── shared\                # Gemeinsam genutzter Code
@@ -121,9 +122,9 @@ A:\M-Toolbox\
 │           ├── assets\        # CSS, Schriftarten
 │           ├── components\    # Wiederverwendbare UI-Komponenten
 │           │   ├── layout\    # Titlebar, Sidebar
-│           │   └── ui\        # Card, DeviceCard, NetworkAdapterCard, PingMatrixCard, etc.
-│           ├── hooks\         # Custom Hooks (useDashboard, useSoftware, useBackup, useDriver, useCleanup, useRepair, useTweaks, useNetwork)
-│           ├── pages\         # Seiten (DashboardPage, SoftwarePage, BackupPage, DriverPage, CleanupPage, RepairPage, TweaksPage, NetworkPage)
+│           │   └── ui\        # Card, DeviceCard, ToolLauncherCard, StartupManagerCard, etc.
+│           ├── hooks\         # Custom Hooks (useDashboard, useSoftware, useBackup, useDriver, useCleanup, useRepair, useTweaks, useNetwork, useAdvancedTools)
+│           ├── pages\         # Seiten (DashboardPage, SoftwarePage, BackupPage, DriverPage, CleanupPage, RepairPage, TweaksPage, NetworkPage, AdvancedPage)
 │           ├── App.tsx        # Routing / Modulwechsel
 │           └── main.tsx       # React Root
 ├── package.json
@@ -144,7 +145,9 @@ A:\M-Toolbox\
 - **`window.mToolbox.repair`:** `getSystemHealth()`, `executeAction()`, `isElevated()`, `restartAsAdmin()`, `onRepairLog()`
 - **`window.mToolbox.tweaks`:** `getAll()`, `setTweak()`, `applyRecommended()`, `restartExplorer()`
 - **`window.mToolbox.network`:** `getDiagnostics()`, `getWanIp()`, `pingTargets()`, `benchmarkDns()`, `scanPorts()`, `flushDns()`, `renewIp()`, `openNetworkConnections()`
+- **`window.mToolbox.advanced`:** `getTools()`, `launchTool()`, `getStartupItems()`, `deleteStartupItem()`, `getHostsFile()`, `saveHostsFile()`
 - **`window.mToolbox.system`:** `minimize()`, `maximize()`, `close()`, `openExternal()`
+
 
 
 

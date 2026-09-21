@@ -162,3 +162,4 @@ export function useNetwork() {
     reload: loadDiagnostics
   }
 }
+

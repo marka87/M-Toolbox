@@ -31,7 +31,11 @@ import type {
   WanIpInfo,
   PingResultItem,
   DnsBenchmarkItem,
-  PortScanReport
+  PortScanReport,
+  AdvancedToolItem,
+  StartupItem,
+  HostsEntry,
+  HostsFileContent
 } from '../shared/types'
 
 export interface MToolboxAPI {
@@ -99,6 +103,14 @@ export interface MToolboxAPI {
     flushDns: () => Promise<{ success: boolean; message: string }>
     renewIp: () => Promise<{ success: boolean; message: string }>
     openNetworkConnections: () => Promise<void>
+  }
+  advanced: {
+    getTools: () => Promise<AdvancedToolItem[]>
+    launchTool: (toolId: string) => Promise<{ success: boolean; message: string }>
+    getStartupItems: () => Promise<StartupItem[]>
+    deleteStartupItem: (itemId: string) => Promise<{ success: boolean; message: string }>
+    getHostsFile: () => Promise<HostsFileContent>
+    saveHostsFile: (entries: HostsEntry[]) => Promise<{ success: boolean; message: string }>
   }
   system: {
     minimize: () => Promise<void>
@@ -240,6 +252,17 @@ const api: MToolboxAPI = {
     renewIp: () => ipcRenderer.invoke(IPC_CHANNELS.NETWORK.RENEW_IP),
     openNetworkConnections: () =>
       ipcRenderer.invoke(IPC_CHANNELS.NETWORK.OPEN_NETWORK_CONNECTIONS)
+  },
+  advanced: {
+    getTools: () => ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.GET_TOOLS),
+    launchTool: (toolId: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.LAUNCH_TOOL, toolId),
+    getStartupItems: () => ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.GET_STARTUP_ITEMS),
+    deleteStartupItem: (itemId: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.DELETE_STARTUP_ITEM, itemId),
+    getHostsFile: () => ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.GET_HOSTS_FILE),
+    saveHostsFile: (entries: HostsEntry[]) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.SAVE_HOSTS_FILE, entries)
   },
   system: {
     minimize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MINIMIZE_WINDOW),

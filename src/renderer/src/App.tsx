@@ -9,6 +9,7 @@ import { CleanupPage } from './pages/CleanupPage'
 import { RepairPage } from './pages/RepairPage'
 import { TweaksPage } from './pages/TweaksPage'
 import { NetworkPage } from './pages/NetworkPage'
+import { AdvancedPage } from './pages/AdvancedPage'
 import type { NavigationModule } from '@shared/types'
 import { Card } from './components/ui/Card'
 import { Wrench } from 'lucide-react'
@@ -34,6 +35,8 @@ export const App: React.FC = () => {
         return <TweaksPage />
       case 'network':
         return <NetworkPage />
+      case 'advanced':
+        return <AdvancedPage />
       default: {
         const moduleTitles: Record<NavigationModule, string> = {
           dashboard: 'Dashboard',

@@ -65,6 +65,15 @@ export const IPC_CHANNELS = {
     RENEW_IP: 'network:renew-ip',
     OPEN_NETWORK_CONNECTIONS: 'network:open-connections'
   },
+  ADVANCED: {
+    GET_TOOLS: 'advanced:get-tools',
+    LAUNCH_TOOL: 'advanced:launch-tool',
+    GET_STARTUP_ITEMS: 'advanced:get-startup-items',
+    TOGGLE_STARTUP_ITEM: 'advanced:toggle-startup-item',
+    DELETE_STARTUP_ITEM: 'advanced:delete-startup-item',
+    GET_HOSTS_FILE: 'advanced:get-hosts-file',
+    SAVE_HOSTS_FILE: 'advanced:save-hosts-file',
+  },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',
     MINIMIZE_WINDOW: 'system:minimize-window',

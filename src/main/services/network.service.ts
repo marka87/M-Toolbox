@@ -510,3 +510,4 @@ export class NetworkService {
 }
 
 export const networkService = NetworkService.getInstance()
+

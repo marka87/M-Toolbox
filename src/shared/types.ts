@@ -539,3 +539,47 @@ export interface NetworkDiagnosticsData {
   defaultGateway: string | null
 }
 
+// -------------------------------------------------------------
+// Modul 9: Advanced Tools Typen
+// -------------------------------------------------------------
+
+export type ToolCategory =
+  | 'all'
+  | 'control'
+  | 'diagnostics'
+  | 'management'
+  | 'storage_security'
+
+export interface AdvancedToolItem {
+  id: string
+  name: string
+  description: string
+  command: string
+  category: 'control' | 'diagnostics' | 'management' | 'storage_security'
+  iconName: string
+  requiresAdmin?: boolean
+}
+
+export interface StartupItem {
+  id: string
+  name: string
+  command: string
+  scope: 'User' | 'System' | 'Folder'
+  location: string
+  isEnabled: boolean
+}
+
+export interface HostsEntry {
+  id: string
+  ip: string
+  host: string
+  comment?: string
+  isEnabled: boolean
+  rawLine: string
+}
+
+export interface HostsFileContent {
+  filePath: string
+  entries: HostsEntry[]
+  rawContent: string
+}

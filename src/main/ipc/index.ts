@@ -8,6 +8,7 @@ import { cleanupService } from '../services/cleanup.service'
 import { repairService, REPAIR_ACTIONS } from '../services/repair.service'
 import { tweakService } from '../services/tweak.service'
 import { networkService } from '../services/network.service'
+import { advancedService } from '../services/advanced.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -298,6 +299,32 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.NETWORK.OPEN_NETWORK_CONNECTIONS, async () => {
     await networkService.openNetworkConnections()
   })
+
+  // Advanced Tools IPC
+  ipcMain.handle(IPC_CHANNELS.ADVANCED.GET_TOOLS, async () => {
+    return advancedService.getTools()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.ADVANCED.LAUNCH_TOOL, async (_, toolId: string) => {
+    return await advancedService.launchTool(toolId)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.ADVANCED.GET_STARTUP_ITEMS, async () => {
+    return await advancedService.getStartupItems()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.ADVANCED.DELETE_STARTUP_ITEM, async (_, itemId: string) => {
+    return await advancedService.deleteStartupItem(itemId)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.ADVANCED.GET_HOSTS_FILE, async () => {
+    return await advancedService.getHostsFile()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.ADVANCED.SAVE_HOSTS_FILE, async (_, entries: any) => {
+    return await advancedService.saveHostsFile(entries)
+  })
 }
+
 
 
