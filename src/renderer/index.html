@@ -3,11 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: ws: http:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ws: http:;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: ws: http: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' http: https:; style-src 'self' 'unsafe-inline' http: https: https://fonts.googleapis.com; font-src 'self' data: https: https://fonts.gstatic.com; connect-src 'self' ws: http: https:;" />
     <title>M-Toolbox</title>
   </head>
   <body class="bg-fluent-bg text-fluent-text font-sans antialiased overflow-hidden select-none">
     <div id="root"></div>
+    <script>
+      window.addEventListener('error', function(e) {
+        var box = document.getElementById('debug-error-box');
+        if (!box) {
+          box = document.createElement('div');
+          box.id = 'debug-error-box';
+          box.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;z-index:99999;background:#3b1111;color:#ff9999;padding:16px;border:2px solid red;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;';
+          document.body.appendChild(box);
+        }
+        box.textContent += '[Error] ' + (e.error ? (e.error.stack || e.error.message) : e.message) + '\n';
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
