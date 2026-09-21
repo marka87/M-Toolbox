@@ -96,7 +96,24 @@ export class DashboardService {
       const freeRamBytes = os.freemem()
       const usedRamBytes = totalRamBytes - freeRamBytes
       const memChips = Array.isArray(parsed.MemoryChips) ? parsed.MemoryChips : (parsed.MemoryChips ? [parsed.MemoryChips] : [])
-      const ramSpeed = memChips.length > 0 ? (memChips[0].Speed || 0) : 0
+      const ramSpeed = memChips.length > 0 ? (memChips[0].Speed || memChips[0].ConfiguredClockSpeed || 0) : 0
+
+      // Detect DDR generation accurately (SMBIOS 3.1+ code 34 = DDR5, 26 = DDR4, etc.)
+      let ramType = 'DDR4'
+      const smbiosType = memChips.length > 0 ? Number(memChips[0].SMBIOSMemoryType || memChips[0].MemoryType || 0) : 0
+      if (smbiosType === 34 || smbiosType === 35) {
+        ramType = 'DDR5'
+      } else if (smbiosType === 26) {
+        ramType = 'DDR4'
+      } else if (smbiosType === 24) {
+        ramType = 'DDR3'
+      } else if (smbiosType === 20 || smbiosType === 21) {
+        ramType = 'DDR2'
+      } else if (ramSpeed >= 4400) {
+        ramType = 'DDR5'
+      } else if (ramSpeed >= 2133) {
+        ramType = 'DDR4'
+      }
 
       // GPUs
       const rawGpus = Array.isArray(parsed.GPUs) ? parsed.GPUs : (parsed.GPUs ? [parsed.GPUs] : [])
@@ -181,7 +198,7 @@ export class DashboardService {
           usedBytes: usedRamBytes,
           usagePercent: Math.round((usedRamBytes / totalRamBytes) * 100),
           speedMHz: ramSpeed,
-          type: 'DDR4/DDR5',
+          type: ramType,
           slotsUsed: memChips.length || 1,
           totalSlots: Math.max(memChips.length, 2)
         },

@@ -305,20 +305,21 @@ export class SoftwareService {
     const headerLine = lines[sepIndex - 1]
     const separatorLine = lines[sepIndex]
 
-    // Identify columns by looking at the separator segments
-    const colMatches = [...separatorLine.matchAll(/(-+)(?:\s+|$)/g)]
-    if (colMatches.length === 0) return []
+    // Identify columns by headers or dashes
+    const headerRegex = /\b([A-Za-zÄÖÜäöü]+(?:\s+[A-Za-zÄÖÜäöü]+)*)\b/g
+    const headerMatches = [...headerLine.matchAll(headerRegex)]
+    if (headerMatches.length === 0) return []
 
     const cols: Array<{ name: string; start: number; end: number }> = []
-    let currentPos = 0
-
-    for (const match of colMatches) {
-      const matchLen = match[0].length
-      const start = currentPos
-      const end = start + matchLen
-      const colName = headerLine.substring(start, end).trim()
-      cols.push({ name: colName.toLowerCase(), start, end })
-      currentPos = end
+    for (let i = 0; i < headerMatches.length; i++) {
+      const current = headerMatches[i]
+      const start = current.index!
+      const end = i < headerMatches.length - 1 ? headerMatches[i + 1].index! : Math.max(separatorLine.length, headerLine.length, 500)
+      cols.push({
+        name: current[1].trim().toLowerCase(),
+        start,
+        end
+      })
     }
 
     const rows: Array<Record<string, string>> = []
@@ -331,7 +332,7 @@ export class SoftwareService {
 
       const row: Record<string, string> = {}
       for (const col of cols) {
-        const val = line.substring(col.start, col.end).trim()
+        const val = line.substring(col.start, Math.min(col.end, line.length)).trim()
         row[col.name] = val
       }
       rows.push(row)

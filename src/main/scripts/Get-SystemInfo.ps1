@@ -5,7 +5,7 @@ $act = Get-CimInstance SoftwareLicensingProduct -Filter "PartialProductKey IS NO
 $cs = Get-CimInstance Win32_ComputerSystem | Select-Object Name, Domain, PartOfDomain
 $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 Name, Manufacturer, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed
 $gpus = @(Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, AdapterRAM, Status)
-$memChips = @(Get-CimInstance Win32_PhysicalMemory | Select-Object Capacity, Speed, DeviceLocator)
+$memChips = @(Get-CimInstance Win32_PhysicalMemory | Select-Object Capacity, Speed, DeviceLocator, SMBIOSMemoryType, MemoryType, ConfiguredClockSpeed)
 $bios = Get-CimInstance Win32_BIOS | Select-Object Manufacturer, SMBIOSBIOSVersion, ReleaseDate, SerialNumber
 
 $tpmPresent = $false

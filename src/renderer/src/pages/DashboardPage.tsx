@@ -343,7 +343,7 @@ export const DashboardPage: React.FC = () => {
             </div>
             <InfoItem
               label="Speichertyp"
-              value={systemInfo?.ram.type || 'DDR4'}
+              value={systemInfo?.ram.type || 'RAM'}
             />
             <InfoItem
               label="Taktfrequenz"

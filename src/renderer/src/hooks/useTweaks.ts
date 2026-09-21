@@ -12,11 +12,14 @@ export function useTweaks() {
   const [restartingExplorer, setRestartingExplorer] = useState<boolean>(false)
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
 
-  const loadTweaks = useCallback(async () => {
+  const loadTweaks = useCallback(async (isManual = false) => {
     try {
       setLoading(true)
       const data = await window.mToolbox.tweaks.getAll()
       setTweaks(data)
+      if (isManual) {
+        setToastMessage({ text: 'Systemzustand erfolgreich neu erfasst.', type: 'success' })
+      }
     } catch (err) {
       console.error('Failed to load tweaks:', err)
       setToastMessage({ text: 'Fehler beim Laden der Tweaks.', type: 'error' })
@@ -166,7 +169,7 @@ export function useTweaks() {
     toggleTweak,
     applyRecommended,
     restartExplorer,
-    reload: loadTweaks
+    reload: () => loadTweaks(true)
   }
 }
 

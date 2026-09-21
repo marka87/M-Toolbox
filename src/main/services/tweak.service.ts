@@ -282,6 +282,63 @@ export class TweakService {
   }
 
   /**
+   * Helper to safely execute a PowerShell script by piping into stdin
+   */
+  private async runPowerShell(script: string, timeoutMs = 20000): Promise<string> {
+    const { spawn } = await import('node:child_process')
+    return new Promise((resolve, reject) => {
+      const child = spawn('powershell.exe', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-Command',
+        '-'
+      ], {
+        windowsHide: true,
+        env: process.env
+      })
+
+      let stdout = ''
+      let stderr = ''
+      let isTimedOut = false
+
+      const timer = setTimeout(() => {
+        isTimedOut = true
+        child.kill()
+        reject(new Error(`PowerShell script timed out after ${timeoutMs}ms`))
+      }, timeoutMs)
+
+      child.stdout.on('data', (chunk) => {
+        stdout += chunk.toString('utf8')
+      })
+
+      child.stderr.on('data', (chunk) => {
+        stderr += chunk.toString('utf8')
+      })
+
+      child.on('error', (err) => {
+        clearTimeout(timer)
+        reject(err)
+      })
+
+      child.on('close', (code) => {
+        clearTimeout(timer)
+        if (!isTimedOut) {
+          if (code === 0 || stdout.trim().length > 0) {
+            resolve(stdout.trim())
+          } else {
+            reject(new Error(stderr.trim() || `PowerShell exited with code ${code}`))
+          }
+        }
+      })
+
+      child.stdin.write(`[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\r\n${script}\r\n`)
+      child.stdin.end()
+    })
+  }
+
+  /**
    * Reads the current state of all tweaks in a single fast PowerShell execution.
    */
   public async getAllTweaks(): Promise<TweakItem[]> {
@@ -291,13 +348,8 @@ export class TweakService {
         (t) => `"${t.id}" = (${t.psReadExpression})`
       ).join('; ')
 
-      const psScript = `& { [PSCustomObject]@{ ${expressions} } | ConvertTo-Json -Compress }`
-      const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
-
-      const { stdout } = await execAsync(
-        `powershell.exe -NoProfile -NonInteractive -EncodedCommand ${encoded}`,
-        { timeout: 15000 }
-      )
+      const psScript = `[PSCustomObject]@{ ${expressions} } | ConvertTo-Json -Compress`
+      const stdout = await this.runPowerShell(psScript, 20000)
 
       const valuesMap: Record<string, boolean> = JSON.parse(stdout.trim())
 
@@ -346,12 +398,7 @@ export class TweakService {
 
     try {
       const script = def.getApplyScript(value)
-      const encoded = Buffer.from(script, 'utf16le').toString('base64')
-
-      await execAsync(
-        `powershell.exe -NoProfile -NonInteractive -EncodedCommand ${encoded}`,
-        { timeout: 10000 }
-      )
+      await this.runPowerShell(script, 15000)
 
       return {
         tweakId,

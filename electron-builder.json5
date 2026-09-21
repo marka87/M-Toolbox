@@ -27,6 +27,9 @@
         ]
       }
     ],
+    "sign": null,
+    "signAndEditExecutable": false,
+    "forceCodeSigning": false,
     "requestedExecutionLevel": "asInvoker"
   },
   "nsis": {

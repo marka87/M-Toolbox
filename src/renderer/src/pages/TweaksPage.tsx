@@ -102,10 +102,11 @@ export const TweaksPage: React.FC = () => {
           <button
             onClick={reload}
             disabled={loading}
-            title="Status aktualisieren"
-            className="p-2 rounded-xl bg-fluent-card border border-fluent-border/60 hover:bg-fluent-border/30 text-fluent-muted hover:text-fluent-text transition-colors disabled:opacity-50"
+            title="Aktuellen Status aller Tweaks aus der Windows-Registry neu erfassen"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-fluent-card border border-fluent-border/60 hover:bg-fluent-border/30 text-fluent-text text-xs font-medium transition-colors disabled:opacity-50 active:scale-95"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Zustand erfassen</span>
           </button>
         </div>
       </div>
