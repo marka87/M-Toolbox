@@ -35,7 +35,10 @@ import type {
   AdvancedToolItem,
   StartupItem,
   HostsEntry,
-  HostsFileContent
+  HostsFileContent,
+  AppSettings,
+  UpdateCheckResult,
+  AppVersionInfo
 } from '../shared/types'
 
 export interface MToolboxAPI {
@@ -111,6 +114,15 @@ export interface MToolboxAPI {
     deleteStartupItem: (itemId: string) => Promise<{ success: boolean; message: string }>
     getHostsFile: () => Promise<HostsFileContent>
     saveHostsFile: (entries: HostsEntry[]) => Promise<{ success: boolean; message: string }>
+  }
+  settings: {
+    getSettings: () => Promise<AppSettings>
+    saveSettings: (settings: Partial<AppSettings>) => Promise<{ success: boolean; error?: string }>
+    checkUpdates: () => Promise<UpdateCheckResult>
+    getAppInfo: () => Promise<AppVersionInfo>
+    openUserDataFolder: () => Promise<void>
+    clearCache: () => Promise<{ success: boolean; error?: string }>
+    resetSettings: () => Promise<{ success: boolean; error?: string }>
   }
   system: {
     minimize: () => Promise<void>
@@ -263,6 +275,16 @@ const api: MToolboxAPI = {
     getHostsFile: () => ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.GET_HOSTS_FILE),
     saveHostsFile: (entries: HostsEntry[]) =>
       ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.SAVE_HOSTS_FILE, entries)
+  },
+  settings: {
+    getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.GET_SETTINGS),
+    saveSettings: (settings: Partial<AppSettings>) =>
+      ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.SAVE_SETTINGS, settings),
+    checkUpdates: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.CHECK_UPDATES),
+    getAppInfo: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.GET_APP_INFO),
+    openUserDataFolder: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.OPEN_USER_DATA_FOLDER),
+    clearCache: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.CLEAR_CACHE),
+    resetSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.RESET_SETTINGS)
   },
   system: {
     minimize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MINIMIZE_WINDOW),

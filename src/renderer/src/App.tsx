@@ -10,12 +10,15 @@ import { RepairPage } from './pages/RepairPage'
 import { TweaksPage } from './pages/TweaksPage'
 import { NetworkPage } from './pages/NetworkPage'
 import { AdvancedPage } from './pages/AdvancedPage'
+import { SettingsPage } from './pages/SettingsPage'
+import { useSettings } from './hooks/useSettings'
 import type { NavigationModule } from '@shared/types'
-import { Card } from './components/ui/Card'
-import { Wrench } from 'lucide-react'
 
 export const App: React.FC = () => {
   const [activeModule, setActiveModule] = useState<NavigationModule>('dashboard')
+
+  // Initialize app settings, accent colors and theme DOM styling on root load
+  useSettings()
 
   const renderModuleContent = () => {
     switch (activeModule) {
@@ -37,39 +40,10 @@ export const App: React.FC = () => {
         return <NetworkPage />
       case 'advanced':
         return <AdvancedPage />
-      default: {
-        const moduleTitles: Record<NavigationModule, string> = {
-          dashboard: 'Dashboard',
-          software: 'Software Center',
-          backup: 'Backup & Restore',
-          driver: 'Driver Center',
-          cleanup: 'Cleanup Center',
-          repair: 'Repair Center',
-          tweaks: 'Tweaks',
-          network: 'Netzwerk Toolkit',
-          advanced: 'Advanced Tools',
-          settings: 'Settings'
-        }
-
-        return (
-          <div className="p-8 max-w-4xl mx-auto">
-            <Card
-              title={moduleTitles[activeModule]}
-              subtitle="Modul bereit für Implementierung"
-              icon={<Wrench className="w-5 h-5" />}
-            >
-              <div className="py-8 text-center space-y-3">
-                <p className="text-sm text-fluent-muted">
-                  Dieses Modul wird gemäß Entwicklungsplan als nächster Schritt nach Bestätigung von Modul 1 (Dashboard) vollständig implementiert.
-                </p>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-fluent-accent-muted text-fluent-accent text-xs font-semibold">
-                  Nächster Schritt in der Entwicklungs-Pipeline
-                </div>
-              </div>
-            </Card>
-          </div>
-        )
-      }
+      case 'settings':
+        return <SettingsPage />
+      default:
+        return <DashboardPage />
     }
   }
 

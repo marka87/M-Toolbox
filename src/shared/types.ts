@@ -583,3 +583,43 @@ export interface HostsFileContent {
   entries: HostsEntry[]
   rawContent: string
 }
+
+// -------------------------------------------------------------
+// Modul 10: Settings Typen
+// -------------------------------------------------------------
+
+export type AppTheme = 'dark' | 'light' | 'system'
+export type AccentColor = 'blue' | 'indigo' | 'emerald' | 'rose' | 'amber'
+
+export interface AppSettings {
+  theme: AppTheme
+  accentColor: AccentColor
+  startModule: NavigationModule
+  autoStart: boolean
+  minimizeToTray: boolean
+  transparencyEffects: boolean
+  hardwareAcceleration: boolean
+}
+
+export interface UpdateCheckResult {
+  hasUpdate: boolean
+  currentVersion: string
+  latestVersion: string
+  releaseUrl: string
+  publishedAt?: string
+  releaseNotes?: string
+}
+
+export interface AppVersionInfo {
+  version: string
+  electronVersion: string
+  nodeVersion: string
+  chromeVersion: string
+  v8Version: string
+  osVersion: string
+  osBuild: string
+  arch: string
+  userDataPath: string
+  logsPath: string
+}
+

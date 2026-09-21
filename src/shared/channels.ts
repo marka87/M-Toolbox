@@ -74,6 +74,16 @@ export const IPC_CHANNELS = {
     GET_HOSTS_FILE: 'advanced:get-hosts-file',
     SAVE_HOSTS_FILE: 'advanced:save-hosts-file',
   },
+  SETTINGS: {
+    GET_SETTINGS: 'settings:get-settings',
+    SAVE_SETTINGS: 'settings:save-settings',
+    CHECK_UPDATES: 'settings:check-updates',
+    GET_APP_INFO: 'settings:get-app-info',
+    OPEN_LOGS_FOLDER: 'settings:open-logs-folder',
+    OPEN_USER_DATA_FOLDER: 'settings:open-user-data-folder',
+    CLEAR_CACHE: 'settings:clear-cache',
+    RESET_SETTINGS: 'settings:reset-settings',
+  },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',
     MINIMIZE_WINDOW: 'system:minimize-window',

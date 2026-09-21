@@ -9,6 +9,8 @@ import { repairService, REPAIR_ACTIONS } from '../services/repair.service'
 import { tweakService } from '../services/tweak.service'
 import { networkService } from '../services/network.service'
 import { advancedService } from '../services/advanced.service'
+import { settingsService } from '../services/settings.service'
+import { AppSettings } from '../../shared/types'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -323,6 +325,35 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.ADVANCED.SAVE_HOSTS_FILE, async (_, entries: any) => {
     return await advancedService.saveHostsFile(entries)
+  })
+
+  // Settings IPC
+  ipcMain.handle(IPC_CHANNELS.SETTINGS.GET_SETTINGS, async () => {
+    return await settingsService.getSettings()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS.SAVE_SETTINGS, async (_, partialSettings: Partial<AppSettings>) => {
+    return await settingsService.saveSettings(partialSettings)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS.CHECK_UPDATES, async () => {
+    return await settingsService.checkUpdates()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS.GET_APP_INFO, async () => {
+    return await settingsService.getAppInfo()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS.OPEN_USER_DATA_FOLDER, async () => {
+    await settingsService.openUserDataFolder()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS.CLEAR_CACHE, async () => {
+    return await settingsService.clearCache()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS.RESET_SETTINGS, async () => {
+    return await settingsService.resetSettings()
   })
 }
 
