@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   HardDrive,
   Cpu,
@@ -18,12 +18,25 @@ import {
   Wifi,
   Volume2,
   Keyboard,
-  Usb
+  Usb,
+  LayoutGrid,
+  List
 } from 'lucide-react'
-import { useDriver } from '../hooks/useDriver'
-import { DeviceCard } from '../components/ui/DeviceCard'
+import { useDriver, type DriverVendorFilter } from '../hooks/useDriver'
+import { DeviceCard, type DriverViewMode } from '../components/ui/DeviceCard'
 import { DriverDetailsModal } from '../components/ui/DriverDetailsModal'
 import type { DriverCategory } from '@shared/types'
+
+const VENDORS: { id: DriverVendorFilter; label: string }[] = [
+  { id: 'all', label: 'Alle' },
+  { id: 'oem', label: 'Drittanbieter (OEM)' },
+  { id: 'microsoft', label: 'Microsoft (System)' },
+  { id: 'amd', label: 'AMD / ATI' },
+  { id: 'nvidia', label: 'NVIDIA' },
+  { id: 'intel', label: 'Intel' },
+  { id: 'hp', label: 'HP' },
+  { id: 'realtek', label: 'Realtek' }
+]
 
 const CATEGORIES: { id: DriverCategory; label: string; icon: React.ReactNode }[] = [
   { id: 'all', label: 'Alle Geräte', icon: <Layers className="w-4 h-4" /> },
@@ -53,8 +66,9 @@ export const DriverPage: React.FC = () => {
     setSearchQuery,
     onlyProblems,
     setOnlyProblems,
-    onlyThirdParty,
-    setOnlyThirdParty,
+    vendorFilter,
+    setVendorFilter,
+    vendorCounts,
     filteredDevices,
     categoryCounts,
     isExporting,
@@ -77,8 +91,10 @@ export const DriverPage: React.FC = () => {
     handleOpenWindowsUpdateSettings
   } = useDriver()
 
+  const [viewMode, setViewMode] = useState<DriverViewMode>('normal')
+
   return (
-    <div className="flex flex-col h-full bg-fluent-bg text-fluent-text p-8 overflow-y-auto space-y-6">
+    <div className="h-full bg-fluent-bg text-fluent-text p-8 overflow-y-auto space-y-6">
       {/* Top Header & Quick Actions */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -153,7 +169,7 @@ export const DriverPage: React.FC = () => {
 
       {/* GPU & Online Driver Check Banner */}
       {gpuInfo && (
-        <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border relative overflow-hidden backdrop-blur-sm">
+        <div className="w-full p-4 rounded-2xl bg-fluent-card border border-fluent-border relative overflow-hidden backdrop-blur-sm shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5 min-w-0">
               <div className="p-3 rounded-xl bg-fluent-accent/15 border border-fluent-accent/30 text-fluent-accent shrink-0">
@@ -346,6 +362,36 @@ export const DriverPage: React.FC = () => {
           })}
         </div>
 
+        {/* Vendor Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          <span className="text-xs font-semibold text-fluent-muted mr-1.5 shrink-0">Hersteller:</span>
+          {VENDORS.map((v) => {
+            const count = vendorCounts[v.id] ?? 0
+            const isActive = vendorFilter === v.id
+            if (v.id !== 'all' && count === 0) return null
+            return (
+              <button
+                key={v.id}
+                onClick={() => setVendorFilter(v.id)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium transition-all shrink-0 border ${
+                  isActive
+                    ? 'bg-fluent-card border-fluent-accent text-fluent-accent shadow-sm'
+                    : 'bg-fluent-card/50 text-fluent-muted hover:text-fluent-text border-fluent-border/60 hover:bg-fluent-card'
+                }`}
+              >
+                <span>{v.label}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
+                    isActive ? 'bg-fluent-accent/20 text-fluent-accent' : 'bg-fluent-card-subtle text-fluent-muted'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
         {/* Search & Quick Toggles */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
           {/* Search Input */}
@@ -360,7 +406,7 @@ export const DriverPage: React.FC = () => {
             />
           </div>
 
-          {/* Quick Toggles */}
+          {/* Quick Toggles & View Switcher */}
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             <label className="inline-flex items-center gap-2 text-xs text-fluent-muted hover:text-fluent-text cursor-pointer select-none">
               <input
@@ -372,15 +418,31 @@ export const DriverPage: React.FC = () => {
               <span>Nur Probleme ({categoryCounts.problems})</span>
             </label>
 
-            <label className="inline-flex items-center gap-2 text-xs text-fluent-muted hover:text-fluent-text cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={onlyThirdParty}
-                onChange={(e) => setOnlyThirdParty(e.target.checked)}
-                className="rounded border-fluent-border text-fluent-accent focus:ring-0 w-3.5 h-3.5"
-              />
-              <span>Nur Drittanbieter (OEM)</span>
-            </label>
+            {/* View Mode Switcher */}
+            <div className="flex items-center rounded-lg bg-fluent-card border border-fluent-border/70 p-0.5 shrink-0">
+              <button
+                onClick={() => setViewMode('normal')}
+                className={`p-1.5 rounded-md text-xs transition-colors ${
+                  viewMode === 'normal'
+                    ? 'bg-fluent-accent text-white shadow-sm'
+                    : 'text-fluent-muted hover:text-white'
+                }`}
+                title="Normal (Karten-Ansicht)"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('compact')}
+                className={`p-1.5 rounded-md text-xs transition-colors ${
+                  viewMode === 'compact'
+                    ? 'bg-fluent-accent text-white shadow-sm'
+                    : 'text-fluent-muted hover:text-white'
+                }`}
+                title="Kompakt (Listen-Ansicht)"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -400,11 +462,12 @@ export const DriverPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className={viewMode === 'normal' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4' : 'flex flex-col space-y-2'}>
           {filteredDevices.map((dev) => (
             <DeviceCard
               key={dev.instanceId}
               device={dev}
+              viewMode={viewMode}
               onShowDetails={(d) => setSelectedDeviceForDetails(d)}
               onExport={(inf) => handleExportSingle(inf)}
               onRestart={(id) => handleRestartDevice(id)}

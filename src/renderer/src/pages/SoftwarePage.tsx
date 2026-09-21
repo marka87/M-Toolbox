@@ -9,10 +9,13 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
-  XCircle
+  XCircle,
+  LayoutGrid,
+  List,
+  Grid
 } from 'lucide-react'
 import { useSoftware } from '../hooks/useSoftware'
-import { PackageCard } from '../components/ui/PackageCard'
+import { PackageCard, type SoftwareViewMode } from '../components/ui/PackageCard'
 import { BatchActionBar } from '../components/ui/BatchActionBar'
 import type { SoftwareCategory } from '@shared/types'
 
@@ -53,6 +56,7 @@ export const SoftwarePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('catalog')
   const [selectedCategory, setSelectedCategory] = useState<SoftwareCategory>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [viewMode, setViewMode] = useState<SoftwareViewMode>('normal')
   const [showLogs, setShowLogs] = useState(false)
   const logContainerRef = useRef<HTMLDivElement>(null)
 
@@ -219,22 +223,61 @@ export const SoftwarePage: React.FC = () => {
           />
         </div>
 
-        {/* Category Pills (Only for Catalog) */}
+        {/* Category Pills & View Switcher (Only for Catalog) */}
         {activeTab === 'catalog' && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
-            {CATEGORIES.map((cat) => (
+          <div className="flex items-center gap-3 overflow-x-auto pb-1 max-w-full">
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                    selectedCategory === cat.id
+                      ? 'bg-fluent-card border border-fluent-accent text-fluent-accent'
+                      : 'bg-fluent-card/50 border border-fluent-border/60 text-fluent-muted hover:text-white'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* View Mode Switcher */}
+            <div className="flex items-center rounded-lg bg-fluent-card border border-fluent-border/70 p-0.5 shrink-0">
               <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                  selectedCategory === cat.id
-                    ? 'bg-fluent-card border border-fluent-accent text-fluent-accent'
-                    : 'bg-fluent-card/50 border border-fluent-border/60 text-fluent-muted hover:text-white'
+                onClick={() => setViewMode('normal')}
+                className={`p-1.5 rounded-md text-xs transition-colors ${
+                  viewMode === 'normal'
+                    ? 'bg-fluent-accent text-white shadow-sm'
+                    : 'text-fluent-muted hover:text-white'
                 }`}
+                title="Normal (Karten-Ansicht)"
               >
-                {cat.label}
+                <LayoutGrid className="w-4 h-4" />
               </button>
-            ))}
+              <button
+                onClick={() => setViewMode('compact')}
+                className={`p-1.5 rounded-md text-xs transition-colors ${
+                  viewMode === 'compact'
+                    ? 'bg-fluent-accent text-white shadow-sm'
+                    : 'text-fluent-muted hover:text-white'
+                }`}
+                title="Kompakt (Listen-Ansicht)"
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('icons')}
+                className={`p-1.5 rounded-md text-xs transition-colors ${
+                  viewMode === 'icons'
+                    ? 'bg-fluent-accent text-white shadow-sm'
+                    : 'text-fluent-muted hover:text-white'
+                }`}
+                title="Icons (Kachel-Ansicht)"
+              >
+                <Grid className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -252,7 +295,15 @@ export const SoftwarePage: React.FC = () => {
               Keine Software gefunden für &quot;{searchQuery}&quot;.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div
+              className={
+                viewMode === 'normal'
+                  ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'
+                  : viewMode === 'compact'
+                  ? 'flex flex-col space-y-2'
+                  : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3'
+              }
+            >
               {filteredCatalog.map((pkg) => (
                 <PackageCard
                   key={pkg.id}
@@ -260,6 +311,7 @@ export const SoftwarePage: React.FC = () => {
                   isSelected={selectedPackages.has(pkg.id)}
                   isOperating={isOperating}
                   isCurrentActive={activePackageId === pkg.id}
+                  viewMode={viewMode}
                   onToggleSelect={toggleSelectPackage}
                   onInstall={installPackage}
                   onUninstall={uninstallPackage}

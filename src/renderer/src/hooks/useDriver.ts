@@ -10,6 +10,8 @@ import type {
   WindowsUpdateDriver
 } from '@shared/types'
 
+export type DriverVendorFilter = 'all' | 'oem' | 'microsoft' | 'amd' | 'nvidia' | 'intel' | 'hp' | 'realtek'
+
 export function useDriver() {
   const [devices, setDevices] = useState<DeviceItem[]>([])
   const [packages, setPackages] = useState<DriverPackage[]>([])
@@ -21,6 +23,7 @@ export function useDriver() {
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [onlyProblems, setOnlyProblems] = useState<boolean>(false)
   const [onlyThirdParty, setOnlyThirdParty] = useState<boolean>(false)
+  const [vendorFilter, setVendorFilter] = useState<DriverVendorFilter>('all')
 
   const [isExporting, setIsExporting] = useState<boolean>(false)
   const [exportLogs, setExportLogs] = useState<string[]>([])
@@ -93,6 +96,36 @@ export function useDriver() {
     return counts
   }, [devices])
 
+  // Hersteller-Zähler
+  const vendorCounts = useMemo(() => {
+    const counts: Record<DriverVendorFilter, number> = {
+      all: devices.length,
+      oem: 0,
+      microsoft: 0,
+      amd: 0,
+      nvidia: 0,
+      intel: 0,
+      hp: 0,
+      realtek: 0
+    }
+
+    for (const d of devices) {
+      const mfg = (d.manufacturerName || '').toLowerCase()
+      const provider = (d.driverProvider || '').toLowerCase()
+      const desc = (d.deviceDescription || '').toLowerCase()
+
+      if (d.isThirdParty) counts.oem++
+      if (provider.includes('microsoft') || (!d.isThirdParty && !provider)) counts.microsoft++
+      if (mfg.includes('amd') || mfg.includes('advanced micro devices') || mfg.includes('ati') || provider.includes('amd') || desc.includes('radeon')) counts.amd++
+      if (mfg.includes('nvidia') || provider.includes('nvidia') || desc.includes('geforce') || desc.includes('nvidia')) counts.nvidia++
+      if (mfg.includes('intel') || provider.includes('intel') || desc.includes('intel')) counts.intel++
+      if (mfg.includes('hp') || mfg.includes('hewlett') || provider.includes('hp')) counts.hp++
+      if (mfg.includes('realtek') || provider.includes('realtek') || desc.includes('realtek')) counts.realtek++
+    }
+
+    return counts
+  }, [devices])
+
   // Gefilterte Geräte
   const filteredDevices = useMemo(() => {
     return devices.filter((d) => {
@@ -106,14 +139,65 @@ export function useDriver() {
         return false
       }
 
-      // 3. Kategorie-Filter
+      // 3. Hersteller / System Filter
+      if (vendorFilter !== 'all') {
+        const mfg = (d.manufacturerName || '').toLowerCase()
+        const provider = (d.driverProvider || '').toLowerCase()
+        const desc = (d.deviceDescription || '').toLowerCase()
+
+        if (vendorFilter === 'oem') {
+          if (!d.isThirdParty) return false
+        } else if (vendorFilter === 'microsoft') {
+          const isMs = provider.includes('microsoft') || (!d.isThirdParty && !provider)
+          if (!isMs) return false
+        } else if (vendorFilter === 'amd') {
+          const isAmd =
+            mfg.includes('amd') ||
+            mfg.includes('advanced micro devices') ||
+            mfg.includes('ati') ||
+            provider.includes('amd') ||
+            provider.includes('advanced micro devices') ||
+            provider.includes('ati') ||
+            desc.includes('amd') ||
+            desc.includes('radeon')
+          if (!isAmd) return false
+        } else if (vendorFilter === 'nvidia') {
+          const isNvidia =
+            mfg.includes('nvidia') ||
+            provider.includes('nvidia') ||
+            desc.includes('geforce') ||
+            desc.includes('nvidia')
+          if (!isNvidia) return false
+        } else if (vendorFilter === 'intel') {
+          const isIntel =
+            mfg.includes('intel') ||
+            provider.includes('intel') ||
+            desc.includes('intel')
+          if (!isIntel) return false
+        } else if (vendorFilter === 'hp') {
+          const isHp =
+            mfg.includes('hp') ||
+            mfg.includes('hewlett') ||
+            provider.includes('hp') ||
+            provider.includes('hewlett')
+          if (!isHp) return false
+        } else if (vendorFilter === 'realtek') {
+          const isRealtek =
+            mfg.includes('realtek') ||
+            provider.includes('realtek') ||
+            desc.includes('realtek')
+          if (!isRealtek) return false
+        }
+      }
+
+      // 4. Kategorie-Filter
       if (selectedCategory === 'problems') {
         if (d.status !== 'Problem' && !d.problemCode) return false
       } else if (selectedCategory !== 'all') {
         if (d.category !== selectedCategory) return false
       }
 
-      // 4. Suche
+      // 5. Suche
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
         const matchName = d.deviceDescription.toLowerCase().includes(q)
@@ -128,7 +212,7 @@ export function useDriver() {
 
       return true
     })
-  }, [devices, selectedCategory, searchQuery, onlyProblems, onlyThirdParty])
+  }, [devices, selectedCategory, searchQuery, onlyProblems, onlyThirdParty, vendorFilter])
 
   // Export aller Drittanbieter-Treiber
   const handleExportAll = async () => {
@@ -272,6 +356,9 @@ export function useDriver() {
     setOnlyProblems,
     onlyThirdParty,
     setOnlyThirdParty,
+    vendorFilter,
+    setVendorFilter,
+    vendorCounts,
     filteredDevices,
     categoryCounts,
     isExporting,

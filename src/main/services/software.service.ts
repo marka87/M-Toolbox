@@ -52,6 +52,34 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     category: 'browser',
     publisher: 'Opera'
   },
+  {
+    id: 'Opera.OperaGX',
+    name: 'Opera GX',
+    description: 'Spezialisierter Gaming-Browser mit CPU-, RAM- und Netzwerk-Limitern.',
+    category: 'browser',
+    publisher: 'Opera'
+  },
+  {
+    id: 'Vivaldi.Vivaldi',
+    name: 'Vivaldi Browser',
+    description: 'Extrem anpassbarer Browser mit Tab-Stacking, Notizen und Mail-Client.',
+    category: 'browser',
+    publisher: 'Vivaldi Technologies'
+  },
+  {
+    id: 'LibreWolf.LibreWolf',
+    name: 'LibreWolf',
+    description: 'Fokussiert auf Privatsphäre und Sicherheit, befreit von Telemetrie.',
+    category: 'browser',
+    publisher: 'LibreWolf Community'
+  },
+  {
+    id: 'TorProject.TorBrowser',
+    name: 'Tor Browser',
+    description: 'Anonymes Surfen über das dezentrale Onion-Routing-Netzwerk.',
+    category: 'browser',
+    publisher: 'The Tor Project'
+  },
 
   // Developer Tools
   {
@@ -90,13 +118,6 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     publisher: 'Microsoft Corporation'
   },
   {
-    id: 'Docker.DockerDesktop',
-    name: 'Docker Desktop',
-    description: 'Container-Plattform zum Erstellen, Teilen und Ausführen von Anwendungen.',
-    category: 'dev',
-    publisher: 'Docker Inc.'
-  },
-  {
     id: 'Notepad++.Notepad++',
     name: 'Notepad++',
     description: 'Extrem schneller Text- und Quellcode-Editor mit Syntax-Highlighting.',
@@ -104,11 +125,39 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     publisher: 'Don HO'
   },
   {
+    id: 'Docker.DockerDesktop',
+    name: 'Docker Desktop',
+    description: 'Container-Plattform zum Erstellen, Teilen und Ausführen von Anwendungen.',
+    category: 'dev',
+    publisher: 'Docker Inc.'
+  },
+  {
     id: 'Postman.Postman',
     name: 'Postman',
     description: 'Umfassende Entwicklungs- und Test-Plattform für REST- und GraphQL-APIs.',
     category: 'dev',
     publisher: 'Postman Inc.'
+  },
+  {
+    id: 'Neovim.Neovim',
+    name: 'Neovim',
+    description: 'Hypereffizienter, erweiterbarer modal-basierter Texteditor.',
+    category: 'dev',
+    publisher: 'Neovim'
+  },
+  {
+    id: 'Rustlang.Rustup',
+    name: 'Rust (Rustup)',
+    description: 'Offizieller Installer und Versionsverwalter für die Programmiersprache Rust.',
+    category: 'dev',
+    publisher: 'Rust Foundation'
+  },
+  {
+    id: 'GoLang.Go',
+    name: 'Go Programming Language',
+    description: 'Einfache, schnelle und zuverlässige Programmiersprache von Google.',
+    category: 'dev',
+    publisher: 'Google LLC'
   },
 
   // Utilities
@@ -118,6 +167,13 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     description: 'Leistungsfähiges, kostenloses Packprogramm mit hoher Kompressionsrate.',
     category: 'utilities',
     publisher: 'Igor Pavlov'
+  },
+  {
+    id: 'M2Team.NanaZip',
+    name: 'NanaZip',
+    description: 'Modernes 7-Zip-Derivat mit nativem Windows 11 Kontextmenü.',
+    category: 'utilities',
+    publisher: 'M2-Team'
   },
   {
     id: 'Microsoft.PowerToys',
@@ -134,11 +190,32 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     publisher: 'voidtools'
   },
   {
-    id: 'Rufus.Rufus',
-    name: 'Rufus',
-    description: 'Erstellt im Handumdrehen bootfähige USB-Sticks (Windows, Linux, UEFI).',
+    id: 'AntibodySoftware.WizTree',
+    name: 'WizTree',
+    description: 'Ultraschneller Speicherplatz-Finder über MFT-Dateisystemscan.',
     category: 'utilities',
-    publisher: 'Pete Batard'
+    publisher: 'Antibody Software'
+  },
+  {
+    id: 'JAMSoftware.TreeSize.Free',
+    name: 'TreeSize Free',
+    description: 'Speicherplatz-Manager zur grafischen Analyse von Festplattenbelegung.',
+    category: 'utilities',
+    publisher: 'JAM Software'
+  },
+  {
+    id: 'RevoUninstaller.RevoUninstaller',
+    name: 'Revo Uninstaller',
+    description: 'Saubere Deinstallation inklusive Beseitigung von Registry- & Datei-Überresten.',
+    category: 'utilities',
+    publisher: 'VS REVO GROUP'
+  },
+  {
+    id: 'Klocman.BulkCrapUninstaller',
+    name: 'Bulk Crap Uninstaller',
+    description: 'Mächtiges Open-Source-Tool zum schnellen Batch-Deinstallieren von Programmen.',
+    category: 'utilities',
+    publisher: 'Klocman Software'
   },
   {
     id: 'BleachBit.BleachBit',
@@ -148,11 +225,60 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     publisher: 'Andrew Ziem'
   },
   {
-    id: 'JAMSoftware.TreeSize.Free',
-    name: 'TreeSize Free',
-    description: 'Speicherplatz-Manager zur grafischen Analyse von Festplattenbelegung.',
+    id: 'CrystalDewWorld.CrystalDiskInfo',
+    name: 'CrystalDiskInfo',
+    description: 'S.M.A.R.T.-Festplatten- und SSD-Zustandsüberwachung mit Temperaturanzeige.',
     category: 'utilities',
-    publisher: 'JAM Software'
+    publisher: 'Crystal Dew World'
+  },
+  {
+    id: 'CrystalDewWorld.CrystalDiskMark',
+    name: 'CrystalDiskMark',
+    description: 'Standard-Benchmark für Lese- und Schreibgeschwindigkeiten von Speichermedien.',
+    category: 'utilities',
+    publisher: 'Crystal Dew World'
+  },
+  {
+    id: 'CPUID.CPU-Z',
+    name: 'CPU-Z',
+    description: 'Detaillierte Hardware-Erkennung für Prozessor, Mainboard, RAM und SPD.',
+    category: 'utilities',
+    publisher: 'CPUID'
+  },
+  {
+    id: 'TechPowerUp.GPU-Z',
+    name: 'GPU-Z',
+    description: 'Präzises Diagnose- und Sensor-Tool für Grafikkarten aller Hersteller.',
+    category: 'utilities',
+    publisher: 'TechPowerUp'
+  },
+  {
+    id: 'Rufus.Rufus',
+    name: 'Rufus',
+    description: 'Erstellt im Handumdrehen bootfähige USB-Sticks (Windows, Linux, UEFI).',
+    category: 'utilities',
+    publisher: 'Pete Batard'
+  },
+  {
+    id: 'Balena.Etcher',
+    name: 'balenaEtcher',
+    description: 'Sicheres Flashen von OS-Images auf SD-Karten und USB-Laufwerke.',
+    category: 'utilities',
+    publisher: 'Balena'
+  },
+  {
+    id: 'AutoHotkey.AutoHotkey',
+    name: 'AutoHotkey',
+    description: 'Leistungsfähige Skriptsprache für Windows-Automatisierung und Hotkeys.',
+    category: 'utilities',
+    publisher: 'AutoHotkey'
+  },
+  {
+    id: 'ShareX.ShareX',
+    name: 'ShareX',
+    description: 'Erweiterte Bildschirmaufnahme, OCR-Texterkennung und Workflow-Tool.',
+    category: 'utilities',
+    publisher: 'ShareX Team'
   },
 
   // Media
@@ -185,6 +311,13 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     publisher: 'The GIMP Team'
   },
   {
+    id: 'dotPDN.PaintDotNet',
+    name: 'Paint.NET',
+    description: 'Schnelle, benutzerfreundliche Bild- und Fotobearbeitung mit Ebenen.',
+    category: 'media',
+    publisher: 'dotPDN LLC'
+  },
+  {
     id: 'Audacity.Audacity',
     name: 'Audacity',
     description: 'Mehrspur-Audioeditor und Aufnahme-Werkzeug.',
@@ -197,6 +330,13 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     description: 'Konverter zum Umwandeln von Videos in moderne Formate und Codecs.',
     category: 'media',
     publisher: 'The HandBrake Team'
+  },
+  {
+    id: 'CodecGuide.K-LiteCodecPack.Full',
+    name: 'K-Lite Codec Pack Full',
+    description: 'Komplettes Paket von Audio- und Video-Codecs inklusive MPC-HC Player.',
+    category: 'media',
+    publisher: 'Codec Guide'
   },
 
   // Communication
@@ -213,6 +353,20 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     description: 'Schneller, sicherer und cloudbasierter Instant-Messenger.',
     category: 'communication',
     publisher: 'Telegram FZ-LLC'
+  },
+  {
+    id: 'WhatsApp.WhatsApp',
+    name: 'WhatsApp Desktop',
+    description: 'Offizielle WhatsApp Desktop-Anwendung für Windows.',
+    category: 'communication',
+    publisher: 'Meta / WhatsApp LLC'
+  },
+  {
+    id: 'OpenWhisperSystems.Signal',
+    name: 'Signal',
+    description: 'Ende-zu-Ende verschlüsselter Messenger mit Fokus auf Datenschutz.',
+    category: 'communication',
+    publisher: 'Signal Messenger LLC'
   },
   {
     id: 'SlackTechnologies.Slack',
@@ -244,6 +398,34 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     category: 'gaming',
     publisher: 'Epic Games Inc.'
   },
+  {
+    id: 'GOG.Galaxy',
+    name: 'GOG GALAXY',
+    description: 'DRM-freie Spieleplattform und universaler Spielebibliotheks-Verwalter.',
+    category: 'gaming',
+    publisher: 'GOG.com'
+  },
+  {
+    id: 'ElectronicArts.EADesktop',
+    name: 'EA App',
+    description: 'Offizielle Plattform für Spiele von Electronic Arts.',
+    category: 'gaming',
+    publisher: 'Electronic Arts'
+  },
+  {
+    id: 'Ubisoft.Connect',
+    name: 'Ubisoft Connect',
+    description: 'Spielebibliothek und Launcher für Ubisoft-Titel.',
+    category: 'gaming',
+    publisher: 'Ubisoft'
+  },
+  {
+    id: 'PrismLauncher.PrismLauncher',
+    name: 'Prism Launcher',
+    description: 'Schneller, moderner Open-Source-Launcher für Minecraft mit Mod-Support.',
+    category: 'gaming',
+    publisher: 'Prism Launcher Community'
+  },
 
   // Runtimes
   {
@@ -264,6 +446,13 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     id: 'Microsoft.DotNet.DesktopRuntime.8',
     name: '.NET Desktop Runtime 8',
     description: 'Offizielle Microsoft .NET 8 Laufzeitumgebung für Desktop-Anwendungen.',
+    category: 'runtimes',
+    publisher: 'Microsoft Corporation'
+  },
+  {
+    id: 'Microsoft.DirectX',
+    name: 'DirectX End-User Runtimes',
+    description: 'Legacy DirectX-Bibliotheken für optimale Kompatibilität älterer Spiele.',
     category: 'runtimes',
     publisher: 'Microsoft Corporation'
   }
@@ -288,7 +477,9 @@ export class SoftwareService {
    * Parses standard winget table output (fixed column layout)
    */
   private parseWingetTable(output: string): Array<Record<string, string>> {
-    const lines = output.split(/\r?\n/).filter((l) => l.trim().length > 0)
+    // Strip ANSI escape codes
+    const cleanOutput = output.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
+    const lines = cleanOutput.split(/\r?\n/).filter((l) => l.trim().length > 0)
     if (lines.length < 2) return []
 
     // Locate separator line containing dashes (e.g. '---------------------  -------')
@@ -305,9 +496,10 @@ export class SoftwareService {
     const headerLine = lines[sepIndex - 1]
     const separatorLine = lines[sepIndex]
 
-    // Identify columns by headers or dashes
-    const headerRegex = /\b([A-Za-zÄÖÜäöü]+(?:\s+[A-Za-zÄÖÜäöü]+)*)\b/g
-    const headerMatches = [...headerLine.matchAll(headerRegex)]
+    // In winget CLI, column headers are separated by 2 or more spaces
+    // e.g. "Name                                                         ID                                                    Version            Quelle"
+    const colRegex = /\S+(?:\s(?!\s)\S+)*/g
+    const headerMatches = [...headerLine.matchAll(colRegex)]
     if (headerMatches.length === 0) return []
 
     const cols: Array<{ name: string; start: number; end: number }> = []
@@ -316,7 +508,7 @@ export class SoftwareService {
       const start = current.index!
       const end = i < headerMatches.length - 1 ? headerMatches[i + 1].index! : Math.max(separatorLine.length, headerLine.length, 500)
       cols.push({
-        name: current[1].trim().toLowerCase(),
+        name: current[0].trim().toLowerCase(),
         start,
         end
       })
@@ -491,19 +683,22 @@ export class SoftwareService {
     onProgress: (event: OperationLogEvent) => void
   ): Promise<{ success: boolean; error?: string }> {
     return new Promise((resolve) => {
-      const command = `winget uninstall --id "${packageId}" --silent`
-      onProgress({ type: 'info', line: `> Starte Deinstallation: ${packageId}...`, packageId })
+      const cleanId = packageId.trim()
+      const isExactWingetId = !cleanId.startsWith('ARP\\') && !cleanId.startsWith('MSIX\\') && !cleanId.includes('\\')
+      const exactFlag = isExactWingetId ? '-e ' : ''
+      const command = `winget uninstall --id "${cleanId}" ${exactFlag}--silent --accept-source-agreements --nowarn --disable-interactivity`
+      onProgress({ type: 'info', line: `> Starte Deinstallation: ${cleanId}...`, packageId: cleanId })
 
       this.ps.streamCommand(
         command,
-        (data) => onProgress({ type: 'stdout', line: data, packageId }),
-        (data) => onProgress({ type: 'stderr', line: data, packageId }),
+        (data) => onProgress({ type: 'stdout', line: data, packageId: cleanId }),
+        (data) => onProgress({ type: 'stderr', line: data, packageId: cleanId }),
         (code) => {
           const success = code === 0
           onProgress({
             type: 'exit',
-            line: success ? `Deinstallation von ${packageId} erfolgreich abgeschlossen.` : `Deinstallation beendet mit Code ${code}.`,
-            packageId,
+            line: success ? `Deinstallation von ${cleanId} erfolgreich abgeschlossen.` : `Deinstallation beendet mit Code ${code}.`,
+            packageId: cleanId,
             exitCode: code ?? undefined
           })
           resolve({ success, error: success ? undefined : `Deinstallation fehlgeschlagen mit Exit-Code ${code}` })

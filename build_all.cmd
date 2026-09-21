@@ -39,9 +39,9 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo ========================================================
-echo [ERFOLG] Beide Versionen erfolgreich erstellt:
-echo   1. Setup-Installer : %~dp0release\M-Toolbox-Setup-1.9.1.exe
-echo   2. Portable EXE    : %~dp0release\M-Toolbox-1.9.1-portable.exe
+echo [ERFOLG] Beide Versionen erfolgreich im Ordner "release\" erstellt:
+echo   - Setup-Installer (NSIS)
+echo   - Portable EXE
 echo ========================================================
 echo.
 
