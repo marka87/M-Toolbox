@@ -264,3 +264,4 @@ export class SettingsService {
 }
 
 export const settingsService = SettingsService.getInstance()
+

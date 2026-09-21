@@ -117,12 +117,12 @@ export interface MToolboxAPI {
   }
   settings: {
     getSettings: () => Promise<AppSettings>
-    saveSettings: (settings: Partial<AppSettings>) => Promise<{ success: boolean; error?: string }>
+    saveSettings: (settings: Partial<AppSettings>) => Promise<AppSettings>
     checkUpdates: () => Promise<UpdateCheckResult>
     getAppInfo: () => Promise<AppVersionInfo>
     openUserDataFolder: () => Promise<void>
-    clearCache: () => Promise<{ success: boolean; error?: string }>
-    resetSettings: () => Promise<{ success: boolean; error?: string }>
+    clearCache: () => Promise<{ success: boolean; message: string }>
+    resetSettings: () => Promise<AppSettings>
   }
   system: {
     minimize: () => Promise<void>

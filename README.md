@@ -2,7 +2,7 @@
 
 > Moderne Windows 11 Desktop System-Utility-Suite auf Basis von Electron, React, TypeScript und Windows-Bordmitteln.
 
-[![Version](https://img.shields.io/badge/Version-1.8.0-blue.svg)](https://github.com/marka87/M-Toolbox)
+[![Version](https://img.shields.io/badge/Version-1.9.0-blue.svg)](https://github.com/marka87/M-Toolbox)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2011-0078d4.svg)](https://microsoft.com/windows)
 
@@ -21,7 +21,7 @@ M-Toolbox besteht aus 10 aufeinander abgestimmten Modulen für Wartung, Bereinig
 7. **Tweaks** (`v1.6.0`) – Windows 11 Oberflächen- & Leistungsoptimierungen (Klassisches Kontextmenü, Dateiendungen, Widgets, Telemetrie, Gaming & Explorer-Neustart).
 8. **Netzwerk Toolkit** (`v1.7.0`) – Latenz- & Ping-Monitor, DNS-Benchmark, nativer TCP-Port-Scanner, Adapter-Übersicht & Flush DNS.
 9. **Advanced Tools** (`v1.8.0`) – Windows-Tools Launcher (17 Verwaltungstools, God Mode), Autostart-Manager & Hosts-Datei Editor.
-10. **Settings** (`Geplant, v1.9.0`) – App-Konfiguration, Autostart und Protokolle.
+10. **Settings** (`v1.9.0`) – App-Konfiguration, Fluent Theme (Dark/Light/System), 5 Akzentfarben, Windows-Autostart, Live GitHub Update-Prüfung, AppData-Verwaltung und System-Info.
 
 ---
 

@@ -13,8 +13,7 @@ import {
   AlertCircle,
   Info,
   Sparkles,
-  Github,
-  Cpu
+  Github
 } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { ThemeSelector } from '../components/ui/ThemeSelector'
@@ -42,9 +41,9 @@ export const SettingsPage: React.FC = () => {
   const handleClearCache = async () => {
     const res = await clearCache()
     if (res.success) {
-      setCacheMessage('Temporärer Cache wurde erfolgreich bereinigt.')
+      setCacheMessage(res.message || 'Temporärer Cache wurde erfolgreich bereinigt.')
     } else {
-      setCacheMessage(`Fehler beim Bereinigen: ${res.error}`)
+      setCacheMessage(res.message || 'Fehler beim Bereinigen.')
     }
     setTimeout(() => setCacheMessage(null), 4000)
   }
@@ -156,8 +155,8 @@ export const SettingsPage: React.FC = () => {
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={settings.startWithWindows}
-                onChange={(e) => updateSettings({ startWithWindows: e.target.checked })}
+                checked={settings.autoStart}
+                onChange={(e) => updateSettings({ autoStart: e.target.checked })}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fluent-accent"></div>
@@ -183,6 +182,25 @@ export const SettingsPage: React.FC = () => {
             </label>
           </div>
 
+          {/* Transparency Effects */}
+          <div className="flex items-center justify-between pt-4">
+            <div>
+              <div className="text-sm font-medium text-slate-200">Transparenzeffekte (Mica / Acrylic)</div>
+              <div className="text-xs text-fluent-muted">
+                Moderne Windows 11 Transparenz- und Blur-Effekte auf Oberflächen anwenden
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.transparencyEffects}
+                onChange={(e) => updateSettings({ transparencyEffects: e.target.checked })}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fluent-accent"></div>
+            </label>
+          </div>
+
           {/* Hardware Acceleration */}
           <div className="flex items-center justify-between pt-4">
             <div>
@@ -194,27 +212,8 @@ export const SettingsPage: React.FC = () => {
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={settings.enableHardwareAcceleration}
-                onChange={(e) => updateSettings({ enableHardwareAcceleration: e.target.checked })}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fluent-accent"></div>
-            </label>
-          </div>
-
-          {/* Developer Mode */}
-          <div className="flex items-center justify-between pt-4">
-            <div>
-              <div className="text-sm font-medium text-slate-200">Entwickler- & Diagnosemodus</div>
-              <div className="text-xs text-fluent-muted">
-                Ausführliche IPC-Protokolle und erweiterte Diagnosedaten in der Konsole ausgeben
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.developerMode}
-                onChange={(e) => updateSettings({ developerMode: e.target.checked })}
+                checked={settings.hardwareAcceleration}
+                onChange={(e) => updateSettings({ hardwareAcceleration: e.target.checked })}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fluent-accent"></div>
@@ -228,17 +227,6 @@ export const SettingsPage: React.FC = () => {
         title="GitHub Updates & Version"
         subtitle="Prüfen Sie direkt auf neue M-Toolbox Versionen über die offizielle GitHub API"
         icon={<Github className="w-5 h-5" />}
-        headerAction={
-          <button
-            type="button"
-            onClick={checkForUpdates}
-            disabled={checkingUpdates}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-fluent bg-fluent-accent hover:bg-fluent-accent-hover text-white text-xs font-semibold shadow-fluent-sm transition-all disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${checkingUpdates ? 'animate-spin' : ''}`} />
-            <span>{checkingUpdates ? 'Prüfe...' : 'Jetzt nach Updates suchen'}</span>
-          </button>
-        }
       >
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-fluent-lg bg-fluent-sidebar/40 border border-fluent-border/60 gap-3">
@@ -257,15 +245,15 @@ export const SettingsPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <label className="text-xs text-fluent-muted flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.checkUpdatesAutomatically}
-                  onChange={(e) => updateSettings({ checkUpdatesAutomatically: e.target.checked })}
-                  className="rounded border-fluent-border bg-fluent-sidebar text-fluent-accent focus:ring-fluent-accent"
-                />
-                <span>Automatisch prüfen</span>
-              </label>
+              <button
+                type="button"
+                onClick={checkForUpdates}
+                disabled={checkingUpdates}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-fluent bg-fluent-accent hover:bg-fluent-accent-hover text-white text-xs font-semibold shadow-fluent-sm transition-all disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${checkingUpdates ? 'animate-spin' : ''}`} />
+                <span>{checkingUpdates ? 'Prüfe...' : 'Jetzt prüfen'}</span>
+              </button>
             </div>
           </div>
 
@@ -273,26 +261,26 @@ export const SettingsPage: React.FC = () => {
           {updateResult && (
             <div
               className={`p-4 rounded-fluent-lg border animate-fade-in ${
-                updateResult.updateAvailable
+                updateResult.hasUpdate
                   ? 'bg-amber-500/10 border-amber-500/30 text-amber-200'
                   : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2.5">
-                  {updateResult.updateAvailable ? (
+                  {updateResult.hasUpdate ? (
                     <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                   ) : (
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                   )}
                   <div>
                     <div className="text-sm font-semibold">
-                      {updateResult.updateAvailable
+                      {updateResult.hasUpdate
                         ? `Neue Version ${updateResult.latestVersion} verfügbar!`
                         : 'M-Toolbox ist auf dem neuesten Stand!'}
                     </div>
                     <div className="text-xs text-slate-300 mt-1">
-                      {updateResult.updateAvailable
+                      {updateResult.hasUpdate
                         ? `Eine neuere Version (${updateResult.latestVersion}) wurde auf GitHub veröffentlicht.`
                         : `Sie verwenden die aktuellste Version (v${updateResult.currentVersion}). Keine Updates ausstehend.`}
                     </div>
@@ -304,7 +292,7 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {updateResult.updateAvailable && (
+                {updateResult.hasUpdate && (
                   <button
                     type="button"
                     onClick={() => handleOpenReleaseUrl(updateResult.releaseUrl)}
@@ -396,7 +384,7 @@ export const SettingsPage: React.FC = () => {
             <div className="p-3 rounded-fluent bg-fluent-sidebar/40 border border-fluent-border/40">
               <div className="text-[11px] text-fluent-muted">Plattform / Arch</div>
               <div className="text-sm font-semibold text-slate-100">
-                {appInfo?.platform || 'win32'} ({appInfo?.arch || 'x64'})
+                {appInfo?.osBuild || 'Windows 11'} ({appInfo?.arch || 'x64'})
               </div>
             </div>
           </div>
@@ -424,3 +412,4 @@ export const SettingsPage: React.FC = () => {
     </div>
   )
 }
+

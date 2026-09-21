@@ -108,14 +108,13 @@ export function useSettings() {
 
     try {
       const res = await window.mToolbox.settings.saveSettings(partial)
-      if (res.success) {
+      if (res) {
+        setSettings(res)
         setSaveStatus('Gespeichert')
         setTimeout(() => setSaveStatus(null), 2500)
         return true
-      } else {
-        setSaveStatus(`Fehler: ${res.error}`)
-        return false
       }
+      return false
     } catch (err: any) {
       setSaveStatus(`Fehler: ${err?.message || 'Unbekannt'}`)
       return false
@@ -142,7 +141,7 @@ export function useSettings() {
     try {
       return await window.mToolbox.settings.clearCache()
     } catch (err: any) {
-      return { success: false, error: err?.message || 'Cache konnte nicht geleert werden' }
+      return { success: false, message: err?.message || 'Cache konnte nicht geleert werden' }
     }
   }
 
@@ -150,10 +149,12 @@ export function useSettings() {
   const resetSettings = async () => {
     try {
       const res = await window.mToolbox.settings.resetSettings()
-      if (res.success) {
-        await loadData()
+      if (res) {
+        setSettings(res)
+        applyAccentToDom(res.accentColor)
+        applyThemeToDom(res.theme)
       }
-      return res
+      return { success: true, settings: res }
     } catch (err: any) {
       return { success: false, error: err?.message || 'Einstellungen konnten nicht zurückgesetzt werden' }
     }
@@ -183,3 +184,4 @@ export function useSettings() {
     refresh: loadData
   }
 }
+
