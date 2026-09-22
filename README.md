@@ -30,15 +30,10 @@ M-Toolbox bündelt native Windows-Werkzeuge, PowerShell, Winget und eine moderne
 | --- | --- |
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Software Center](docs/screenshots/software-center.png) |
 
-| Driver Center | Cleanup Center |
+| Cleanup Center | Tweaks |
 | --- | --- |
-| ![Driver Center](docs/screenshots/driver-center.png) | ![Cleanup Center](docs/screenshots/cleanup-center.png) |
+| ![Cleanup Center](docs/screenshots/cleanup-center.png) | ![Tweaks Center](docs/screenshots/tweaks-center.png) |
 
-| Repair Center | Tweaks |
-| --- | --- |
-| ![Repair Center](docs/screenshots/repair-center.png) | ![Tweaks Center](docs/screenshots/tweaks-center.png) |
-
-Die Bilddateien liegen unter [`docs/screenshots/`](docs/screenshots/). Platzhalter können dort durch aktuelle Aufnahmen ersetzt werden.
 
 ## Installation
 
