@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Build renderer and Electron bundles
+        run: npm run build:renderer
+
+      - name: Build Windows installers
+        run: npx electron-builder --win nsis portable
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = Get-ChildItem -Path release -Filter *.exe | Select-Object -ExpandProperty FullName
+          if (-not $assets) {
+            throw "No Windows installer artifacts were created."
+          }
+          gh release create "${{ github.ref_name }}" $assets --title "M-Toolbox ${{ github.ref_name }}" --generate-notes

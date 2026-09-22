@@ -1,7 +1,7 @@
 {
   "name": "m-toolbox",
   "version": "1.9.4",
-  "description": "M-Toolbox - Modern Windows 11 System Utility",
+  "description": "Modern Windows 11 system utility suite for maintenance, diagnostics, repair and optimization",
   "main": "dist-electron/main/index.js",
   "scripts": {
     "dev": "vite",
@@ -17,10 +17,22 @@
     "utility",
     "toolbox",
     "system",
-    "electron"
+    "electron",
+    "windows-11",
+    "maintenance",
+    "diagnostics",
+    "winget"
   ],
-  "author": "M-Toolbox Team",
+  "author": "Mark Angyal",
   "license": "MIT",
+  "homepage": "https://github.com/marka87/M-Toolbox#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marka87/M-Toolbox.git"
+  },
+  "bugs": {
+    "url": "https://github.com/marka87/M-Toolbox/issues"
+  },
   "dependencies": {
     "better-sqlite3": "^11.8.1",
     "framer-motion": "^11.18.2",

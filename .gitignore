@@ -8,6 +8,7 @@ release/
 
 # Logs
 *.log
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -21,9 +22,19 @@ yarn-error.log*
 *.db
 *.sqlite
 *.sqlite3
+backups/
+backup/
+temp/
+tmp/
 
 # OS files
 Thumbs.db
 [Dd]esktop.ini
 .DS_Store
 
+# Editor and Electron caches
+.vscode/.cache/
+.vscode/*.cache
+.electron/
+.electron-cache/
+electron-cache/

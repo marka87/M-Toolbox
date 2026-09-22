@@ -1,48 +1,108 @@
 # M-Toolbox
 
-> Moderne Windows 11 Desktop System-Utility-Suite auf Basis von Electron, React, TypeScript und Windows-Bordmitteln.
+> Moderne Windows-11-System-Utility-Suite für Wartung, Diagnose, Reparatur und Optimierung.
 
-[![Version](https://img.shields.io/badge/Version-1.9.0-blue.svg)](https://github.com/marka87/M-Toolbox)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%2011-0078d4.svg)](https://microsoft.com/windows)
+[![Version](https://img.shields.io/github/package-json/v/marka87/M-Toolbox?label=version)](https://github.com/marka87/M-Toolbox/releases)
+[![License](https://img.shields.io/github/license/marka87/M-Toolbox)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%2011%20x64-0078D4)](https://www.microsoft.com/windows/windows-11)
+[![Electron](https://img.shields.io/badge/Electron-34-47848F)](https://www.electronjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18-61DAFB)](https://react.dev/)
 
----
+M-Toolbox bündelt native Windows-Werkzeuge, PowerShell, Winget und eine moderne Fluent-Oberfläche in einer Desktop-Anwendung. Die Suite arbeitet lokal und bietet verständliche, nachvollziehbare Aktionen für Administration und tägliche Pflege.
 
-## 🚀 Übersicht der Module
+## Features
 
-M-Toolbox besteht aus 10 aufeinander abgestimmten Modulen für Wartung, Bereinigung, Optimierung und Diagnose:
+- **Dashboard** – CPU, RAM, GPU, Speicher, Betriebssystem und Live-Metriken.
+- **Software Center** – kuratierter Winget-Katalog, Suche, Kategorien, Batch-Installation und Updates.
+- **Backup & Restore** – Winget-Pakete, Explorer-Einstellungen, Fonts, Wallpaper und PowerShell-Module.
+- **Driver Center** – Treiberinventar, Problemgeräte, Export, GPU-Informationen und Online-Suche.
+- **Cleanup Center** – temporäre Dateien, Update-Cache, Browser-Caches, Crash Dumps und Papierkorb.
+- **Repair Center** – SFC, DISM, Windows-Update-, Netzwerk-, Spooler- und AppX-Reparaturen.
+- **Tweaks** – Explorer-, Datenschutz-, Gaming- und Windows-11-Oberflächenanpassungen.
+- **Network Toolkit** – Adapterdiagnose, WAN-IP, Ping-Matrix, DNS-Benchmark und Port-Scanner.
+- **Advanced Tools** – Windows-Tools, Autostart-Verwaltung und Hosts-Datei-Editor.
+- **Settings** – Themes, Akzentfarben, Autostart, Updates, Cache und Systeminformationen.
 
-1. **Dashboard** (`v1.0.0`) – Vollständige Systemübersicht (CPU, RAM, GPU, OS) mit ressourcenschonendem Echtzeit-Streaming.
-2. **Software Center** (`v1.1.0`) – Grafischer Paketmanager auf Basis von `winget` mit kuratiertem Software-Katalog und Batch-Installationen.
-3. **Backup & Restore** (`v1.2.0`) – Granulare Sicherung & Wiederherstellung von Winget-Paketen, Explorer-Einstellungen, User-Fonts, Wallpaper und PowerShell-Modulen.
-4. **Driver Center** (`v1.3.1`) – Geräte- & OEM-Treiber-Inventar, Problem-Diagnose, 1-Klick Treiber-Export, GPU-Aktualitätsprüfung und Online-Treibersuche (Microsoft Update-Katalog & Windows Update).
-5. **Cleanup Center** (`v1.4.0`) – Temporäre Dateien, Update-Cache, Crash Dumps, Browser-Caches, Papierkorb & Speicherplatz-Analyse.
-6. **Repair Center** (`v1.5.0`) – Windows-Systemreparaturen (SFC /scannow, DISM RestoreHealth, Windows Update Reset, Netzwerk-Stack Reset, Spooler & AppX-Reparatur).
-7. **Tweaks** (`v1.6.0`) – Windows 11 Oberflächen- & Leistungsoptimierungen (Klassisches Kontextmenü, Dateiendungen, Widgets, Telemetrie, Gaming & Explorer-Neustart).
-8. **Netzwerk Toolkit** (`v1.7.0`) – Latenz- & Ping-Monitor, DNS-Benchmark, nativer TCP-Port-Scanner, Adapter-Übersicht & Flush DNS.
-9. **Advanced Tools** (`v1.8.0`) – Windows-Tools Launcher (17 Verwaltungstools, God Mode), Autostart-Manager & Hosts-Datei Editor.
-10. **Settings** (`v1.9.0`) – App-Konfiguration, Fluent Theme (Dark/Light/System), 5 Akzentfarben, Windows-Autostart, Live GitHub Update-Prüfung, AppData-Verwaltung und System-Info.
+## Screenshots
 
----
+| Dashboard | Software Center |
+| --- | --- |
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Software Center](docs/screenshots/software-center.png) |
 
-## 🛠️ Entwicklung & Mitarbeit von Agenten
+| Driver Center | Cleanup Center |
+| --- | --- |
+| ![Driver Center](docs/screenshots/driver-center.png) | ![Cleanup Center](docs/screenshots/cleanup-center.png) |
 
-Für alle Entwickler und KI-Agenten, die am Projekt mitarbeiten, existiert eine verbindliche Richtlinie:
+| Repair Center | Tweaks |
+| --- | --- |
+| ![Repair Center](docs/screenshots/repair-center.png) | ![Tweaks Center](docs/screenshots/tweaks-center.png) |
 
-👉 **[AGENT_GUIDE.md](./AGENT_GUIDE.md)**
+Die Bilddateien liegen unter [`docs/screenshots/`](docs/screenshots/). Platzhalter können dort durch aktuelle Aufnahmen ersetzt werden.
 
-Dort sind alle kritischen System-Gotchas (z. B. subst-Laufwerk `A:\`, Node.js Pfade, Tabuzonen und Versionsrichtlinien) genau dokumentiert.
+## Installation
 
----
+1. Lade die aktuelle Setup-Datei oder die portable Version aus den [GitHub Releases](https://github.com/marka87/M-Toolbox/releases).
+2. Starte den Installer als normaler Windows-Benutzer.
+3. Für einzelne Reparatur- und Systemaktionen fordert M-Toolbox bei Bedarf Administratorrechte an.
 
-## 💻 Schnellstart (Entwicklung)
+Voraussetzungen:
+
+- Windows 11 x64
+- Winget für das Software Center
+- PowerShell 5.1 oder neuer
+
+## Entwicklung
 
 ```powershell
-# In PowerShell:
+git clone https://github.com/marka87/M-Toolbox.git
+cd M-Toolbox
+npm ci
 npm run dev
-
-# Bauen & TypeScript-Check:
-npm run typecheck
-npm run build:renderer
 ```
 
+Weitere Regeln und bekannte Windows-Entwicklungsdetails stehen in [`AGENT_GUIDE.md`](AGENT_GUIDE.md).
+
+## Build
+
+```powershell
+npm run typecheck
+npm run build:renderer
+npm run build:setup
+npm run build:portable
+```
+
+Die fertigen Dateien werden in `release/` abgelegt. Alternativ stehen [`release.cmd`](release.cmd) und [`release.ps1`](release.ps1) zur Verfügung.
+
+## Projektstruktur
+
+```text
+src/
+├── main/                 # Electron Main Process und native Services
+├── preload/              # Sichere Context-Bridge
+├── renderer/             # React-Oberfläche
+└── shared/               # IPC-Kanäle und gemeinsame Typen
+.github/                 # Workflows, Templates und Dependabot
+docs/                    # Screenshots, Assets und Projekt-Dokumentation
+```
+
+## Roadmap
+
+Der aktuelle Stand und geplante Arbeiten stehen in [`ROADMAP.md`](ROADMAP.md).
+
+## Changelog
+
+Release-Historie nach Keep-a-Changelog: [`CHANGELOG.md`](CHANGELOG.md).
+
+## Lizenz
+
+M-Toolbox ist unter der [MIT-Lizenz](LICENSE) veröffentlicht.
+
+## Credits
+
+- **Mark Angyal** – Projekt und Maintainer
+- Electron, React, TypeScript, Vite, Tailwind CSS, SQLite, Winget und Windows-Systemwerkzeuge
+
+## Support
+
+Für Fehler, Vorschläge und Fragen siehe [`SUPPORT.md`](SUPPORT.md). Sicherheitsprobleme bitte ausschließlich gemäß [`SECURITY.md`](SECURITY.md) melden.
