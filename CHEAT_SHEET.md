@@ -67,3 +67,10 @@ git push origin v1.9.1
 | `git tag -d v1.9.1` | Löscht einen lokalen Tag (falls vertippt) |
 | `git push origin --delete v1.9.1` | Löscht einen Tag auf GitHub |
 
+## Korrekte Reihenfolge
+npm version x.x.x --no-git-tag-version
+git add package.json package-lock.json
+git commit -m "chore: bump version to 1.9.3"
+git tag -d vx.x.x
+git tag vx.x.x
+

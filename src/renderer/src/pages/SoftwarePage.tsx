@@ -57,6 +57,7 @@ export const SoftwarePage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<SoftwareCategory>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<SoftwareViewMode>('normal')
+  const [installedSort, setInstalledSort] = useState<'name' | 'version'>('name')
   const [showLogs, setShowLogs] = useState(false)
   const logContainerRef = useRef<HTMLDivElement>(null)
 
@@ -91,10 +92,16 @@ export const SoftwarePage: React.FC = () => {
   // Filtered Installed
   const filteredInstalled = useMemo(() => {
     const q = searchQuery.toLowerCase()
-    return installed.filter((pkg) => {
-      return !q || pkg.name.toLowerCase().includes(q) || pkg.id.toLowerCase().includes(q)
-    })
-  }, [installed, searchQuery])
+    return installed
+      .filter((pkg) => {
+        return !q || pkg.name.toLowerCase().includes(q) || pkg.id.toLowerCase().includes(q)
+      })
+      .sort((a, b) =>
+        installedSort === 'name'
+          ? a.name.localeCompare(b.name, 'de')
+          : b.version.localeCompare(a.version, undefined, { numeric: true })
+      )
+  }, [installed, searchQuery, installedSort])
 
   // Filtered Updates
   const filteredUpdates = useMemo(() => {
@@ -104,8 +111,34 @@ export const SoftwarePage: React.FC = () => {
     })
   }, [updates, searchQuery])
 
+  const catalogGridClass =
+    viewMode === 'normal'
+      ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'
+      : viewMode === 'compact'
+      ? 'flex flex-col space-y-2'
+      : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3'
+
+  const renderCatalogPackages = (packages: typeof filteredCatalog) => (
+    <div className={catalogGridClass}>
+      {packages.map((pkg) => (
+        <PackageCard
+          key={pkg.id}
+          pkg={pkg}
+          isSelected={selectedPackages.has(pkg.id)}
+          isOperating={isOperating}
+          isCurrentActive={activePackageId === pkg.id}
+          viewMode={viewMode}
+          onToggleSelect={toggleSelectPackage}
+          onInstall={installPackage}
+          onUninstall={uninstallPackage}
+          onUpgrade={upgradePackage}
+        />
+      ))}
+    </div>
+  )
+
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6 pb-28">
+    <div className="w-full max-w-[1500px] mx-auto p-8 space-y-6 pb-28">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -205,44 +238,43 @@ export const SoftwarePage: React.FC = () => {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-fluent-muted" />
-          <input
-            type="text"
-            placeholder={
-              activeTab === 'catalog'
-                ? 'Katalog durchsuchen...'
-                : activeTab === 'installed'
-                ? 'Installierte Software durchsuchen...'
-                : 'Updates durchsuchen...'
-            }
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg bg-fluent-card border border-fluent-border text-xs text-slate-100 placeholder:text-fluent-muted focus:outline-none focus:border-fluent-accent transition-colors"
-          />
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1 max-w-xl">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-fluent-muted" />
+            <input
+              type="text"
+              placeholder={
+                activeTab === 'catalog'
+                  ? 'Katalog durchsuchen...'
+                  : activeTab === 'installed'
+                  ? 'Installierte Software durchsuchen...'
+                  : 'Updates durchsuchen...'
+              }
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-lg bg-fluent-card border border-fluent-border text-xs text-slate-100 placeholder:text-fluent-muted focus:outline-none focus:border-fluent-accent transition-colors"
+            />
+          </div>
+
+          {activeTab === 'installed' && (
+            <label className="inline-flex items-center gap-2 text-xs text-fluent-muted whitespace-nowrap">
+              <span>Sortieren:</span>
+              <select
+                value={installedSort}
+                onChange={(event) => setInstalledSort(event.target.value as 'name' | 'version')}
+                className="px-2.5 py-2 rounded-lg bg-fluent-card border border-fluent-border text-xs text-slate-200 focus:outline-none focus:border-fluent-accent"
+              >
+                <option value="name">Name A–Z</option>
+                <option value="version">Version</option>
+              </select>
+            </label>
+          )}
         </div>
 
-        {/* Category Pills & View Switcher (Only for Catalog) */}
+        {/* View Switcher (Categories are kept in the left navigation) */}
         {activeTab === 'catalog' && (
-          <div className="flex items-center gap-3 overflow-x-auto pb-1 max-w-full">
-            <div className="flex items-center gap-1.5 overflow-x-auto">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                    selectedCategory === cat.id
-                      ? 'bg-fluent-card border border-fluent-accent text-fluent-accent'
-                      : 'bg-fluent-card/50 border border-fluent-border/60 text-fluent-muted hover:text-white'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-
-            {/* View Mode Switcher */}
+          <div className="flex justify-end pb-1">
             <div className="flex items-center rounded-lg bg-fluent-card border border-fluent-border/70 p-0.5 shrink-0">
               <button
                 onClick={() => setViewMode('normal')}
@@ -295,29 +327,92 @@ export const SoftwarePage: React.FC = () => {
               Keine Software gefunden für &quot;{searchQuery}&quot;.
             </div>
           ) : (
-            <div
-              className={
-                viewMode === 'normal'
-                  ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'
-                  : viewMode === 'compact'
-                  ? 'flex flex-col space-y-2'
-                  : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3'
-              }
-            >
-              {filteredCatalog.map((pkg) => (
-                <PackageCard
-                  key={pkg.id}
-                  pkg={pkg}
-                  isSelected={selectedPackages.has(pkg.id)}
-                  isOperating={isOperating}
-                  isCurrentActive={activePackageId === pkg.id}
-                  viewMode={viewMode}
-                  onToggleSelect={toggleSelectPackage}
-                  onInstall={installPackage}
-                  onUninstall={uninstallPackage}
-                  onUpgrade={upgradePackage}
-                />
-              ))}
+            <div className="flex flex-col lg:flex-row items-start gap-6">
+              <aside className="w-full lg:w-56 shrink-0 rounded-fluent border border-fluent-border bg-fluent-card/60 p-4 space-y-4 lg:sticky lg:top-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider font-semibold text-fluent-accent mb-2">
+                    Aktionen
+                  </p>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => setSelectedCategory('all')}
+                      className="w-full px-3 py-2 rounded-lg bg-fluent-accent/15 border border-fluent-accent/30 text-left text-xs font-medium text-fluent-accent hover:bg-fluent-accent/25 transition-colors"
+                    >
+                      Katalog anzeigen
+                    </button>
+                    <button
+                      onClick={refresh}
+                      disabled={isLoading || isOperating}
+                      className="w-full px-3 py-2 rounded-lg bg-fluent-card border border-fluent-border text-left text-xs text-slate-200 hover:border-fluent-accent/50 transition-colors disabled:opacity-50"
+                    >
+                      Katalog aktualisieren
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border-t border-fluent-border/70 pt-4">
+                  <p className="text-[10px] uppercase tracking-wider font-semibold text-fluent-accent mb-2">
+                    Auswahl
+                  </p>
+                  <p className="text-xs text-fluent-muted mb-3">
+                    {selectedPackages.size === 0
+                      ? 'Keine Programme ausgewählt'
+                      : `${selectedPackages.size} ${selectedPackages.size === 1 ? 'Programm' : 'Programme'} ausgewählt`}
+                  </p>
+                  <button
+                    onClick={clearSelection}
+                    disabled={selectedPackages.size === 0 || isOperating}
+                    className="w-full px-3 py-2 rounded-lg bg-fluent-card border border-fluent-border text-xs text-fluent-muted hover:text-slate-200 transition-colors disabled:opacity-40"
+                  >
+                    Auswahl leeren
+                  </button>
+                </div>
+
+                <div className="border-t border-fluent-border/70 pt-4">
+                  <p className="text-[10px] uppercase tracking-wider font-semibold text-fluent-accent mb-2">
+                    Kategorien
+                  </p>
+                  <div className="space-y-1">
+                    {CATEGORIES.filter((category) => category.id !== 'all').map((category) => {
+                      const count = catalog.filter((pkg) => pkg.category === category.id).length
+                      return (
+                        <button
+                          key={category.id}
+                          onClick={() => setSelectedCategory(category.id)}
+                          className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs text-fluent-muted hover:bg-fluent-card hover:text-slate-200 transition-colors"
+                        >
+                          <span>{category.label}</span>
+                          <span className="text-[10px] text-fluent-subtext">{count}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </aside>
+
+              <div className="min-w-0 flex-1 w-full max-w-[1120px] mx-auto space-y-8">
+                {selectedCategory === 'all'
+                  ? CATEGORIES.filter((category) => category.id !== 'all').map((category) => {
+                      const packages = filteredCatalog.filter((pkg) => pkg.category === category.id)
+                      if (packages.length === 0) return null
+                      return (
+                        <section key={category.id} aria-labelledby={`category-${category.id}`}>
+                          <div className="flex items-center gap-3 mb-3">
+                            <h2
+                              id={`category-${category.id}`}
+                              className="text-sm font-semibold text-slate-100"
+                            >
+                              {category.label}
+                            </h2>
+                            <span className="text-[10px] text-fluent-muted">{packages.length} Programme</span>
+                            <div className="h-px flex-1 bg-fluent-border/60" />
+                          </div>
+                          {renderCatalogPackages(packages)}
+                        </section>
+                      )
+                    })
+                  : renderCatalogPackages(filteredCatalog)}
+              </div>
             </div>
           )}
         </div>
@@ -341,25 +436,35 @@ export const SoftwarePage: React.FC = () => {
                 <thead>
                   <tr className="border-b border-fluent-border bg-fluent-card/80 text-fluent-subtext font-semibold">
                     <th className="py-3 px-4">Programmname</th>
-                    <th className="py-3 px-4">Paket-ID</th>
                     <th className="py-3 px-4">Version</th>
-                    <th className="py-3 px-4">Quelle</th>
+                    <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4 text-right">Aktion</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-fluent-border/40">
                   {filteredInstalled.map((pkg) => (
                     <tr key={pkg.id} className="hover:bg-fluent-card/40 transition-colors">
-                      <td className="py-2.5 px-4 font-medium text-slate-200">{pkg.name}</td>
-                      <td className="py-2.5 px-4 text-fluent-muted font-mono text-[11px] truncate max-w-[200px]">
-                        {pkg.id}
+                      <td className="py-2.5 px-4 font-medium text-slate-200">
+                        <span title={`${pkg.id}${pkg.source ? ` · Quelle: ${pkg.source}` : ''}`}>{pkg.name}</span>
                       </td>
                       <td className="py-2.5 px-4 text-slate-300">
                         <span className="px-2 py-0.5 rounded bg-fluent-bg text-[11px] border border-fluent-border/40 font-mono">
                           {pkg.version}
                         </span>
                       </td>
-                      <td className="py-2.5 px-4 text-fluent-muted text-[11px]">{pkg.source || 'Lokal'}</td>
+                      <td className="py-2.5 px-4">
+                        {pkg.availableVersion ? (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-yellow/15 text-fluent-status-yellow border border-fluent-status-yellow/20">
+                            <ArrowUpCircle className="w-3 h-3" />
+                            Update verfügbar
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-green/15 text-fluent-status-green border border-fluent-status-green/20">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Installiert
+                          </span>
+                        )}
+                      </td>
                       <td className="py-2.5 px-4 text-right">
                         <button
                           onClick={() => uninstallPackage(pkg.id)}
@@ -367,7 +472,7 @@ export const SoftwarePage: React.FC = () => {
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs text-fluent-muted hover:text-fluent-status-red hover:bg-fluent-status-red/10 border border-transparent hover:border-fluent-status-red/30 transition-colors disabled:opacity-50"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          <span>Deinstallieren</span>
+                          <span className="hidden sm:inline">Deinstallieren</span>
                         </button>
                       </td>
                     </tr>
@@ -475,7 +580,7 @@ export const SoftwarePage: React.FC = () => {
 
       {/* Live Log Console Drawer */}
       {showLogs && (
-        <div className="fixed bottom-0 left-64 right-0 z-40 bg-fluent-sidebar/95 border-t border-fluent-border backdrop-blur-md shadow-2xl p-4 transition-all">
+        <div className="fixed bottom-0 left-64 right-0 z-40 bg-fluent-sidebar/95 border-t border-fluent-border backdrop-blur-md shadow-2xl p-3 transition-all">
           <div className="flex items-center justify-between pb-2 border-b border-fluent-border/60 mb-2">
             <div className="flex items-center gap-2">
               <Terminal className="w-4 h-4 text-fluent-accent" />
@@ -502,7 +607,7 @@ export const SoftwarePage: React.FC = () => {
 
           <div
             ref={logContainerRef}
-            className="h-44 overflow-y-auto font-mono text-[11px] text-slate-300 bg-black/40 p-3 rounded-lg space-y-1 select-text"
+            className="h-28 overflow-y-auto font-mono text-[11px] text-slate-300 bg-black/40 p-3 rounded-lg space-y-1 select-text"
           >
             {operationLogs.length === 0 ? (
               <span className="text-fluent-muted italic">Keine aktuellen Ausgaben vorhanden.</span>
@@ -519,4 +624,3 @@ export const SoftwarePage: React.FC = () => {
     </div>
   )
 }
-

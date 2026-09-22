@@ -280,6 +280,69 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     category: 'utilities',
     publisher: 'ShareX Team'
   },
+  {
+    id: 'WinSCP.WinSCP',
+    name: 'WinSCP',
+    description: 'Sicherer Dateiübertragungs-Client für SFTP, SCP, FTP und WebDAV.',
+    category: 'utilities',
+    publisher: 'Martin Prikryl'
+  },
+  {
+    id: 'JanDeDobbeleer.OhMyPosh',
+    name: 'Oh My Posh',
+    description: 'Anpassbare Prompt-Engine für PowerShell, Windows Terminal und weitere Shells.',
+    category: 'utilities',
+    publisher: 'Jan De Dobbeleer'
+  },
+  {
+    id: 'Microsoft.Sysinternals.Autoruns',
+    name: 'Autoruns',
+    description: 'Zeigt detailliert, welche Programme und Dienste beim Windows-Start geladen werden.',
+    category: 'utilities',
+    publisher: 'Microsoft Corporation'
+  },
+  {
+    id: 'Microsoft.Sysinternals.ProcessExplorer',
+    name: 'Process Explorer',
+    description: 'Erweiterte Prozess- und Handle-Analyse als leistungsfähige Task-Manager-Alternative.',
+    category: 'utilities',
+    publisher: 'Microsoft Corporation'
+  },
+  {
+    id: 'Microsoft.Sysinternals.ProcessMonitor',
+    name: 'Process Monitor',
+    description: 'Überwacht Datei-, Registry- und Prozesszugriffe in Echtzeit.',
+    category: 'utilities',
+    publisher: 'Microsoft Corporation'
+  },
+  {
+    id: 'FilesCommunity.Files',
+    name: 'Files',
+    description: 'Moderner Open-Source-Dateimanager mit Tabs und Windows-11-Integration.',
+    category: 'utilities',
+    publisher: 'Files Community'
+  },
+  {
+    id: 'voidtools.Everything.Lite',
+    name: 'Everything Lite',
+    description: 'Schlanke Variante der extrem schnellen Dateisuche für Windows.',
+    category: 'utilities',
+    publisher: 'voidtools'
+  },
+  {
+    id: 'qBittorrent.qBittorrent',
+    name: 'qBittorrent',
+    description: 'Leistungsfähiger Open-Source-BitTorrent-Client ohne Werbeeinblendungen.',
+    category: 'utilities',
+    publisher: 'The qBittorrent Project'
+  },
+  {
+    id: 'gerardog.gsudo',
+    name: 'gsudo',
+    description: 'Sudo-ähnliches Kommandozeilenwerkzeug für erhöhte Windows-Prozesse.',
+    category: 'utilities',
+    publisher: 'gerardog'
+  },
 
   // Media
   {
@@ -338,6 +401,41 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     category: 'media',
     publisher: 'Codec Guide'
   },
+  {
+    id: 'Daum.PotPlayer',
+    name: 'PotPlayer',
+    description: 'Flexibler Media-Player mit umfangreicher Format- und Codec-Unterstützung.',
+    category: 'media',
+    publisher: 'Daum Communications'
+  },
+  {
+    id: 'KDE.Kdenlive',
+    name: 'Kdenlive',
+    description: 'Leistungsfähiger Open-Source-Videoeditor für mehrspurige Projekte.',
+    category: 'media',
+    publisher: 'KDE'
+  },
+  {
+    id: 'BlenderFoundation.Blender',
+    name: 'Blender',
+    description: '3D-Suite für Modellierung, Animation, Rendering und Videobearbeitung.',
+    category: 'media',
+    publisher: 'Blender Foundation'
+  },
+  {
+    id: 'Inkscape.Inkscape',
+    name: 'Inkscape',
+    description: 'Vektorgrafik-Editor für Illustrationen, Logos und technische Zeichnungen.',
+    category: 'media',
+    publisher: 'Inkscape Project'
+  },
+  {
+    id: 'Microsoft.WindowsCamera',
+    name: 'Windows Kamera',
+    description: 'Microsoft-Kameraanwendung für Webcam-Aufnahmen und Videoanrufe.',
+    category: 'media',
+    publisher: 'Microsoft Corporation'
+  },
 
   // Communication
   {
@@ -382,6 +480,41 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     category: 'communication',
     publisher: 'Zoom Video Communications'
   },
+  {
+    id: 'Microsoft.Teams',
+    name: 'Microsoft Teams',
+    description: 'Arbeitsbereich für Chat, Besprechungen, Dateien und Teamzusammenarbeit.',
+    category: 'communication',
+    publisher: 'Microsoft Corporation'
+  },
+  {
+    id: 'Mozilla.Thunderbird',
+    name: 'Mozilla Thunderbird',
+    description: 'Freier E-Mail-Client mit Kalender, Kontakten und Erweiterungssystem.',
+    category: 'communication',
+    publisher: 'Mozilla'
+  },
+  {
+    id: 'Element.Element',
+    name: 'Element',
+    description: 'Sicherer, Matrix-basierter Messenger für Chats, Anrufe und Zusammenarbeit.',
+    category: 'communication',
+    publisher: 'Element'
+  },
+  {
+    id: 'TeamSpeakSystems.TeamSpeakClient',
+    name: 'TeamSpeak Client',
+    description: 'Sprachkommunikation mit geringer Latenz für Teams und Gaming.',
+    category: 'communication',
+    publisher: 'TeamSpeak Systems'
+  },
+  {
+    id: 'Mumble.Mumble',
+    name: 'Mumble',
+    description: 'Open-Source-Sprachchat mit niedriger Latenz und eigener Serververwaltung.',
+    category: 'communication',
+    publisher: 'The Mumble Team'
+  },
 
   // Gaming
   {
@@ -413,6 +546,13 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     publisher: 'Electronic Arts'
   },
   {
+    id: 'PrismLauncher.PrismLauncher',
+    name: 'Prism Launcher',
+    description: 'Schneller, moderner Open-Source-Launcher für Minecraft mit Mod-Support.',
+    category: 'gaming',
+    publisher: 'Prism Launcher Community'
+  },
+  {
     id: 'Ubisoft.Connect',
     name: 'Ubisoft Connect',
     description: 'Spielebibliothek und Launcher für Ubisoft-Titel.',
@@ -420,11 +560,32 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     publisher: 'Ubisoft'
   },
   {
-    id: 'PrismLauncher.PrismLauncher',
-    name: 'Prism Launcher',
-    description: 'Schneller, moderner Open-Source-Launcher für Minecraft mit Mod-Support.',
+    id: 'Microsoft.XboxApp',
+    name: 'Xbox App',
+    description: 'Xbox-Spielebibliothek, PC Game Pass und soziale Funktionen für Windows.',
     category: 'gaming',
-    publisher: 'Prism Launcher Community'
+    publisher: 'Microsoft Corporation'
+  },
+  {
+    id: 'Nvidia.GeForceExperience',
+    name: 'NVIDIA App',
+    description: 'Verwaltet NVIDIA-Treiber, Spieleprofile und Grafikkartenfunktionen.',
+    category: 'gaming',
+    publisher: 'NVIDIA Corporation'
+  },
+  {
+    id: 'Overwolf.CurseForge',
+    name: 'CurseForge',
+    description: 'Verwaltung von Mods und Add-ons für beliebte PC-Spiele.',
+    category: 'gaming',
+    publisher: 'Overwolf'
+  },
+  {
+    id: 'LizardByte.Sunshine',
+    name: 'Sunshine',
+    description: 'Host-Anwendung für latenzarmes Game-Streaming im lokalen Netzwerk.',
+    category: 'gaming',
+    publisher: 'LizardByte'
   },
 
   // Runtimes
@@ -455,6 +616,34 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     description: 'Legacy DirectX-Bibliotheken für optimale Kompatibilität älterer Spiele.',
     category: 'runtimes',
     publisher: 'Microsoft Corporation'
+  },
+  {
+    id: 'OpenJS.NodeJS',
+    name: 'Node.js (Current)',
+    description: 'Aktuelle Node.js-Laufzeit für JavaScript-Anwendungen und Werkzeuge.',
+    category: 'runtimes',
+    publisher: 'OpenJS Foundation'
+  },
+  {
+    id: 'Python.Python.3.13',
+    name: 'Python 3.13',
+    description: 'Aktuelle Python-Laufzeit für Automatisierung, Datenverarbeitung und Entwicklung.',
+    category: 'runtimes',
+    publisher: 'Python Software Foundation'
+  },
+  {
+    id: 'Microsoft.DotNet.Runtime.8',
+    name: '.NET Runtime 8',
+    description: 'Microsoft-Laufzeit für moderne .NET-Anwendungen ohne Desktop-Framework.',
+    category: 'runtimes',
+    publisher: 'Microsoft Corporation'
+  },
+  {
+    id: 'Oracle.JavaRuntimeEnvironment',
+    name: 'Java Runtime Environment',
+    description: 'Java-Laufzeitumgebung für Anwendungen, Tools und ältere Spiele.',
+    category: 'runtimes',
+    publisher: 'Oracle'
   }
 ]
 
@@ -763,4 +952,3 @@ export class SoftwareService {
     })
   }
 }
-

@@ -16,7 +16,7 @@ call npm run typecheck
 if %ERRORLEVEL% NEQ 0 (
     echo [FEHLER] TypeScript-Fehler gefunden! Abbruch.
     pause
-    exit /b 1
+    exit /b 1>
 )
 
 echo.
