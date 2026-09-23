@@ -13,14 +13,27 @@ import { AdvancedPage } from './pages/AdvancedPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { RAMGuardianPage } from './pages/RAMGuardianPage'
 import { BatteryPage } from './pages/BatteryPage'
+import { MiniHudWidget } from './components/ui/MiniHudWidget'
 import { useSettings } from './hooks/useSettings'
 import type { NavigationModule } from '@shared/types'
 
 export const App: React.FC = () => {
+  const isWidgetView =
+    window.location.search.includes('view=widget') ||
+    window.location.hash.includes('widget')
+
   const [activeModule, setActiveModule] = useState<NavigationModule>('dashboard')
 
   // Initialize app settings, accent colors and theme DOM styling on root load
   useSettings()
+
+  if (isWidgetView) {
+    return (
+      <div className="w-screen h-screen overflow-hidden bg-transparent p-0 m-0">
+        <MiniHudWidget />
+      </div>
+    )
+  }
 
   const renderModuleContent = () => {
     switch (activeModule) {

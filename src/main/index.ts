@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { registerIpcHandlers } from './ipc'
 import { DatabaseService } from './services/database.service'
 import { DashboardService } from './services/dashboard.service'
+import { WidgetService } from './services/widget.service'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -72,6 +73,11 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null
+    try {
+      WidgetService.getInstance().destroy()
+    } catch {
+      // ignore
+    }
     DashboardService.getInstance().stopMetricsStream()
   })
 }

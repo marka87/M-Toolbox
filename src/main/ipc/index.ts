@@ -14,9 +14,12 @@ import { reinstallService } from '../services/reinstall.service'
 import { ramService } from '../services/ram.service'
 import { databaseService } from '../services/database.service'
 import { batteryService } from '../services/battery.service'
+import { WidgetService } from '../services/widget.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
+  const widgetService = WidgetService.getInstance()
+  widgetService.setMainWindow(mainWindow)
 
   // Dashboard IPC: Get full system information
   ipcMain.handle(IPC_CHANNELS.DASHBOARD.GET_SYSTEM_INFO, async (_, forceRefresh?: boolean) => {
@@ -26,9 +29,11 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   // Dashboard IPC: Start metrics stream
   ipcMain.handle(IPC_CHANNELS.DASHBOARD.START_METRICS_STREAM, () => {
     dashboardService.startMetricsStream((metrics) => {
-      if (!mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(IPC_CHANNELS.DASHBOARD.LIVE_METRICS_EVENT, metrics)
-      }
+      BrowserWindow.getAllWindows().forEach((win) => {
+        if (!win.isDestroyed()) {
+          win.webContents.send(IPC_CHANNELS.DASHBOARD.LIVE_METRICS_EVENT, metrics)
+        }
+      })
     })
     return true
   })
@@ -445,6 +450,27 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.BATTERY.KILL_PROCESS, async (_, pid: number) => {
     return await batteryService.killProcess(pid)
+  })
+
+  // Desktop Widget IPC
+  ipcMain.handle(IPC_CHANNELS.WIDGET.TOGGLE, () => {
+    return widgetService.toggle()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.WIDGET.GET_STATE, () => {
+    return widgetService.getState()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.WIDGET.SET_ALWAYS_ON_TOP, (_, alwaysOnTop: boolean) => {
+    widgetService.setAlwaysOnTop(alwaysOnTop)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.WIDGET.RESTORE_MAIN, () => {
+    widgetService.restoreMainWindow()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.WIDGET.CLOSE, () => {
+    widgetService.closeWidget()
   })
 }
 

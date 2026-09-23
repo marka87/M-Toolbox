@@ -115,5 +115,12 @@ export const IPC_CHANNELS = {
     MINIMIZE_WINDOW: 'system:minimize-window',
     MAXIMIZE_WINDOW: 'system:maximize-window',
     CLOSE_WINDOW: 'system:close-window',
+  },
+  WIDGET: {
+    TOGGLE: 'widget:toggle',
+    GET_STATE: 'widget:get-state',
+    SET_ALWAYS_ON_TOP: 'widget:set-always-on-top',
+    RESTORE_MAIN: 'widget:restore-main',
+    CLOSE: 'widget:close'
   }
 } as const

@@ -99,6 +99,7 @@ export interface LiveMetrics {
   ramTotalGB: number
   networkSendKBps: number
   networkReceiveKBps: number
+  gpuUsagePercent?: number
   timestamp: number
 }
 
@@ -624,4 +625,9 @@ export interface AppVersionInfo {
   arch: string
   userDataPath: string
   logsPath: string
+}
+
+export interface WidgetState {
+  isOpen: boolean
+  alwaysOnTop: boolean
 }

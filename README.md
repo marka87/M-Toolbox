@@ -19,6 +19,7 @@ M-Toolbox bündelt native Windows-Werkzeuge, PowerShell, Winget und eine moderne
 - **Driver Center** – Treiberinventar, Problemgeräte, Export, GPU-Informationen und Online-Suche.
 - **RAM Guardian** – Echtzeit-RAM-Monitoring, Standby-List/Working-Set-Bereinigung, Hygiene-Score, 24h-Verlauf und RAM-Fresser-Inspektor.
 - **Batterie-Manager** – Laptop-Akku-Management, Echtzeit-Watt-Überwachung (Entlade-/Laderate in W), Zellspannung, Kapazitäts- und Verschleißgradanalyse (Wh / mWh), Drain-Inspektor (Top Energie-Fresser), automatische Akku-Drain-Warnungen, interaktiver HTML-Akkubericht und Windows-Energieschemas.
+- **Desktop Mini-HUD Widget** – Schwebendes, transparentes 2×2 Desktop-Overlay für CPU, RAM (inkl. 1-Klick-Bereinigung), GPU und Akku (inkl. Entlade-Wattage), Always-on-Top und Drag & Drop.
 - **Cleanup Center** – Temporäre Dateien, Update-Cache, Browser-Caches, Crash Dumps und Papierkorb.
 - **Repair Center** – SFC, DISM, Windows-Update-, Netzwerk-, Spooler- und AppX-Reparaturen.
 - **Tweaks** – Explorer-, Datenschutz-, Gaming- und Windows-11-Oberflächenanpassungen.

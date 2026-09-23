@@ -15,6 +15,7 @@
 - [x] Advanced Tools
 - [x] Settings und Update-Prüfung
 - [x] Kuratierter Katalog mit 88 Softwarepaketen
+- [x] Desktop Mini-HUD Widget (Kompakt-Kachel 2x2, Live-Metriken, Always-on-Top, Drag & Drop)
 
 ## In Progress
 

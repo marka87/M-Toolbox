@@ -9,6 +9,16 @@ Alle wichtigen Änderungen an M-Toolbox werden hier dokumentiert. Das Format ori
 - Weitere kuratierte Winget-Pakete
 - Verbesserte Release- und Community-Dokumentation
 
+## [2.4.0] - 2026-09-23
+
+### Hinzugefügt
+
+- **Desktop Mini-HUD Widget (Kompakt-Kachel 2×2)**: Frei bewegliches, transparentes Overlay-Fenster (`240 × 120 px`) im Windows 11 Fluent Glassmorphism-Design zur dauerhaften Live-Überwachung von CPU, RAM, GPU und Akku.
+- **Always-on-Top & Drag & Drop**: Vollständig frei per Maus auf dem Desktop positionierbar (`-webkit-app-region: drag`) mit automatischem Positions-Gedächtnis und Umschaltung auf Always-on-Top (📌 Pin).
+- **Live GPU-Performance Monitoring**: Asynchrones, ressourcenschonendes Sampling der GPU-Auslastung über native Windows-Performance-Counter (`Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine`).
+- **1-Klick RAM-Bereinigung direkt im Widget**: Schnelles Besen-Icon zur sofortigen Freigabe von Arbeitsspeicher (`EmptyWorkingSet`) mit visueller Erfolgsrückmeldung.
+- **Doppelklick-Aktion & Titlebar-Integration**: Neues Tacho-Icon im Fensterkopf von M-Toolbox zum Umschalten des Widgets sowie Doppelklick auf die Widget-Fläche, um das Hauptfenster in den Vordergrund zu holen.
+
 ## [2.3.0] - 2026-09-23
 
 ### Hinzugefügt

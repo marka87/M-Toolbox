@@ -1,13 +1,13 @@
 # M-Toolbox: Agent & Entwickler Leitfaden (AGENT_GUIDE.md)
 
-Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler**, die an **M-Toolbox** (aktuell **v2.3.0**) weiterarbeiten. Es dokumentiert den aktuellen Entwicklungsstand, die Architektur, strikte Entwicklungsregeln sowie kritische Systemdetails (**„Was man nicht anfassen darf!“**).
+Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler**, die an **M-Toolbox** (aktuell **v2.4.0**) weiterarbeiten. Es dokumentiert den aktuellen Entwicklungsstand, die Architektur, strikte Entwicklungsregeln sowie kritische Systemdetails (**„Was man nicht anfassen darf!“**).
 
 ---
 
 ## 1. Projektübersicht & Tech-Stack
 
 - **Projekt:** M-Toolbox – Moderne Windows 11 Desktop-System-Utility-Suite
-- **Aktuelle Version:** `v2.3.0`
+- **Aktuelle Version:** `v2.4.0`
 - **Technologie-Stack:**
   - **Electron:** Version 34 (Main Process, IPC, Node.js Integration)
   - **Frontend:** React 18, TypeScript 5.7, Tailwind CSS, Framer Motion, Lucide Icons
@@ -80,6 +80,7 @@ Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler
 | **Modul 10**| **Settings** | `v1.9.0` | ✅ Fertig | Fluent Design (Dark/Light/System), 5 Akzentfarben, Windows-Autostart, GitHub Updates API, AppData & Cache-Verwaltung, System-Info |
 | **Modul 11**| **RAM Guardian** | `v2.1.0` | ✅ Fertig | Echtzeit-RAM-Monitoring, Standby-List/Working-Set-Bereinigung (`EmptyWorkingSet`), Hygiene-Score, 24h-Verlaufshistorie in SQLite, Autostart-Empfehlungen |
 | **Modul 12**| **Batterie-Manager** | `v2.3.0` | ✅ Fertig | ACPI Live-Wattage (Lade-/Entladerate in W), Zellspannung, Kapazitäts- und Verschleißgrad (Wh), Energieschemas, HTML-Akkubericht, Top-Drain-Inspektor, Drain-Alerts mit Kill-Option, akkuschonender 8s-Timer, Selbstschutz |
+| **Modul 13**| **Desktop Mini-HUD** | `v2.4.0` | ✅ Fertig | Transparentes 2×2 Overlay-Fenster, Live-CPU/RAM/GPU/Akku (Wattage), Always-on-Top, Drag & Drop, 1-Klick RAM-Clean |
 
 ---
 
@@ -134,7 +135,8 @@ M-Toolbox/
 │   │       ├── repair.service.ts
 │   │       ├── settings.service.ts
 │   │       ├── software.service.ts
-│   │       └── tweak.service.ts
+│   │       ├── tweak.service.ts
+│   │       └── widget.service.ts         # Desktop Mini-HUD Fenstersteuerung & Bounds
 │   ├── preload/               # Preload-Skript (Sichere ContextBridge)
 │   │   └── index.ts           # Exponiert window.mToolbox.* typisiert
 │   ├── shared/                # Gemeinsam genutzter Code
@@ -200,4 +202,5 @@ M-Toolbox/
 - **`window.mToolbox.ram`:** `getStats()`, `getTopProcesses()`, `getHygiene()`, `getRecommendations()`, `getHealthScore()`, `getHistory24h()`, `cleanWindows()`, `disableStartup()`
 - **`window.mToolbox.battery`:** `getInfo()`, `setPowerPlan()`, `generateReport()`, `killProcess()`
 - **`window.mToolbox.settings`:** `getSettings()`, `saveSettings()`, `checkUpdates()`, `getAppInfo()`, `openUserDataFolder()`, `clearCache()`, `resetSettings()`
+- **`window.mToolbox.widget`:** `toggle()`, `getState()`, `setAlwaysOnTop()`, `restoreMainWindow()`, `close()`
 - **`window.mToolbox.system`:** `minimize()`, `maximize()`, `close()`, `openExternal()`

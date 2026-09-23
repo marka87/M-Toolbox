@@ -1,5 +1,5 @@
 import React from 'react'
-import { Minus, Square, X, Wrench } from 'lucide-react'
+import { Minus, Square, X, Wrench, Gauge } from 'lucide-react'
 
 export const Titlebar: React.FC = () => {
   const handleMinimize = () => {
@@ -12,6 +12,10 @@ export const Titlebar: React.FC = () => {
 
   const handleClose = () => {
     window.mToolbox?.system?.close()
+  }
+
+  const handleToggleWidget = () => {
+    window.mToolbox?.widget?.toggle()
   }
 
   return (
@@ -27,6 +31,13 @@ export const Titlebar: React.FC = () => {
       </div>
 
       <div className="titlebar-no-drag flex items-center">
+        <button
+          onClick={handleToggleWidget}
+          className="w-10 h-10 flex items-center justify-center text-fluent-muted hover:text-cyan-400 hover:bg-white/5 transition-colors"
+          title="Desktop Mini-HUD Widget (Overlay) ein-/ausblenden"
+        >
+          <Gauge className="w-3.5 h-3.5" />
+        </button>
         <button
           onClick={handleMinimize}
           className="w-10 h-10 flex items-center justify-center text-fluent-muted hover:text-white hover:bg-white/5 transition-colors"

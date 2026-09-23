@@ -38,7 +38,8 @@ import type {
   HostsFileContent,
   AppSettings,
   UpdateCheckResult,
-  AppVersionInfo
+  AppVersionInfo,
+  WidgetState
 } from '../shared/types'
 import type {
   ReinstallArchiveSummary,
@@ -172,6 +173,13 @@ export interface MToolboxAPI {
     maximize: () => Promise<void>
     close: () => Promise<void>
     openExternal: (url: string) => Promise<void>
+  }
+  widget: {
+    toggle: () => Promise<boolean>
+    getState: () => Promise<WidgetState>
+    setAlwaysOnTop: (alwaysOnTop: boolean) => Promise<void>
+    restoreMainWindow: () => Promise<void>
+    close: () => Promise<void>
   }
 }
 
@@ -364,6 +372,13 @@ const api: MToolboxAPI = {
     maximize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MAXIMIZE_WINDOW),
     close: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.CLOSE_WINDOW),
     openExternal: (url) => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.OPEN_EXTERNAL, url),
+  },
+  widget: {
+    toggle: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.TOGGLE),
+    getState: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.GET_STATE),
+    setAlwaysOnTop: (alwaysOnTop: boolean) => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.SET_ALWAYS_ON_TOP, alwaysOnTop),
+    restoreMainWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.RESTORE_MAIN),
+    close: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.CLOSE)
   }
 }
 

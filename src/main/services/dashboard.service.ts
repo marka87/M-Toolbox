@@ -20,6 +20,9 @@ export class DashboardService {
   private lastCpuTimes: { idle: number; total: number } | null = null
   private lastNetStats: { rxBytes: number; txBytes: number; timestamp: number } | null = null
   private cachedSystemInfo: SystemInfo | null = null
+  private cachedGpuUsage = 0
+  private isSamplingGpu = false
+  private lastGpuSampleTime = 0
 
   private constructor() {
     this.ps = PowerShellService.getInstance()
@@ -299,6 +302,27 @@ export class DashboardService {
     }
   }
 
+  private sampleGpuUsageAsync(): void {
+    const now = Date.now()
+    if (this.isSamplingGpu || now - this.lastGpuSampleTime < 3500) {
+      return
+    }
+    this.isSamplingGpu = true
+    this.lastGpuSampleTime = now
+
+    const cmd = `Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Measure-Object -Property UtilizationPercentage -Sum | Select-Object -ExpandProperty Sum`
+    this.ps.executeCommand(cmd).then(res => {
+      const val = parseInt(res.stdout.trim(), 10)
+      if (!isNaN(val)) {
+        this.cachedGpuUsage = Math.min(100, Math.max(0, val))
+      }
+    }).catch(() => {
+      // silently keep previous cached value
+    }).finally(() => {
+      this.isSamplingGpu = false
+    })
+  }
+
   /**
    * Reads one snapshot of live metrics.
    */
@@ -313,6 +337,7 @@ export class DashboardService {
     const ramTotalGB = Number((totalMem / (1024 * 1024 * 1024)).toFixed(1))
 
     const { rxKBps, txKBps } = await this.getNetworkThroughput()
+    this.sampleGpuUsageAsync()
 
     return {
       cpuUsagePercent,
@@ -321,6 +346,7 @@ export class DashboardService {
       ramTotalGB,
       networkSendKBps: txKBps,
       networkReceiveKBps: rxKBps,
+      gpuUsagePercent: this.cachedGpuUsage,
       timestamp: Date.now()
     }
   }
