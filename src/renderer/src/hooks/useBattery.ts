@@ -9,6 +9,10 @@ export function useBattery() {
   const [reportResult, setReportResult] = useState<BatteryReportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const [isLiveMonitoring, setIsLiveMonitoring] = useState(true)
+  const [killingPid, setKillingPid] = useState<number | null>(null)
+  const [alertDismissed, setAlertDismissed] = useState(false)
+
   const isMounted = useRef(true)
 
   const fetchInfo = useCallback(async () => {
@@ -35,7 +39,9 @@ export function useBattery() {
     isMounted.current = true
     fetchInfo()
 
-    // Poll live battery status every 4 seconds
+    if (!isLiveMonitoring) return
+
+    // Poll live battery status & drain every 4 seconds when live monitoring is on
     const interval = setInterval(() => {
       fetchInfo()
     }, 4000)
@@ -44,7 +50,36 @@ export function useBattery() {
       isMounted.current = false
       clearInterval(interval)
     }
-  }, [fetchInfo])
+  }, [fetchInfo, isLiveMonitoring])
+
+  const toggleLiveMonitoring = useCallback(() => {
+    setIsLiveMonitoring((prev) => !prev)
+  }, [])
+
+  const dismissAlert = useCallback(() => {
+    setAlertDismissed(true)
+  }, [])
+
+  const killDrainProcess = useCallback(
+    async (pid: number) => {
+      if (!window.mToolbox?.battery) return { success: false, message: 'API nicht verfügbar' }
+      setKillingPid(pid)
+      try {
+        const res = await window.mToolbox.battery.killProcess(pid)
+        if (isMounted.current) {
+          await fetchInfo()
+        }
+        return res
+      } catch (err: any) {
+        return { success: false, message: err?.message || 'Fehler beim Beenden des Prozesses.' }
+      } finally {
+        if (isMounted.current) {
+          setKillingPid(null)
+        }
+      }
+    },
+    [fetchInfo]
+  )
 
   const setPowerPlan = useCallback(
     async (guid: string) => {
@@ -95,11 +130,18 @@ export function useBattery() {
     isLoading,
     isSwitchingPlan,
     isGeneratingReport,
+    isLiveMonitoring,
+    killingPid,
+    alertDismissed,
     reportResult,
     error,
     refresh: fetchInfo,
+    toggleLiveMonitoring,
+    dismissAlert,
+    killDrainProcess,
     setPowerPlan,
     generateReport
   }
 }
+
 

@@ -107,7 +107,8 @@ export const IPC_CHANNELS = {
   BATTERY: {
     GET_INFO: 'battery:get-info',
     SET_POWER_PLAN: 'battery:set-power-plan',
-    GENERATE_REPORT: 'battery:generate-report'
+    GENERATE_REPORT: 'battery:generate-report',
+    KILL_PROCESS: 'battery:kill-process'
   },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',

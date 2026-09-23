@@ -165,6 +165,7 @@ export interface MToolboxAPI {
     getInfo: () => Promise<BatteryInfo>
     setPowerPlan: (guid: string) => Promise<{ success: boolean; message: string }>
     generateReport: () => Promise<BatteryReportResult>
+    killProcess: (pid: number) => Promise<{ success: boolean; message: string }>
   }
   system: {
     minimize: () => Promise<void>
@@ -355,7 +356,8 @@ const api: MToolboxAPI = {
   battery: {
     getInfo: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GET_INFO),
     setPowerPlan: (guid: string) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SET_POWER_PLAN, guid),
-    generateReport: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GENERATE_REPORT)
+    generateReport: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GENERATE_REPORT),
+    killProcess: (pid: number) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.KILL_PROCESS, pid)
   },
   system: {
     minimize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MINIMIZE_WINDOW),

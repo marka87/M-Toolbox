@@ -442,5 +442,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.BATTERY.GENERATE_REPORT, async () => {
     return await batteryService.generateHtmlReport()
   })
+
+  ipcMain.handle(IPC_CHANNELS.BATTERY.KILL_PROCESS, async (_, pid: number) => {
+    return await batteryService.killProcess(pid)
+  })
 }
 
