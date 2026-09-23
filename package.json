@@ -1,6 +1,6 @@
 {
   "name": "m-toolbox",
-  "version": "1.9.4",
+  "version": "2.0.0",
   "description": "Modern Windows 11 system utility suite for maintenance, diagnostics, repair and optimization",
   "main": "dist-electron/main/index.js",
   "scripts": {

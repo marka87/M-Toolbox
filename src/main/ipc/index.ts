@@ -11,6 +11,8 @@ import { networkService } from '../services/network.service'
 import { advancedService } from '../services/advanced.service'
 import { settingsService } from '../services/settings.service'
 import { AppSettings } from '../../shared/types'
+import type { ReinstallRestoreOptions } from '../../shared/reinstall.types'
+import { ReinstallService } from '../services/reinstall.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -108,6 +110,41 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   // Backup & Restore IPC
   const backupService = BackupService.getInstance()
+  const reinstallService = ReinstallService.getInstance()
+
+  ipcMain.handle(IPC_CHANNELS.REINSTALL.DISCOVER, async () =>
+    reinstallService.discover((event) => {
+      if (!mainWindow.isDestroyed()) mainWindow.webContents.send(IPC_CHANNELS.REINSTALL.PROGRESS_EVENT, event)
+    })
+  )
+  ipcMain.handle(IPC_CHANNELS.REINSTALL.CREATE, async (_, filePath: string, options) =>
+    reinstallService.createArchive(filePath, options, (event) => {
+      if (!mainWindow.isDestroyed()) mainWindow.webContents.send(IPC_CHANNELS.REINSTALL.PROGRESS_EVENT, event)
+    })
+  )
+  ipcMain.handle(IPC_CHANNELS.REINSTALL.PREVIEW, async (_, filePath: string) => reinstallService.preview(filePath))
+  ipcMain.handle(IPC_CHANNELS.REINSTALL.RESTORE, async (_, filePath: string, options?: ReinstallRestoreOptions) =>
+    reinstallService.restore(filePath, options, (event) => {
+      if (!mainWindow.isDestroyed()) mainWindow.webContents.send(IPC_CHANNELS.REINSTALL.PROGRESS_EVENT, event)
+    })
+  )
+  ipcMain.handle(IPC_CHANNELS.REINSTALL.HISTORY, () => reinstallService.getHistory())
+  ipcMain.handle(IPC_CHANNELS.REINSTALL.SELECT_FILE, async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'M-Toolbox Reinstall-Archiv auswählen',
+      properties: ['openFile'],
+      filters: [{ name: 'M-Toolbox Archiv (*.mtoolbox)', extensions: ['mtoolbox'] }]
+    })
+    return result.canceled ? null : result.filePaths[0] ?? null
+  })
+  ipcMain.handle(IPC_CHANNELS.REINSTALL.SAVE_DIALOG, async () => {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'M-Toolbox Reinstall-Archiv speichern',
+      defaultPath: `M-Toolbox-Reinstall-${new Date().toISOString().slice(0, 10)}.mtoolbox`,
+      filters: [{ name: 'M-Toolbox Archiv (*.mtoolbox)', extensions: ['mtoolbox'] }]
+    })
+    return result.canceled ? null : result.filePath ?? null
+  })
 
   ipcMain.handle(IPC_CHANNELS.BACKUP.CREATE_BACKUP, async (_, customFilePath?: string) => {
     return await backupService.createBackup(customFilePath, (event) => {
@@ -356,6 +393,3 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     return await settingsService.resetSettings()
   })
 }
-
-
-

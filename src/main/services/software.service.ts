@@ -725,12 +725,13 @@ export class SoftwareService {
   /**
    * Retrieves installed packages via winget list
    */
-  public async getInstalledPackages(): Promise<InstalledPackage[]> {
+  public async getInstalledPackages(source?: string): Promise<InstalledPackage[]> {
     try {
-      const res = await this.ps.executeCommand('winget list --accept-source-agreements', 60000)
+      const sourceArgument = source ? ` --source ${source}` : ''
+      const res = await this.ps.executeCommand(`winget list${sourceArgument} --accept-source-agreements`, 60000)
       const rows = this.parseWingetTable(res.stdout)
 
-      return rows.map((r) => {
+      const packages = rows.map((r) => {
         // Look up common header names in English / German
         const name = r['name'] || Object.values(r)[0] || 'Unbekannt'
         const id = r['id'] || Object.values(r)[1] || ''
@@ -745,7 +746,19 @@ export class SoftwareService {
           availableVersion: available || undefined,
           source: source || undefined
         }
-      }).filter((pkg) => pkg.id.length > 0)
+      }).filter((pkg) =>
+        pkg.id.length > 0 &&
+        pkg.id !== pkg.name
+      )
+      const seen = new Set<string>()
+      return packages.filter((pkg) => {
+        const id = pkg.id.toLowerCase()
+        if (seen.has(id)) return false
+        seen.add(id)
+        return !/^m-toolbox\b/i.test(pkg.name) &&
+          !/(windowsappruntime|vclibs|dotnet|netcore|windowsdesktop|vcredist|xnaredist|redist|runtime|webview2|appinstaller|desktopappinstaller)/i.test(id) &&
+          !/(runtime|framework|redistributable|redist|webview|app installer)/i.test(pkg.name)
+      })
     } catch (err) {
       console.error('[SoftwareService] getInstalledPackages error:', err)
       return []

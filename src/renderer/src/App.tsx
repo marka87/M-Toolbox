@@ -11,6 +11,7 @@ import { TweaksPage } from './pages/TweaksPage'
 import { NetworkPage } from './pages/NetworkPage'
 import { AdvancedPage } from './pages/AdvancedPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { ReinstallPage } from './pages/ReinstallPage'
 import { useSettings } from './hooks/useSettings'
 import type { NavigationModule } from '@shared/types'
 
@@ -28,6 +29,8 @@ export const App: React.FC = () => {
         return <SoftwarePage />
       case 'backup':
         return <BackupPage />
+      case 'reinstall':
+        return <ReinstallPage />
       case 'driver':
         return <DriverPage />
       case 'cleanup':

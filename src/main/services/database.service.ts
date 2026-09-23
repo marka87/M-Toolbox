@@ -91,8 +91,13 @@ export class DatabaseService {
     `).run(JSON.stringify(data))
   }
 
+  public getActivity(module: string, action: string, limit = 50): Array<{ createdAt: string; status: string; details?: string }> {
+    return this.db.prepare(
+      'SELECT created_at as createdAt, status, details FROM activity_log WHERE module = ? AND action = ? ORDER BY id DESC LIMIT ?'
+    ).all(module, action, limit) as Array<{ createdAt: string; status: string; details?: string }>
+  }
+
   public close(): void {
     this.db.close()
   }
 }
-

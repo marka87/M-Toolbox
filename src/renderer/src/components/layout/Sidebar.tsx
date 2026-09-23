@@ -10,7 +10,8 @@ import {
   Network,
   Terminal,
   Settings,
-  ShieldCheck
+  ShieldCheck,
+  RefreshCw
 } from 'lucide-react'
 import type { NavigationModule } from '@shared/types'
 
@@ -25,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'software', label: 'Software Center', icon: Package },
   { id: 'backup', label: 'Backup & Restore', icon: History },
+  { id: 'reinstall', label: 'Windows Reinstall Assistant', icon: RefreshCw },
   { id: 'driver', label: 'Driver Center', icon: Cpu },
   { id: 'cleanup', label: 'Cleanup Center', icon: Trash2 },
   { id: 'repair', label: 'Repair Center', icon: Wrench },

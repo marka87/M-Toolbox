@@ -106,6 +106,7 @@ export type NavigationModule =
   | 'dashboard'
   | 'software'
   | 'backup'
+  | 'reinstall'
   | 'driver'
   | 'cleanup'
   | 'repair'
@@ -622,4 +623,3 @@ export interface AppVersionInfo {
   userDataPath: string
   logsPath: string
 }
-

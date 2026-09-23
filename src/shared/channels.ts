@@ -25,6 +25,16 @@ export const IPC_CHANNELS = {
     LIST_LOCAL_BACKUPS: 'backup:list-local',
     PROGRESS_EVENT: 'backup:progress-event',
   },
+  REINSTALL: {
+    DISCOVER: 'reinstall:discover',
+    CREATE: 'reinstall:create',
+    PREVIEW: 'reinstall:preview',
+    RESTORE: 'reinstall:restore',
+    SELECT_FILE: 'reinstall:select-file',
+    SAVE_DIALOG: 'reinstall:save-dialog',
+    HISTORY: 'reinstall:history',
+    PROGRESS_EVENT: 'reinstall:progress-event',
+  },
   DRIVER: {
     GET_DATA: 'driver:get-data',
     EXPORT_DRIVERS: 'driver:export',
@@ -91,4 +101,3 @@ export const IPC_CHANNELS = {
     CLOSE_WINDOW: 'system:close-window',
   }
 } as const
-

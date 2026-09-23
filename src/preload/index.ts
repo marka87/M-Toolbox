@@ -40,6 +40,13 @@ import type {
   UpdateCheckResult,
   AppVersionInfo
 } from '../shared/types'
+import type {
+  ReinstallArchiveSummary,
+  ReinstallCreateOptions,
+  ReinstallProgress,
+  ReinstallRestoreOptions,
+  ReinstallResult
+} from '../shared/reinstall.types'
 
 export interface MToolboxAPI {
   dashboard: {
@@ -66,6 +73,16 @@ export interface MToolboxAPI {
     selectBackupFile: () => Promise<string | null>
     saveBackupDialog: () => Promise<string | null>
     onProgress: (callback: (event: OperationLogEvent) => void) => () => void
+  }
+  reinstall: {
+    discover: () => Promise<{ apps: InstalledPackage[]; drivers: { devices: DeviceItem[]; packages: DriverPackage[]; stats: DriverStats }; system: Record<string, unknown> }>
+    create: (filePath: string, options?: ReinstallCreateOptions) => Promise<ReinstallResult>
+    preview: (filePath: string) => Promise<ReinstallArchiveSummary>
+    restore: (filePath: string, options?: ReinstallRestoreOptions) => Promise<ReinstallResult>
+    selectFile: () => Promise<string | null>
+    saveDialog: () => Promise<string | null>
+    history: () => Promise<Array<{ createdAt: string; status: string; details?: string }>>
+    onProgress: (callback: (event: ReinstallProgress) => void) => () => void
   }
   driver: {
     getData: () => Promise<{ devices: DeviceItem[]; packages: DriverPackage[]; stats: DriverStats }>
@@ -194,6 +211,20 @@ const api: MToolboxAPI = {
       }
     }
   },
+  reinstall: {
+    discover: () => ipcRenderer.invoke(IPC_CHANNELS.REINSTALL.DISCOVER),
+    create: (filePath, options) => ipcRenderer.invoke(IPC_CHANNELS.REINSTALL.CREATE, filePath, options),
+    preview: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.REINSTALL.PREVIEW, filePath),
+    restore: (filePath, options) => ipcRenderer.invoke(IPC_CHANNELS.REINSTALL.RESTORE, filePath, options),
+    selectFile: () => ipcRenderer.invoke(IPC_CHANNELS.REINSTALL.SELECT_FILE),
+    saveDialog: () => ipcRenderer.invoke(IPC_CHANNELS.REINSTALL.SAVE_DIALOG),
+    history: () => ipcRenderer.invoke(IPC_CHANNELS.REINSTALL.HISTORY),
+    onProgress: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, event: ReinstallProgress) => callback(event)
+      ipcRenderer.on(IPC_CHANNELS.REINSTALL.PROGRESS_EVENT, listener)
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.REINSTALL.PROGRESS_EVENT, listener)
+    }
+  },
   driver: {
     getData: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.GET_DATA),
     exportDrivers: (targetDir: string, infName?: string) =>
@@ -301,4 +332,3 @@ declare global {
     mToolbox: MToolboxAPI
   }
 }
-
