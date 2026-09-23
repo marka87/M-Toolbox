@@ -4,8 +4,10 @@
 
 - [x] Dashboard mit Live-Systemmetriken
 - [x] Winget-basiertes Software Center
-- [x] Backup & Restore
+- [x] Backup & Migration (.mtoolbox-Archive)
 - [x] Driver Center
+- [x] RAM Guardian (Live-RAM-Optimierung, 24h-Verlauf, Hygiene-Score)
+- [x] Batterie-Manager & Energy Drain-Inspector (Echtzeit-Watt, Entladerate, Top-Verbraucher, Akku-Report)
 - [x] Cleanup Center
 - [x] Repair Center
 - [x] Windows-11-Tweaks

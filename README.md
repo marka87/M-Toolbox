@@ -14,10 +14,12 @@ M-Toolbox bündelt native Windows-Werkzeuge, PowerShell, Winget und eine moderne
 ## Features
 
 - **Dashboard** – CPU, RAM, GPU, Speicher, Betriebssystem und Live-Metriken.
-- **Software Center** – kuratierter Winget-Katalog, Suche, Kategorien, Batch-Installation und Updates.
-- **Backup & Restore** – Winget-Pakete, Explorer-Einstellungen, Fonts, Wallpaper und PowerShell-Module.
+- **Software Center** – Kuratierter Winget-Katalog, Suche, Kategorien, Batch-Installation und Updates.
+- **Backup & Migration** – Vollständige Systemmigration & Reinstall-Archiv (`.mtoolbox`), Winget-Pakete, Registry, App-Daten, Browser-Profile und Wiederherstellungs-Assistent.
 - **Driver Center** – Treiberinventar, Problemgeräte, Export, GPU-Informationen und Online-Suche.
-- **Cleanup Center** – temporäre Dateien, Update-Cache, Browser-Caches, Crash Dumps und Papierkorb.
+- **RAM Guardian** – Echtzeit-RAM-Monitoring, Standby-List/Working-Set-Bereinigung, Hygiene-Score, 24h-Verlauf und RAM-Fresser-Inspektor.
+- **Batterie-Manager** – Laptop-Akku-Management, Echtzeit-Watt-Überwachung (Entlade-/Laderate in W), Zellspannung, Kapazitäts- und Verschleißgradanalyse (Wh / mWh), Drain-Inspektor (Top Energie-Fresser), automatische Akku-Drain-Warnungen, interaktiver HTML-Akkubericht und Windows-Energieschemas.
+- **Cleanup Center** – Temporäre Dateien, Update-Cache, Browser-Caches, Crash Dumps und Papierkorb.
 - **Repair Center** – SFC, DISM, Windows-Update-, Netzwerk-, Spooler- und AppX-Reparaturen.
 - **Tweaks** – Explorer-, Datenschutz-, Gaming- und Windows-11-Oberflächenanpassungen.
 - **Network Toolkit** – Adapterdiagnose, WAN-IP, Ping-Matrix, DNS-Benchmark und Port-Scanner.
