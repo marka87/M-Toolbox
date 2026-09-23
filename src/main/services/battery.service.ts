@@ -163,8 +163,9 @@ export class BatteryService {
    * live discharge/charge wattage, and top energy-draining processes.
    */
   public async getBatteryInfo(): Promise<BatteryInfo> {
-    // 1. Check live power status, WMI battery status & sample process CPU delta
-    const psScript = `
+    try {
+      // 1. Check live power status, WMI battery status & sample process CPU delta
+      const psScript = `
       $ProgressPreference = 'SilentlyContinue'
       Add-Type -AssemblyName System.Windows.Forms
       $p = [System.Windows.Forms.SystemInformation]::PowerStatus
@@ -275,6 +276,12 @@ export class BatteryService {
     }
 
     // Map top processes to BatteryDrainProcess
+    const rawProcesses = Array.isArray(liveData.TopProcesses)
+      ? liveData.TopProcesses
+      : liveData.TopProcesses
+      ? [liveData.TopProcesses]
+      : []
+
     const currentPid = process.pid
     const drainProcesses: BatteryDrainProcess[] = rawProcesses
       .filter((p: any) => p && p.Name && !['Idle'].includes(p.Name))
@@ -369,7 +376,39 @@ export class BatteryService {
       activePowerPlan: active,
       availablePowerPlans: available
     }
+  } catch (fatalErr) {
+    console.error('[BatteryService] Fatal error in getBatteryInfo:', fatalErr)
+    const { active, available } = await this.getPowerPlans().catch(() => ({ active: null, available: [] }))
+    return {
+      hasBattery: this.hasBatteryHardware ?? true,
+      chargePercent: 100,
+      statusText: 'Akku-Status wird aktualisiert...',
+      isCharging: false,
+      isDischarging: false,
+      isAcOnline: true,
+      remainingSeconds: -1,
+      designCapacityMWh: this.staticCache?.designCapacityMWh || 0,
+      fullChargeCapacityMWh: this.staticCache?.fullChargeCapacityMWh || 0,
+      healthPercent: this.staticCache?.healthPercent || 100,
+      wearLevelPercent: this.staticCache?.wearLevelPercent || 0,
+      healthRating: this.staticCache?.healthRating || 'Exzellent',
+      cycleCount: this.staticCache?.cycleCount || 0,
+      manufacturer: this.staticCache?.manufacturer || 'Unbekannt',
+      modelId: this.staticCache?.modelId || 'Interner Akku',
+      serialNumber: this.staticCache?.serialNumber,
+      chemistry: this.staticCache?.chemistry || 'Lithium-Ionen',
+      voltageMv: 0,
+      voltageV: 0,
+      dischargeRateWatts: 0,
+      chargeRateWatts: 0,
+      currentWattage: 0,
+      drainProcesses: [],
+      drainAlert: null,
+      activePowerPlan: active,
+      availablePowerPlans: available
+    }
   }
+}
 
   /**
    * Terminates a running process by PID

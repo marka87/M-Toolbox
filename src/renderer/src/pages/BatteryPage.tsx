@@ -43,12 +43,12 @@ export const BatteryPage: React.FC = () => {
     isLoading,
     isSwitchingPlan,
     isGeneratingReport,
-    monitorMode,
-    setMonitorMode,
+    isLiveMonitoring,
     killingPid,
     alertDismissed,
     reportResult,
     refresh,
+    toggleLiveMonitoring,
     dismissAlert,
     killDrainProcess,
     setPowerPlan,
@@ -87,56 +87,27 @@ export const BatteryPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {hasBattery && (
-            <div className="flex items-center rounded-xl border border-fluent-border bg-fluent-card/70 p-1 text-xs">
-              <span className="text-[10px] font-semibold text-fluent-muted px-2 flex items-center gap-1">
-                <Activity className="w-3 h-3 text-fluent-accent" />
-                Intervall:
-              </span>
-              <button
-                onClick={() => setMonitorMode('eco')}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-                  monitorMode === 'eco'
-                    ? 'bg-emerald-500/20 text-emerald-300 font-bold shadow-sm border border-emerald-500/30'
-                    : 'text-fluent-muted hover:text-fluent-text'
+            <button
+              onClick={toggleLiveMonitoring}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                isLiveMonitoring
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/15'
+                  : 'bg-fluent-card border-fluent-border text-fluent-muted hover:text-fluent-text hover:bg-fluent-card-hover'
+              }`}
+              title={
+                isLiveMonitoring
+                  ? 'Echtzeit-Überwachung aktiv (aktualisiert alle 8s energiesparend)'
+                  : 'Klicken, um Echtzeit-Überwachung zu starten'
+              }
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isLiveMonitoring ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
                 }`}
-                title="Eco-Modus (10 Sek.): Extrem sparsam, fast 0% Hintergrundlast"
-              >
-                Eco (10s)
-              </button>
-              <button
-                onClick={() => setMonitorMode('balanced')}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-                  monitorMode === 'balanced'
-                    ? 'bg-fluent-accent/20 text-fluent-accent font-bold shadow-sm border border-fluent-accent/30'
-                    : 'text-fluent-muted hover:text-fluent-text'
-                }`}
-                title="Ausbalanciert (6 Sek. - Empfohlen): Optimale Balance aus Aktualität und Sparsamkeit"
-              >
-                Normal (6s)
-              </button>
-              <button
-                onClick={() => setMonitorMode('fast')}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-                  monitorMode === 'fast'
-                    ? 'bg-amber-500/20 text-amber-300 font-bold shadow-sm border border-amber-500/30'
-                    : 'text-fluent-muted hover:text-fluent-text'
-                }`}
-                title="Echtzeit (3 Sek.): Sehr schnelle Reaktion, benötigt aber durch häufige Messungen etwas mehr Energie"
-              >
-                Echtzeit (3s)
-              </button>
-              <button
-                onClick={() => setMonitorMode('off')}
-                className={`px-2 py-1 rounded-lg font-medium transition-all ${
-                  monitorMode === 'off'
-                    ? 'bg-rose-500/20 text-rose-300 font-bold shadow-sm border border-rose-500/30'
-                    : 'text-fluent-muted hover:text-fluent-text'
-                }`}
-                title="Live-Überwachung pausieren"
-              >
-                Aus
-              </button>
-            </div>
+              />
+              <Activity className="w-3.5 h-3.5 text-fluent-accent" />
+              <span>{isLiveMonitoring ? 'Live (8s)' : 'Live pausiert'}</span>
+            </button>
           )}
 
           {hasBattery && (
@@ -162,30 +133,6 @@ export const BatteryPage: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* Energy Efficiency Hint for Live Monitoring */}
-      {hasBattery && (
-        <div className="px-3.5 py-2 rounded-xl border border-fluent-border/60 bg-fluent-card/40 text-[11px] text-fluent-muted flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-amber-400 font-semibold flex items-center gap-1">
-              <Zap className="w-3 h-3" />
-              Energie-Hinweis:
-            </span>
-            <span>
-              {monitorMode === 'fast'
-                ? 'Kürzere Messintervalle (3s) messen häufiger und verbrauchen etwas mehr Energie.'
-                : monitorMode === 'balanced'
-                ? 'Ausbalanciert (6s) bietet eine optimale Mischung aus schneller Aktualisierung und minimalem Eigenverbrauch.'
-                : monitorMode === 'eco'
-                ? 'Eco (10s) minimiert die CPU-Abfragen für maximale Akkulaufzeit.'
-                : 'Live-Monitoring pausiert. Klicke auf ein Intervall, um die Echtzeit-Überwachung zu starten.'}
-            </span>
-          </div>
-          <span className="font-mono text-[10px] text-fluent-muted shrink-0 hidden sm:inline">
-            Modus: {monitorMode.toUpperCase()}
-          </span>
-        </div>
-      )}
 
       {/* Battery Drain Alert Banner */}
       {hasBattery && info?.drainAlert && !alertDismissed && (
