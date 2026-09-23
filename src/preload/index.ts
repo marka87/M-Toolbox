@@ -47,6 +47,15 @@ import type {
   ReinstallRestoreOptions,
   ReinstallResult
 } from '../shared/reinstall.types'
+import type {
+  RAMLiveStats,
+  RAMProcessItem,
+  AppHygieneReport,
+  RAMRecommendation,
+  RAMHealthScore,
+  RAMHistoryPoint,
+  RAMCleanupResult
+} from '../shared/ram.types'
 
 export interface MToolboxAPI {
   dashboard: {
@@ -140,6 +149,16 @@ export interface MToolboxAPI {
     openUserDataFolder: () => Promise<void>
     clearCache: () => Promise<{ success: boolean; message: string }>
     resetSettings: () => Promise<AppSettings>
+  }
+  ram: {
+    getStats: () => Promise<RAMLiveStats>
+    getTopProcesses: () => Promise<RAMProcessItem[]>
+    getHygiene: () => Promise<AppHygieneReport>
+    getRecommendations: () => Promise<RAMRecommendation[]>
+    getHealthScore: () => Promise<RAMHealthScore>
+    getHistory24h: () => Promise<RAMHistoryPoint[]>
+    cleanWindows: () => Promise<RAMCleanupResult>
+    disableStartup: (itemId: string) => Promise<{ success: boolean; message: string }>
   }
   system: {
     minimize: () => Promise<void>
@@ -316,6 +335,16 @@ const api: MToolboxAPI = {
     openUserDataFolder: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.OPEN_USER_DATA_FOLDER),
     clearCache: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.CLEAR_CACHE),
     resetSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.RESET_SETTINGS)
+  },
+  ram: {
+    getStats: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_STATS),
+    getTopProcesses: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_TOP_PROCESSES),
+    getHygiene: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_HYGIENE),
+    getRecommendations: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_RECOMMENDATIONS),
+    getHealthScore: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_HEALTH_SCORE),
+    getHistory24h: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_HISTORY_24H),
+    cleanWindows: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.CLEAN_WINDOWS),
+    disableStartup: (itemId: string) => ipcRenderer.invoke(IPC_CHANNELS.RAM.DISABLE_STARTUP, itemId)
   },
   system: {
     minimize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MINIMIZE_WINDOW),

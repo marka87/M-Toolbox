@@ -11,8 +11,9 @@ import { networkService } from '../services/network.service'
 import { advancedService } from '../services/advanced.service'
 import { settingsService } from '../services/settings.service'
 import { AppSettings } from '../../shared/types'
-import type { ReinstallRestoreOptions } from '../../shared/reinstall.types'
-import { ReinstallService } from '../services/reinstall.service'
+import { reinstallService } from '../services/reinstall.service'
+import { ramService } from '../services/ram.service'
+import { databaseService } from '../services/database.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -110,7 +111,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   // Backup & Restore IPC
   const backupService = BackupService.getInstance()
-  const reinstallService = ReinstallService.getInstance()
 
   ipcMain.handle(IPC_CHANNELS.REINSTALL.DISCOVER, async () =>
     reinstallService.discover((event) => {
@@ -392,4 +392,38 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.SETTINGS.RESET_SETTINGS, async () => {
     return await settingsService.resetSettings()
   })
+
+  // RAM Guardian IPC
+  ipcMain.handle(IPC_CHANNELS.RAM.GET_STATS, async () => {
+    return await ramService.getLiveStats()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.RAM.GET_TOP_PROCESSES, async () => {
+    return await ramService.getTopProcesses()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.RAM.GET_HYGIENE, async () => {
+    return await ramService.getAppHygiene()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.RAM.GET_RECOMMENDATIONS, async () => {
+    return await ramService.getRecommendations()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.RAM.GET_HEALTH_SCORE, async () => {
+    return await ramService.getHealthScore()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.RAM.GET_HISTORY_24H, async () => {
+    return databaseService.getRamHistory24h()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.RAM.CLEAN_WINDOWS, async () => {
+    return await ramService.cleanWindows()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.RAM.DISABLE_STARTUP, async (_, itemId: string) => {
+    return await ramService.disableStartupItem(itemId)
+  })
 }
+

@@ -9,16 +9,20 @@ import type {
 } from '@shared/reinstall.types'
 
 export function useReinstall() {
-  const [apps, setApps] = useState<InstalledPackage[]>([])
-  const [drivers, setDrivers] = useState<{ devices: DeviceItem[]; packages: DriverPackage[]; stats: DriverStats } | null>(null)
-  const [system, setSystem] = useState<Record<string, unknown>>({})
-  const [history, setHistory] = useState<Array<{ createdAt: string; status: string; details?: string }>>([])
+  const [data, setData] = useState<{
+    apps: InstalledPackage[]
+    drivers: { devices: DeviceItem[]; packages: DriverPackage[]; stats: DriverStats } | null
+    system: Record<string, unknown>
+    history: Array<{ createdAt: string; status: string; details?: string }>
+  }>({ apps: [], drivers: null, system: {}, history: [] })
+
   const [progress, setProgress] = useState<ReinstallProgress | null>(null)
   const [isBusy, setIsBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const unsubscribe = window.mToolbox.reinstall.onProgress(setProgress)
+    window.mToolbox.reinstall.history().then((history) => setData((d) => ({ ...d, history })))
     return unsubscribe
   }, [])
 
@@ -27,13 +31,10 @@ export function useReinstall() {
     setError(null)
     try {
       const result = await window.mToolbox.reinstall.discover()
-      setApps(result.apps)
-      setDrivers(result.drivers)
-      setSystem(result.system)
+      setData((d) => ({ ...d, apps: result.apps, drivers: result.drivers, system: result.system }))
       return result
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setError(message)
+      setError(err instanceof Error ? err.message : String(err))
       return null
     } finally {
       setIsBusy(false)
@@ -61,8 +62,7 @@ export function useReinstall() {
     try {
       return await window.mToolbox.reinstall.preview(filePath)
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setError(message)
+      setError(err instanceof Error ? err.message : String(err))
       return null
     }
   }, [])
@@ -72,7 +72,8 @@ export function useReinstall() {
     setError(null)
     try {
       const result = await window.mToolbox.reinstall.restore(filePath, options)
-      setHistory(await window.mToolbox.reinstall.history())
+      const history = await window.mToolbox.reinstall.history()
+      setData((d) => ({ ...d, history }))
       return result
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
@@ -84,8 +85,22 @@ export function useReinstall() {
   }, [])
 
   const loadHistory = useCallback(async () => {
-    setHistory(await window.mToolbox.reinstall.history())
+    const history = await window.mToolbox.reinstall.history()
+    setData((d) => ({ ...d, history }))
   }, [])
 
-  return { apps, drivers, system, history, progress, isBusy, error, discover, create, preview, restore, loadHistory }
+  return {
+    apps: data.apps,
+    drivers: data.drivers,
+    system: data.system,
+    history: data.history,
+    progress,
+    isBusy,
+    error,
+    discover,
+    create,
+    preview,
+    restore,
+    loadHistory
+  }
 }

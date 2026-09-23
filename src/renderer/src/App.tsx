@@ -12,6 +12,7 @@ import { NetworkPage } from './pages/NetworkPage'
 import { AdvancedPage } from './pages/AdvancedPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { ReinstallPage } from './pages/ReinstallPage'
+import { RAMGuardianPage } from './pages/RAMGuardianPage'
 import { useSettings } from './hooks/useSettings'
 import type { NavigationModule } from '@shared/types'
 
@@ -33,6 +34,8 @@ export const App: React.FC = () => {
         return <ReinstallPage />
       case 'driver':
         return <DriverPage />
+      case 'ram-guardian':
+        return <RAMGuardianPage />
       case 'cleanup':
         return <CleanupPage />
       case 'repair':

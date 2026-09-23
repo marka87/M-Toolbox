@@ -44,7 +44,19 @@ export function useSoftware() {
     if (!window.mToolbox?.software) return
 
     const unsubscribe = window.mToolbox.software.onProgress((event: OperationLogEvent) => {
-      setOperationLogs((prev) => [...prev, event.line])
+      const line = event.line.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').trim()
+      if (!line || /^[-/\\|]$/.test(line)) return
+
+      setOperationLogs((prev) => {
+        const isProgress = /\b\d{1,3}%\b/.test(line) || /^[█░▒▓\s-]+\d+%/.test(line)
+        if (isProgress && prev.length > 0) {
+          const last = prev[prev.length - 1]
+          if (/\b\d{1,3}%\b/.test(last) || /^[█░▒▓\s-]+\d+%/.test(last)) {
+            return [...prev.slice(0, -1), line]
+          }
+        }
+        return [...prev, line]
+      })
     })
 
     return () => {

@@ -668,13 +668,14 @@ export class SoftwareService {
   private parseWingetTable(output: string): Array<Record<string, string>> {
     // Strip ANSI escape codes
     const cleanOutput = output.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
-    const lines = cleanOutput.split(/\r?\n/).filter((l) => l.trim().length > 0)
+    // Split on \r and \n so carriage returns from CLI spinners are separated
+    const lines = cleanOutput.split(/[\r\n]+/).filter((l) => l.trim().length > 0)
     if (lines.length < 2) return []
 
     // Locate separator line containing dashes (e.g. '---------------------  -------')
     let sepIndex = -1
     for (let i = 0; i < lines.length; i++) {
-      if (/^[-]{3,}/.test(lines[i])) {
+      if (/^[-]{3,}/.test(lines[i].trim())) {
         sepIndex = i
         break
       }
@@ -683,19 +684,15 @@ export class SoftwareService {
     if (sepIndex <= 0) return []
 
     const headerLine = lines[sepIndex - 1]
-    const separatorLine = lines[sepIndex]
-
-    // In winget CLI, column headers are separated by 2 or more spaces
-    // e.g. "Name                                                         ID                                                    Version            Quelle"
-    const colRegex = /\S+(?:\s(?!\s)\S+)*/g
-    const headerMatches = [...headerLine.matchAll(colRegex)]
+    const headerRegex = /\b(name|id|version|available|verfügbar|source|quelle)\b/gi
+    const headerMatches = [...headerLine.matchAll(headerRegex)]
     if (headerMatches.length === 0) return []
 
     const cols: Array<{ name: string; start: number; end: number }> = []
     for (let i = 0; i < headerMatches.length; i++) {
       const current = headerMatches[i]
       const start = current.index!
-      const end = i < headerMatches.length - 1 ? headerMatches[i + 1].index! : Math.max(separatorLine.length, headerLine.length, 500)
+      const end = i < headerMatches.length - 1 ? headerMatches[i + 1].index! : 1000
       cols.push({
         name: current[0].trim().toLowerCase(),
         start,
@@ -707,14 +704,18 @@ export class SoftwareService {
 
     for (let i = sepIndex + 1; i < lines.length; i++) {
       const line = lines[i]
-      if (!line || line.startsWith('-') || /^\d+\s+Aktualisierung/i.test(line) || /^\d+\s+update/i.test(line)) {
+      if (
+        !line ||
+        /^[-]{3,}/.test(line.trim()) ||
+        /^\s*\d+\s*(upgrades?|aktualisierung)/i.test(line) ||
+        /available\.\s*$/i.test(line)
+      ) {
         continue
       }
 
       const row: Record<string, string> = {}
       for (const col of cols) {
-        const val = line.substring(col.start, Math.min(col.end, line.length)).trim()
-        row[col.name] = val
+        row[col.name] = line.substring(col.start, Math.min(col.end, line.length)).trim()
       }
       rows.push(row)
     }
@@ -731,34 +732,25 @@ export class SoftwareService {
       const res = await this.ps.executeCommand(`winget list${sourceArgument} --accept-source-agreements`, 60000)
       const rows = this.parseWingetTable(res.stdout)
 
-      const packages = rows.map((r) => {
-        // Look up common header names in English / German
+      const ignoredId = /(windowsappruntime|vclibs|dotnet|netcore|windowsdesktop|vcredist|xnaredist|redist|runtime|webview2|appinstaller|desktopappinstaller)/i
+      const ignoredName = /^(m-toolbox\b|.*(runtime|framework|redistributable|redist|webview|app installer))/i
+
+      const unique = new Map<string, InstalledPackage>()
+      for (const r of rows) {
         const name = r['name'] || Object.values(r)[0] || 'Unbekannt'
         const id = r['id'] || Object.values(r)[1] || ''
-        const version = r['version'] || Object.values(r)[2] || ''
-        const available = r['verfügbar'] || r['available'] || ''
-        const source = r['quelle'] || r['source'] || ''
-
-        return {
-          id: id || name,
+        if (!id || id.toLowerCase() === name.toLowerCase()) continue
+        const key = id.toLowerCase()
+        if (unique.has(key) || ignoredId.test(key) || ignoredName.test(name)) continue
+        unique.set(key, {
+          id,
           name,
-          version,
-          availableVersion: available || undefined,
-          source: source || undefined
-        }
-      }).filter((pkg) =>
-        pkg.id.length > 0 &&
-        pkg.id !== pkg.name
-      )
-      const seen = new Set<string>()
-      return packages.filter((pkg) => {
-        const id = pkg.id.toLowerCase()
-        if (seen.has(id)) return false
-        seen.add(id)
-        return !/^m-toolbox\b/i.test(pkg.name) &&
-          !/(windowsappruntime|vclibs|dotnet|netcore|windowsdesktop|vcredist|xnaredist|redist|runtime|webview2|appinstaller|desktopappinstaller)/i.test(id) &&
-          !/(runtime|framework|redistributable|redist|webview|app installer)/i.test(pkg.name)
-      })
+          version: r['version'] || Object.values(r)[2] || '',
+          availableVersion: r['available'] || r['verfügbar'] || undefined,
+          source: r['source'] || r['quelle'] || undefined
+        })
+      }
+      return [...unique.values()]
     } catch (err) {
       console.error('[SoftwareService] getInstalledPackages error:', err)
       return []
@@ -778,8 +770,8 @@ export class SoftwareService {
           const name = r['name'] || Object.values(r)[0] || ''
           const id = r['id'] || Object.values(r)[1] || ''
           const currentVersion = r['version'] || Object.values(r)[2] || ''
-          const availableVersion = r['verfügbar'] || r['available'] || Object.values(r)[3] || ''
-          const source = r['quelle'] || r['source'] || ''
+          const availableVersion = r['available'] || r['verfügbar'] || Object.values(r)[3] || ''
+          const source = r['source'] || r['quelle'] || ''
 
           return {
             id,
@@ -789,7 +781,13 @@ export class SoftwareService {
             source: source || undefined
           }
         })
-        .filter((pkg) => pkg.id.length > 0 && pkg.availableVersion && pkg.availableVersion !== pkg.currentVersion)
+        .filter(
+          (pkg) =>
+            pkg.id.length > 0 &&
+            Boolean(pkg.availableVersion) &&
+            pkg.availableVersion !== pkg.currentVersion &&
+            !/upgrades?\s+avail/i.test(pkg.name)
+        )
     } catch (err) {
       console.error('[SoftwareService] getAvailableUpdates error:', err)
       return []
@@ -848,6 +846,41 @@ export class SoftwareService {
     })
   }
 
+  private streamWinget(
+    command: string,
+    packageId: string | undefined,
+    onProgress: (event: OperationLogEvent) => void,
+    resolve: (res: { success: boolean; error?: string }) => void,
+    successMsg: string,
+    failMsg: string
+  ): void {
+    const emitClean = (type: 'stdout' | 'stderr', raw: string) => {
+      const clean = raw.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
+      const lines = clean.split(/[\r\n]+/)
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed || /^[-/\\|]$/.test(trimmed)) continue
+        onProgress({ type, line: trimmed, packageId })
+      }
+    }
+
+    this.ps.streamCommand(
+      command,
+      (data) => emitClean('stdout', data),
+      (data) => emitClean('stderr', data),
+      (code) => {
+        const success = code === 0
+        onProgress({
+          type: 'exit',
+          line: success ? successMsg : `${failMsg} (Code: ${code}).`,
+          packageId,
+          exitCode: code ?? undefined
+        })
+        resolve({ success, error: success ? undefined : `${failMsg} mit Exit-Code ${code}` })
+      }
+    )
+  }
+
   /**
    * Installs a single winget package with real-time log streaming
    */
@@ -856,23 +889,15 @@ export class SoftwareService {
     onProgress: (event: OperationLogEvent) => void
   ): Promise<{ success: boolean; error?: string }> {
     return new Promise((resolve) => {
-      const command = `winget install --id "${packageId}" --silent --accept-package-agreements --accept-source-agreements`
+      const command = `winget install --id "${packageId}" --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`
       onProgress({ type: 'info', line: `> Starte Installation: ${packageId}...`, packageId })
-
-      this.ps.streamCommand(
+      this.streamWinget(
         command,
-        (data) => onProgress({ type: 'stdout', line: data, packageId }),
-        (data) => onProgress({ type: 'stderr', line: data, packageId }),
-        (code) => {
-          const success = code === 0
-          onProgress({
-            type: 'exit',
-            line: success ? `Installation von ${packageId} erfolgreich abgeschlossen.` : `Installation von ${packageId} beendet mit Code ${code}.`,
-            packageId,
-            exitCode: code ?? undefined
-          })
-          resolve({ success, error: success ? undefined : `Installation fehlgeschlagen mit Exit-Code ${code}` })
-        }
+        packageId,
+        onProgress,
+        resolve,
+        `Installation von ${packageId} erfolgreich abgeschlossen.`,
+        `Installation von ${packageId} fehlgeschlagen`
       )
     })
   }
@@ -890,21 +915,13 @@ export class SoftwareService {
       const exactFlag = isExactWingetId ? '-e ' : ''
       const command = `winget uninstall --id "${cleanId}" ${exactFlag}--silent --accept-source-agreements --nowarn --disable-interactivity`
       onProgress({ type: 'info', line: `> Starte Deinstallation: ${cleanId}...`, packageId: cleanId })
-
-      this.ps.streamCommand(
+      this.streamWinget(
         command,
-        (data) => onProgress({ type: 'stdout', line: data, packageId: cleanId }),
-        (data) => onProgress({ type: 'stderr', line: data, packageId: cleanId }),
-        (code) => {
-          const success = code === 0
-          onProgress({
-            type: 'exit',
-            line: success ? `Deinstallation von ${cleanId} erfolgreich abgeschlossen.` : `Deinstallation beendet mit Code ${code}.`,
-            packageId: cleanId,
-            exitCode: code ?? undefined
-          })
-          resolve({ success, error: success ? undefined : `Deinstallation fehlgeschlagen mit Exit-Code ${code}` })
-        }
+        cleanId,
+        onProgress,
+        resolve,
+        `Deinstallation von ${cleanId} erfolgreich abgeschlossen.`,
+        `Deinstallation von ${cleanId} fehlgeschlagen`
       )
     })
   }
@@ -917,23 +934,15 @@ export class SoftwareService {
     onProgress: (event: OperationLogEvent) => void
   ): Promise<{ success: boolean; error?: string }> {
     return new Promise((resolve) => {
-      const command = `winget upgrade --id "${packageId}" --silent --accept-package-agreements --accept-source-agreements`
+      const command = `winget upgrade --id "${packageId}" --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`
       onProgress({ type: 'info', line: `> Starte Aktualisierung von ${packageId}...`, packageId })
-
-      this.ps.streamCommand(
+      this.streamWinget(
         command,
-        (data) => onProgress({ type: 'stdout', line: data, packageId }),
-        (data) => onProgress({ type: 'stderr', line: data, packageId }),
-        (code) => {
-          const success = code === 0
-          onProgress({
-            type: 'exit',
-            line: success ? `Aktualisierung von ${packageId} erfolgreich abgeschlossen.` : `Aktualisierung beendet mit Code ${code}.`,
-            packageId,
-            exitCode: code ?? undefined
-          })
-          resolve({ success, error: success ? undefined : `Aktualisierung fehlgeschlagen mit Exit-Code ${code}` })
-        }
+        packageId,
+        onProgress,
+        resolve,
+        `Aktualisierung von ${packageId} erfolgreich abgeschlossen.`,
+        `Aktualisierung von ${packageId} fehlgeschlagen`
       )
     })
   }
@@ -945,22 +954,15 @@ export class SoftwareService {
     onProgress: (event: OperationLogEvent) => void
   ): Promise<{ success: boolean; error?: string }> {
     return new Promise((resolve) => {
-      const command = `winget upgrade --all --silent --accept-package-agreements --accept-source-agreements`
+      const command = `winget upgrade --all --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`
       onProgress({ type: 'info', line: '> Starte Aktualisierung aller verfügbaren Pakete...' })
-
-      this.ps.streamCommand(
+      this.streamWinget(
         command,
-        (data) => onProgress({ type: 'stdout', line: data }),
-        (data) => onProgress({ type: 'stderr', line: data }),
-        (code) => {
-          const success = code === 0
-          onProgress({
-            type: 'exit',
-            line: success ? 'Alle Pakete wurden erfolgreich aktualisiert.' : `Aktualisierungsprozess beendet mit Code ${code}.`,
-            exitCode: code ?? undefined
-          })
-          resolve({ success, error: success ? undefined : `Upgrade All beendet mit Exit-Code ${code}` })
-        }
+        undefined,
+        onProgress,
+        resolve,
+        'Alle Pakete wurden erfolgreich aktualisiert.',
+        'Aktualisierungsprozess beendet'
       )
     })
   }

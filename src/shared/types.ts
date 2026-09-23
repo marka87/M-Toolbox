@@ -107,6 +107,7 @@ export type NavigationModule =
   | 'software'
   | 'backup'
   | 'reinstall'
+  | 'ram-guardian'
   | 'driver'
   | 'cleanup'
   | 'repair'

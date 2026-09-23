@@ -94,6 +94,16 @@ export const IPC_CHANNELS = {
     CLEAR_CACHE: 'settings:clear-cache',
     RESET_SETTINGS: 'settings:reset-settings',
   },
+  RAM: {
+    GET_STATS: 'ram:get-stats',
+    GET_TOP_PROCESSES: 'ram:get-top-processes',
+    GET_HYGIENE: 'ram:get-hygiene',
+    GET_RECOMMENDATIONS: 'ram:get-recommendations',
+    GET_HEALTH_SCORE: 'ram:get-health-score',
+    GET_HISTORY_24H: 'ram:get-history-24h',
+    CLEAN_WINDOWS: 'ram:clean-windows',
+    DISABLE_STARTUP: 'ram:disable-startup'
+  },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',
     MINIMIZE_WINDOW: 'system:minimize-window',

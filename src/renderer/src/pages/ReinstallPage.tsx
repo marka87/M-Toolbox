@@ -24,36 +24,7 @@ import {
 } from 'lucide-react'
 import { useReinstall } from '../hooks/useReinstall'
 import type { ReinstallArchiveSummary, ReinstallResult } from '@shared/reinstall.types'
-import type { TweakItem } from '@shared/types'
-
-type Section = 'plan' | 'install' | 'checklist' | 'collections' | 'drivers' | 'clean' | 'history'
-
-const COLLECTIONS = [
-  {
-    name: 'Gaming',
-    icon: '🎮',
-    ids: ['Valve.Steam', 'Discord.Discord', 'EpicGames.EpicGamesLauncher', 'GOG.Galaxy', 'ElectronicArts.EADesktop', 'Ubisoft.Connect'],
-    desc: 'Steam, Discord, Epic Games Launcher, GOG Galaxy & EA App'
-  },
-  {
-    name: 'Development',
-    icon: '💻',
-    ids: ['Microsoft.VisualStudioCode', 'Git.Git', 'Docker.DockerDesktop', 'OpenJS.NodeJS.LTS', 'Python.Python.3.12', 'Microsoft.WindowsTerminal'],
-    desc: 'VS Code, Git, Docker, Node.js LTS, Python 3.12 & Windows Terminal'
-  },
-  {
-    name: 'Creator & Media',
-    icon: '🎨',
-    ids: ['OBSProject.OBSStudio', 'HandBrake.HandBrake', 'BlenderFoundation.Blender', 'GIMP.GIMP', 'VideoLAN.VLC', 'Audacity.Audacity'],
-    desc: 'OBS Studio, VLC Media Player, HandBrake, Blender, GIMP & Audacity'
-  },
-  {
-    name: 'Office & Essentials',
-    icon: '📄',
-    ids: ['Mozilla.Firefox', 'Google.Chrome', '7zip.7zip', 'Notepad++.Notepad++', 'Adobe.Acrobat.Reader.64-bit'],
-    desc: 'Firefox, Chrome, 7-Zip, Notepad++ & Adobe Acrobat Reader'
-  }
-]
+type Section = 'plan' | 'install' | 'checklist' | 'history'
 
 const DEFAULT_CHECKLIST = [
   {
@@ -128,11 +99,6 @@ export const ReinstallPage: React.FC = () => {
   const [showRestoreAppList, setShowRestoreAppList] = useState(false)
   const [restoreResult, setRestoreResult] = useState<ReinstallResult | null>(null)
 
-  // Clean Windows / Tweaks
-  const [tweaks, setTweaks] = useState<TweakItem[]>([])
-  const [selectedTweaks, setSelectedTweaks] = useState<Set<string>>(new Set())
-  const [collectionStatus, setCollectionStatus] = useState<string | null>(null)
-
   // Checklist state (local storage)
   const [checkedList, setCheckedList] = useState<Set<string>>(() => {
     try {
@@ -144,8 +110,7 @@ export const ReinstallPage: React.FC = () => {
   })
 
   useEffect(() => {
-    if (section === 'history' || section === 'drivers') loadHistory()
-    if (section === 'clean') window.mToolbox.tweaks.getAll().then(setTweaks)
+    if (section === 'history') loadHistory()
   }, [section, loadHistory])
 
   const toggleChecklistItem = (id: string) => {
@@ -233,22 +198,10 @@ export const ReinstallPage: React.FC = () => {
     setRestoreResult(result)
   }
 
-  const installCollection = async (ids: string[]) => {
-    setCollectionStatus('Installation läuft …')
-    for (const id of ids) {
-      await window.mToolbox.software.install(id)
-    }
-    setCollectionStatus('Sammlung erfolgreich verarbeitet.')
-    setTimeout(() => setCollectionStatus(null), 4000)
-  }
-
   const nav = [
     ['plan', 'Install Plan', Archive],
     ['install', 'Wiederherstellen', Upload],
     ['checklist', 'Pre-Install Checkliste', CheckSquare],
-    ['collections', 'App Collections', Package],
-    ['drivers', 'Driver Advisor', HardDrive],
-    ['clean', 'Clean Windows', ShieldCheck],
     ['history', 'Install History', History]
   ] as const
 
@@ -957,136 +910,6 @@ export const ReinstallPage: React.FC = () => {
             </Card>
           )}
 
-          {/* SECTION: APP COLLECTIONS */}
-          {section === 'collections' && (
-            <div className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                {COLLECTIONS.map((collection) => (
-                  <Card key={collection.name}>
-                    <div className="mb-3 flex items-center gap-3">
-                      <span className="text-2xl">{collection.icon}</span>
-                      <div>
-                        <h2 className="font-semibold text-white">{collection.name}</h2>
-                        <p className="text-xs text-fluent-muted">{collection.ids.length} kuratierte Winget-Pakete</p>
-                      </div>
-                    </div>
-                    <p className="mb-3 text-xs text-slate-300">{collection.desc}</p>
-                    <div className="mb-4 flex flex-wrap gap-1">
-                      {collection.ids.map((id) => (
-                        <span key={id} className="rounded bg-fluent-bg px-2 py-0.5 text-[10px] text-fluent-subtext font-mono">
-                          {id}
-                        </span>
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => installCollection(collection.ids)}
-                      disabled={isBusy}
-                      className="rounded-lg bg-fluent-accent px-4 py-2 text-xs font-semibold text-white shadow hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
-                    >
-                      <Package className="h-3.5 w-3.5" />
-                      <span>Sammlung jetzt installieren</span>
-                    </button>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* SECTION: DRIVER ADVISOR */}
-          {section === 'drivers' && (
-            <Card>
-              <h2 className="mb-2 text-lg font-semibold text-white">Driver Advisor</h2>
-              <p className="mb-5 text-xs text-fluent-muted">
-                Übersicht der im System erkannten Hardware- und Gerätetreiber.
-              </p>
-              <div className="grid gap-3 md:grid-cols-3">
-                <Metric icon={HardDrive} label="Geräte" value={drivers?.devices.length ?? 0} />
-                <Metric icon={Package} label="Treiberpakete" value={drivers?.packages.length ?? 0} />
-                <Metric icon={ShieldCheck} label="Empfehlung" value="pnputil Export" />
-              </div>
-              <button
-                onClick={discover}
-                disabled={isBusy}
-                className="mt-5 rounded-lg bg-fluent-accent px-4 py-2 text-xs font-semibold text-white shadow hover:opacity-90 flex items-center gap-2"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                <span>Hardware jetzt scannen</span>
-              </button>
-              <div className="mt-5 space-y-2">
-                {drivers?.packages.slice(0, 10).map((driver) => (
-                  <div
-                    key={`${driver.driverName}-${driver.driverVersion}`}
-                    className="flex items-center justify-between rounded-lg border border-fluent-border bg-fluent-bg/30 p-3 text-xs"
-                  >
-                    <span className="text-slate-200">
-                      <strong>{driver.driverName}</strong> · {driver.providerName} (v{driver.driverVersion || '—'})
-                    </span>
-                    <span className="text-[11px] text-fluent-muted font-mono">{driver.originalName || driver.driverName}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {/* SECTION: CLEAN WINDOWS / TWEAKS */}
-          {section === 'clean' && (
-            <Card>
-              <h2 className="mb-2 text-lg font-semibold text-white">Clean Windows Tweaks</h2>
-              <p className="mb-5 text-xs text-fluent-muted">
-                Wenden Sie empfohlene Windows-Optimierungen an, um unnötige Telemetrie, Benachrichtigungen oder Taskleisten-Symbole abzuschalten.
-              </p>
-              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-                {tweaks.map((tweak) => (
-                  <label
-                    key={tweak.id}
-                    className="flex items-start gap-3 rounded-lg border border-fluent-border bg-fluent-bg/30 p-3 text-xs cursor-pointer hover:bg-fluent-card"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedTweaks.has(tweak.id)}
-                      onChange={() =>
-                        setSelectedTweaks((current) => {
-                          const next = new Set(current)
-                          if (next.has(tweak.id)) next.delete(tweak.id)
-                          else next.add(tweak.id)
-                          return next
-                        })
-                      }
-                      className="mt-0.5 rounded border-fluent-border"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <strong className="block text-slate-100">{tweak.title}</strong>
-                      <span className="text-fluent-muted">{tweak.description}</span>
-                    </span>
-                    <span
-                      className={`rounded px-1.5 py-0.5 text-[10px] ${
-                        tweak.dangerLevel === 'caution'
-                          ? 'bg-fluent-status-amber/15 text-fluent-status-amber'
-                          : 'bg-fluent-status-green/15 text-fluent-status-green'
-                      }`}
-                    >
-                      {tweak.dangerLevel === 'caution' ? 'Vorsicht' : 'Sicher'}
-                    </span>
-                  </label>
-                ))}
-              </div>
-              <button
-                disabled={selectedTweaks.size === 0}
-                onClick={async () => {
-                  for (const id of selectedTweaks) {
-                    await window.mToolbox.tweaks.setTweak(id, true)
-                  }
-                  setSelectedTweaks(new Set())
-                  setCollectionStatus('Tweaks wurden erfolgreich angewendet!')
-                  setTimeout(() => setCollectionStatus(null), 4000)
-                }}
-                className="mt-5 rounded-lg bg-fluent-accent px-4 py-2 text-xs font-semibold text-white shadow hover:opacity-90 disabled:opacity-50"
-              >
-                Auswahl anwenden ({selectedTweaks.size})
-              </button>
-            </Card>
-          )}
-
           {/* SECTION: HISTORY */}
           {section === 'history' && (
             <Card>
@@ -1121,13 +944,6 @@ export const ReinstallPage: React.FC = () => {
           )}
         </main>
       </div>
-
-      {collectionStatus && (
-        <div className="fixed bottom-5 right-5 rounded-lg border border-fluent-accent/40 bg-fluent-card shadow-fluent px-4 py-3 text-xs text-fluent-accent flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>{collectionStatus}</span>
-        </div>
-      )}
     </div>
   )
 }

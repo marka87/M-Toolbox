@@ -19,16 +19,21 @@ import type {
 
 const quote = (value: string): string => `'${value.replace(/'/g, "''")}'`
 
+const readJson = async <T>(filePath: string, fallback: T): Promise<T> => {
+  try {
+    return JSON.parse(await fs.readFile(filePath, 'utf8')) as T
+  } catch {
+    return fallback
+  }
+}
+
 export class ReinstallService {
-  private static instance: ReinstallService
   private readonly powershell = PowerShellService.getInstance()
   private readonly software = SoftwareService.getInstance()
   private readonly database = DatabaseService.getInstance()
 
-  private constructor() {}
-
   static getInstance(): ReinstallService {
-    return (this.instance ??= new ReinstallService())
+    return reinstallService
   }
 
   async discover(onProgress?: (event: ReinstallProgress) => void): Promise<{
@@ -56,12 +61,7 @@ export class ReinstallService {
     const result = await this.powershell.executeCommand(
       'Get-CimInstance Win32_OperatingSystem | Select-Object Caption,Version,BuildNumber,InstallDate,LastBootUpTime,OSArchitecture,CSName | ConvertTo-Json -Compress'
     )
-    let system: Record<string, unknown> = {}
-    try {
-      system = JSON.parse(result.stdout || '{}') as Record<string, unknown>
-    } catch {
-      /* keep empty */
-    }
+    const system = await readJson<Record<string, unknown>>(result.stdout || '', {})
     onProgress?.({ phase: 'discover', percent: 100, message: 'Ermittlung abgeschlossen.' })
     return { apps, drivers, system, tweaks: activeTweaks }
   }
@@ -138,39 +138,7 @@ export class ReinstallService {
       await fs.writeFile(path.join(root, 'drivers.json'), JSON.stringify(discovered.drivers, null, 2), 'utf8')
       await fs.writeFile(path.join(root, 'system.json'), JSON.stringify(discovered.system, null, 2), 'utf8')
 
-      // 5. Standalone Notfall-Wiederherstellungsskript (Auto-Restore.cmd)
-      const autoRestoreScript = `@echo off
-:: M-Toolbox Automatischer Reinstall-Wiederhersteller
-cd /d "%~dp0"
-echo ========================================================
-echo   M-Toolbox - Automatische System-Wiederherstellung
-echo ========================================================
-echo.
-
-if exist "drivers\\" (
-    echo [1/3] Installiere gesicherte OEM-Treiber via pnputil...
-    pnputil /add-driver "drivers\\*.inf" /subdirs /install
-)
-
-if exist "wifi\\" (
-    echo [2/3] Importiere WLAN-Profile...
-    for %%f in ("wifi\\*.xml") do (
-        netsh wlan add profile filename="%%f" user=all
-    )
-)
-
-echo [3/3] Installiere Winget-Programme...
-${selectedApps.map((a) => `winget install --id "${a.id}" -e --silent --accept-package-agreements --accept-source-agreements`).join('\r\n')}
-
-echo.
-echo ========================================================
-echo   Wiederherstellung abgeschlossen!
-echo ========================================================
-pause
-`
-      await fs.writeFile(path.join(root, 'Auto-Restore.cmd'), autoRestoreScript, 'utf8')
-
-      // 6. ZIP-Kompression
+      // 5. ZIP-Kompression
       onProgress?.({ phase: 'archive', percent: 85, message: 'Installationsplan wird komprimiert …' })
       const result = await this.powershell.executeCommand(
         `Compress-Archive -Path ${quote(path.join(root, '*'))} -DestinationPath ${quote(filePath)} -Force`,
@@ -193,12 +161,11 @@ pause
     const root = await this.extract(filePath)
     try {
       const manifest = await this.readManifest(root)
-      const apps = JSON.parse(await fs.readFile(path.join(root, 'apps.json'), 'utf8').catch(() => '[]')) as Array<{ id: string; name: string; version?: string }>
-      const drivers = JSON.parse(await fs.readFile(path.join(root, 'drivers.json'), 'utf8').catch(() => '{"packages":[]}')) as { packages?: unknown[] }
-      const systemInfo = JSON.parse(await fs.readFile(path.join(root, 'system.json'), 'utf8').catch(() => '{}')) as Record<string, unknown>
-      const tweaks = JSON.parse(await fs.readFile(path.join(root, 'tweaks.json'), 'utf8').catch(() => '[]')) as string[]
+      const apps = await readJson<Array<{ id: string; name: string; version?: string }>>(path.join(root, 'apps.json'), [])
+      const drivers = await readJson<{ packages?: unknown[] }>(path.join(root, 'drivers.json'), {})
+      const systemInfo = await readJson<Record<string, unknown>>(path.join(root, 'system.json'), {})
+      const tweaks = await readJson<string[]>(path.join(root, 'tweaks.json'), [])
 
-      // Prüfe, ob physische Treiber (.inf) im Verzeichnis existieren
       let hasPhysicalDrivers = false
       try {
         const driverEntries = await fs.readdir(path.join(root, 'drivers'))
@@ -271,7 +238,7 @@ pause
       // 3. Windows-Tweaks anwenden
       if (options.tweaks !== false) {
         try {
-          const tweaks = JSON.parse(await fs.readFile(path.join(root, 'tweaks.json'), 'utf8')) as string[]
+          const tweaks = await readJson<string[]>(path.join(root, 'tweaks.json'), [])
           onProgress?.({ phase: 'tweaks', percent: 40, message: 'Wende gespeicherte Windows-Tweaks an …' })
           let restartExplorerNeeded = false
           for (const tweakId of tweaks) {
@@ -291,7 +258,7 @@ pause
 
       // 4. Programme über Winget installieren
       if (options.apps !== false) {
-        const apps = JSON.parse(await fs.readFile(path.join(root, 'apps.json'), 'utf8')) as Array<{ id?: string; name?: string }>
+        const apps = await readJson<Array<{ id?: string; name?: string }>>(path.join(root, 'apps.json'), [])
         const selectedSet = options.selectedAppIds ? new Set(options.selectedAppIds) : null
         const targetApps = selectedSet ? apps.filter((a) => a.id && selectedSet.has(a.id)) : apps
 
@@ -353,19 +320,12 @@ pause
   }
 
   private async readManifest(root: string): Promise<ReinstallManifest> {
-    const manifest = JSON.parse(await fs.readFile(path.join(root, 'manifest.json'), 'utf8')) as Partial<ReinstallManifest> | null
-    if (
-      !manifest ||
-      manifest.format !== 'mtoolbox-reinstall' ||
-      manifest.formatVersion !== '2.0' ||
-      typeof manifest.createdBy !== 'string' ||
-      typeof manifest.backupId !== 'string' ||
-      typeof manifest.appCount !== 'number' ||
-      typeof manifest.driverCount !== 'number' ||
-      !Array.isArray(manifest.sections)
-    ) {
+    const manifest = await readJson<Partial<ReinstallManifest> | null>(path.join(root, 'manifest.json'), null)
+    if (!manifest?.format?.startsWith('mtoolbox-reinstall')) {
       throw new Error('Ungültiges oder nicht unterstütztes M-Toolbox-Archiv.')
     }
     return manifest as ReinstallManifest
   }
 }
+
+export const reinstallService = new ReinstallService()
