@@ -32,7 +32,8 @@ interface CachedStaticData {
 export class BatteryService {
   private static instance: BatteryService
   private staticCache: CachedStaticData | null = null
-  private readonly STATIC_CACHE_TTL = 60000 // 60 seconds
+  private readonly STATIC_CACHE_TTL = 300000 // 5 minutes cache for static specs
+  private hasBatteryHardware: boolean | null = null
 
   private constructor() {}
 
@@ -170,15 +171,17 @@ export class BatteryService {
       $wmi = Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction SilentlyContinue | Select-Object -First 1
       $b = Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue | Select-Object -First 1
 
-      # Measure process CPU delta over 400ms
+      $hasBat = ($b -ne $null) -or ($wmi -ne $null) -or ($p.BatteryChargeStatus.ToString() -ne 'NoSystemBattery')
+
+      # Measure process CPU delta over 250ms
       $p1 = @{}
       Get-Process | ForEach-Object { if ($_.CPU) { $p1[$_.Id] = $_.CPU } }
-      Start-Sleep -Milliseconds 400
+      Start-Sleep -Milliseconds 250
       $cores = [Environment]::ProcessorCount
 
       $apps = Get-Process | ForEach-Object {
         if ($_.CPU -and $p1.ContainsKey($_.Id)) {
-          $delta = ($_.CPU - $p1[$_.Id]) / 0.4 / $cores * 100
+          $delta = ($_.CPU - $p1[$_.Id]) / 0.25 / $cores * 100
           if ($delta -ge 0.3) {
             [PSCustomObject]@{
               Id = $_.Id
@@ -190,11 +193,14 @@ export class BatteryService {
         }
       } | Sort-Object CpuPercent -Descending | Select-Object -First 10
 
+      $chargePct = if ($p.BatteryLifePercent -ge 0) { [int][Math]::Round($p.BatteryLifePercent * 100) } elseif ($b -and $b.EstimatedChargeRemaining) { [int]$b.EstimatedChargeRemaining } else { 100 }
+
       [PSCustomObject]@{
-        ChargePercent = [int][Math]::Round($p.BatteryLifePercent * 100)
+        HasBattery = $hasBat
+        ChargePercent = $chargePct
         ChargeStatus = $p.BatteryChargeStatus.ToString()
         PowerLine = $p.PowerLineStatus.ToString()
-        RemainingSeconds = $p.BatteryLifeRemaining
+        RemainingSeconds = if ($p.BatteryLifeRemaining -gt 0) { $p.BatteryLifeRemaining } elseif ($b -and $b.EstimatedRunTime -gt 0) { $b.EstimatedRunTime * 60 } else { -1 }
         DischargeRate = if ($wmi) { [int]$wmi.DischargeRate } else { 0 }
         ChargeRate = if ($wmi) { [int]$wmi.ChargeRate } else { 0 }
         Charging = if ($wmi) { [bool]$wmi.Charging } else { $false }
@@ -206,6 +212,7 @@ export class BatteryService {
     `
 
     let liveData: any = {
+      HasBattery: this.hasBatteryHardware ?? true,
       ChargePercent: 100,
       ChargeStatus: 'Online',
       PowerLine: 'Online',
@@ -219,26 +226,31 @@ export class BatteryService {
       TopProcesses: []
     }
 
-    let hasBattery = true
-
     try {
-      const stdout = await this.runPowerShell(psScript, 6000)
+      const stdout = await this.runPowerShell(psScript, 8000)
       if (stdout && stdout.trim()) {
         const parsed = JSON.parse(stdout.trim())
         liveData = parsed
-        if (parsed.ChargeStatus === 'NoSystemBattery' || parsed.ChargePercent < 0) {
-          hasBattery = false
-        }
       }
     } catch (err) {
       console.warn('[BatteryService] Live power status query failed:', err)
     }
 
     // 2. Fetch static battery capacities & hardware details
-    const staticData = hasBattery ? await this.getStaticBatteryData() : null
-    if (!staticData && liveData.ChargeStatus === 'NoSystemBattery') {
-      hasBattery = false
+    const staticData = await this.getStaticBatteryData()
+
+    // Determine battery hardware presence reliably
+    if (this.hasBatteryHardware === null) {
+      if (liveData.HasBattery !== undefined) {
+        this.hasBatteryHardware = Boolean(liveData.HasBattery)
+      } else if (staticData && staticData.designCapacityMWh > 0) {
+        this.hasBatteryHardware = true
+      } else if (liveData.ChargeStatus === 'NoSystemBattery') {
+        this.hasBatteryHardware = false
+      }
     }
+
+    const hasBattery = this.hasBatteryHardware ?? true
 
     // 3. Fetch power plans
     const { active, available } = await this.getPowerPlans()

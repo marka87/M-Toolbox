@@ -39,6 +39,12 @@ export function useBattery() {
 
   useEffect(() => {
     isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
+  useEffect(() => {
     fetchInfo()
 
     if (monitorMode === 'off') return
@@ -51,7 +57,6 @@ export function useBattery() {
     }, intervalMs)
 
     return () => {
-      isMounted.current = false
       clearInterval(interval)
     }
   }, [fetchInfo, monitorMode])
