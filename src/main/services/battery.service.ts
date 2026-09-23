@@ -263,12 +263,7 @@ export class BatteryService {
     }
 
     // Map top processes to BatteryDrainProcess
-    const rawProcesses = Array.isArray(liveData.TopProcesses)
-      ? liveData.TopProcesses
-      : liveData.TopProcesses
-      ? [liveData.TopProcesses]
-      : []
-
+    const currentPid = process.pid
     const drainProcesses: BatteryDrainProcess[] = rawProcesses
       .filter((p: any) => p && p.Name && !['Idle'].includes(p.Name))
       .map((p: any) => {
@@ -278,39 +273,46 @@ export class BatteryService {
         else if (cpu >= 7) impactLevel = 'Hoch'
         else if (cpu >= 2) impactLevel = 'Moderat'
 
+        const nameLower = (p.Name || '').toLowerCase()
+        const isSelf =
+          p.Id === currentPid ||
+          nameLower.includes('m-toolbox') ||
+          nameLower === 'electron'
+
         return {
           id: p.Id,
           name: p.Name,
           cpuPercent: cpu,
           memoryMb: p.MemoryMB || 0,
           impactLevel,
-          estimatedDrainText: `${cpu}% CPU`
+          estimatedDrainText: `${cpu}% CPU`,
+          isSelf
         }
       })
 
-    // Battery Drain Alert evaluation
+    // Battery Drain Alert evaluation - exclude self and benign processes
     let drainAlert: BatteryDrainAlert | null = null
     if (isDischarging) {
       const benignNames = ['Idle', 'System', 'Registry', 'smss', 'csrss']
       const activeDrainHog = drainProcesses.find(
-        (p) => p.cpuPercent >= 12 && !benignNames.includes(p.name)
+        (p) => p.cpuPercent >= 12 && !benignNames.includes(p.name) && !p.isSelf
       )
 
-      if (activeDrainHog || dischargeRateWatts >= 18) {
-        const primaryHog = activeDrainHog || drainProcesses[0]
+      if (activeDrainHog || (dischargeRateWatts >= 18 && drainProcesses.some((p) => !p.isSelf))) {
+        const primaryHog = activeDrainHog || drainProcesses.find((p) => !p.isSelf)
         const isCritical =
           dischargeRateWatts >= 25 || (activeDrainHog && activeDrainHog.cpuPercent >= 25)
 
-        drainAlert = {
-          title: isCritical ? 'Kritisch hoher Akkuverbrauch' : 'Erhöhter Akkuverbrauch erkannt',
-          message: primaryHog
-            ? `"${primaryHog.name}" (PID: ${primaryHog.id}) beansprucht aktuell ${primaryHog.cpuPercent}% CPU und erhöht die Entladerate ${dischargeRateWatts > 0 ? `auf -${dischargeRateWatts} W` : 'spürbar'}.`
-            : `Hohe Systementladung von -${dischargeRateWatts} W im Akkubetrieb.`,
-          processName: primaryHog?.name || 'Hintergrundprozess',
-          pid: primaryHog?.id || 0,
-          severity: isCritical ? 'critical' : 'warning',
-          cpuPercent: primaryHog?.cpuPercent || 0,
-          dischargeWattage: dischargeRateWatts
+        if (primaryHog) {
+          drainAlert = {
+            title: isCritical ? 'Kritisch hoher Akkuverbrauch' : 'Erhöhter Akkuverbrauch erkannt',
+            message: `"${primaryHog.name}" (PID: ${primaryHog.id}) beansprucht aktuell ${primaryHog.cpuPercent}% CPU und erhöht die Entladerate ${dischargeRateWatts > 0 ? `auf -${dischargeRateWatts} W` : 'spürbar'}.`,
+            processName: primaryHog.name,
+            pid: primaryHog.id,
+            severity: isCritical ? 'critical' : 'warning',
+            cpuPercent: primaryHog.cpuPercent,
+            dischargeWattage: dischargeRateWatts
+          }
         }
       }
     }
@@ -361,8 +363,8 @@ export class BatteryService {
    * Terminates a running process by PID
    */
   public async killProcess(pid: number): Promise<{ success: boolean; message: string }> {
-    if (!pid || pid <= 4) {
-      return { success: false, message: 'Systemprozess kann nicht beendet werden.' }
+    if (!pid || pid <= 4 || pid === process.pid) {
+      return { success: false, message: 'System- oder Eigenprozess kann nicht beendet werden.' }
     }
     try {
       await execAsync(`taskkill /F /PID ${pid}`, { timeout: 4000 })

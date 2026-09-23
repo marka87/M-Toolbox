@@ -13,6 +13,7 @@ export interface BatteryDrainProcess {
   memoryMb: number
   impactLevel: BatteryDrainImpact
   estimatedDrainText?: string
+  isSelf?: boolean
 }
 
 export interface BatteryDrainAlert {

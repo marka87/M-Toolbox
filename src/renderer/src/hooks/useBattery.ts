@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { BatteryInfo, BatteryReportResult } from '@shared/battery.types'
 
+export type BatteryMonitorMode = 'fast' | 'balanced' | 'eco' | 'off'
+
 export function useBattery() {
   const [info, setInfo] = useState<BatteryInfo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -9,7 +11,7 @@ export function useBattery() {
   const [reportResult, setReportResult] = useState<BatteryReportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const [isLiveMonitoring, setIsLiveMonitoring] = useState(true)
+  const [monitorMode, setMonitorMode] = useState<BatteryMonitorMode>('balanced')
   const [killingPid, setKillingPid] = useState<number | null>(null)
   const [alertDismissed, setAlertDismissed] = useState(false)
 
@@ -39,21 +41,23 @@ export function useBattery() {
     isMounted.current = true
     fetchInfo()
 
-    if (!isLiveMonitoring) return
+    if (monitorMode === 'off') return
 
-    // Poll live battery status & drain every 4 seconds when live monitoring is on
+    const intervalMs = monitorMode === 'fast' ? 3000 : monitorMode === 'balanced' ? 6000 : 10000
+
+    // Poll live battery status & drain based on selected monitor mode
     const interval = setInterval(() => {
       fetchInfo()
-    }, 4000)
+    }, intervalMs)
 
     return () => {
       isMounted.current = false
       clearInterval(interval)
     }
-  }, [fetchInfo, isLiveMonitoring])
+  }, [fetchInfo, monitorMode])
 
   const toggleLiveMonitoring = useCallback(() => {
-    setIsLiveMonitoring((prev) => !prev)
+    setMonitorMode((prev) => (prev === 'off' ? 'balanced' : 'off'))
   }, [])
 
   const dismissAlert = useCallback(() => {
@@ -130,7 +134,9 @@ export function useBattery() {
     isLoading,
     isSwitchingPlan,
     isGeneratingReport,
-    isLiveMonitoring,
+    monitorMode,
+    setMonitorMode,
+    isLiveMonitoring: monitorMode !== 'off',
     killingPid,
     alertDismissed,
     reportResult,
