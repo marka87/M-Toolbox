@@ -2,7 +2,6 @@ import React from 'react'
 import {
   LayoutDashboard,
   Package,
-  History,
   Cpu,
   Trash2,
   Wrench,
@@ -11,8 +10,8 @@ import {
   Terminal,
   Settings,
   ShieldCheck,
-  RefreshCw,
-  Activity
+  Activity,
+  Archive
 } from 'lucide-react'
 import type { NavigationModule } from '@shared/types'
 
@@ -26,8 +25,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'software', label: 'Software Center', icon: Package },
-  { id: 'backup', label: 'Backup & Restore', icon: History },
-  { id: 'reinstall', label: 'Windows Reinstall Assistant', icon: RefreshCw },
+  { id: 'backup', label: 'Backup & Migration', icon: Archive },
   { id: 'driver', label: 'Driver Center', icon: Cpu },
   { id: 'ram-guardian', label: 'RAM Guardian', icon: Activity, badge: 'Neu' },
   { id: 'cleanup', label: 'Cleanup Center', icon: Trash2 },

@@ -175,9 +175,13 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.BACKUP.SELECT_BACKUP_FILE, async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'M-Toolbox Backup-Datei auswählen',
+      title: 'M-Toolbox Sicherungsdatei auswählen',
       properties: ['openFile'],
-      filters: [{ name: 'M-Toolbox Backup (*.json)', extensions: ['json'] }]
+      filters: [
+        { name: 'Alle M-Toolbox Sicherungen (*.json, *.mtoolbox)', extensions: ['json', 'mtoolbox', 'zip'] },
+        { name: 'Schnell-Backup (*.json)', extensions: ['json'] },
+        { name: 'Reinstall-Bundle (*.mtoolbox)', extensions: ['mtoolbox', 'zip'] }
+      ]
     })
     if (result.canceled || result.filePaths.length === 0) {
       return null

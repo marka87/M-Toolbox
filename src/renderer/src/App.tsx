@@ -3,7 +3,7 @@ import { Titlebar } from './components/layout/Titlebar'
 import { Sidebar } from './components/layout/Sidebar'
 import { DashboardPage } from './pages/DashboardPage'
 import { SoftwarePage } from './pages/SoftwarePage'
-import { BackupPage } from './pages/BackupPage'
+import { BackupMigrationPage } from './pages/BackupMigrationPage'
 import { DriverPage } from './pages/DriverPage'
 import { CleanupPage } from './pages/CleanupPage'
 import { RepairPage } from './pages/RepairPage'
@@ -11,7 +11,6 @@ import { TweaksPage } from './pages/TweaksPage'
 import { NetworkPage } from './pages/NetworkPage'
 import { AdvancedPage } from './pages/AdvancedPage'
 import { SettingsPage } from './pages/SettingsPage'
-import { ReinstallPage } from './pages/ReinstallPage'
 import { RAMGuardianPage } from './pages/RAMGuardianPage'
 import { useSettings } from './hooks/useSettings'
 import type { NavigationModule } from '@shared/types'
@@ -29,9 +28,8 @@ export const App: React.FC = () => {
       case 'software':
         return <SoftwarePage />
       case 'backup':
-        return <BackupPage />
       case 'reinstall':
-        return <ReinstallPage />
+        return <BackupMigrationPage />
       case 'driver':
         return <DriverPage />
       case 'ram-guardian':
