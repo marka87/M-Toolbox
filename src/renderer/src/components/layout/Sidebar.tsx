@@ -11,7 +11,8 @@ import {
   Settings,
   ShieldCheck,
   Activity,
-  Archive
+  Archive,
+  BatteryCharging
 } from 'lucide-react'
 import type { NavigationModule } from '@shared/types'
 
@@ -27,7 +28,8 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'software', label: 'Software Center', icon: Package },
   { id: 'backup', label: 'Backup & Migration', icon: Archive },
   { id: 'driver', label: 'Driver Center', icon: Cpu },
-  { id: 'ram-guardian', label: 'RAM Guardian', icon: Activity, badge: 'Neu' },
+  { id: 'ram-guardian', label: 'RAM Guardian', icon: Activity },
+  { id: 'battery', label: 'Batterie-Manager', icon: BatteryCharging, badge: 'Neu' },
   { id: 'cleanup', label: 'Cleanup Center', icon: Trash2 },
   { id: 'repair', label: 'Repair Center', icon: Wrench },
   { id: 'tweaks', label: 'Tweaks', icon: Sliders },

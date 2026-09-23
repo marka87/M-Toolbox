@@ -56,6 +56,7 @@ import type {
   RAMHistoryPoint,
   RAMCleanupResult
 } from '../shared/ram.types'
+import type { BatteryInfo, BatteryReportResult } from '../shared/battery.types'
 
 export interface MToolboxAPI {
   dashboard: {
@@ -159,6 +160,11 @@ export interface MToolboxAPI {
     getHistory24h: () => Promise<RAMHistoryPoint[]>
     cleanWindows: () => Promise<RAMCleanupResult>
     disableStartup: (itemId: string) => Promise<{ success: boolean; message: string }>
+  }
+  battery: {
+    getInfo: () => Promise<BatteryInfo>
+    setPowerPlan: (guid: string) => Promise<{ success: boolean; message: string }>
+    generateReport: () => Promise<BatteryReportResult>
   }
   system: {
     minimize: () => Promise<void>
@@ -345,6 +351,11 @@ const api: MToolboxAPI = {
     getHistory24h: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_HISTORY_24H),
     cleanWindows: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.CLEAN_WINDOWS),
     disableStartup: (itemId: string) => ipcRenderer.invoke(IPC_CHANNELS.RAM.DISABLE_STARTUP, itemId)
+  },
+  battery: {
+    getInfo: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GET_INFO),
+    setPowerPlan: (guid: string) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SET_POWER_PLAN, guid),
+    generateReport: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GENERATE_REPORT)
   },
   system: {
     minimize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MINIMIZE_WINDOW),

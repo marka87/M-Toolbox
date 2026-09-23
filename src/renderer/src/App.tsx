@@ -12,6 +12,7 @@ import { NetworkPage } from './pages/NetworkPage'
 import { AdvancedPage } from './pages/AdvancedPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { RAMGuardianPage } from './pages/RAMGuardianPage'
+import { BatteryPage } from './pages/BatteryPage'
 import { useSettings } from './hooks/useSettings'
 import type { NavigationModule } from '@shared/types'
 
@@ -34,6 +35,8 @@ export const App: React.FC = () => {
         return <DriverPage />
       case 'ram-guardian':
         return <RAMGuardianPage />
+      case 'battery':
+        return <BatteryPage />
       case 'cleanup':
         return <CleanupPage />
       case 'repair':

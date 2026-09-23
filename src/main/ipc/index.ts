@@ -10,10 +10,10 @@ import { tweakService } from '../services/tweak.service'
 import { networkService } from '../services/network.service'
 import { advancedService } from '../services/advanced.service'
 import { settingsService } from '../services/settings.service'
-import { AppSettings } from '../../shared/types'
 import { reinstallService } from '../services/reinstall.service'
 import { ramService } from '../services/ram.service'
 import { databaseService } from '../services/database.service'
+import { batteryService } from '../services/battery.service'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -428,6 +428,19 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.RAM.DISABLE_STARTUP, async (_, itemId: string) => {
     return await ramService.disableStartupItem(itemId)
+  })
+
+  // Battery Manager IPC
+  ipcMain.handle(IPC_CHANNELS.BATTERY.GET_INFO, async () => {
+    return await batteryService.getBatteryInfo()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BATTERY.SET_POWER_PLAN, async (_, guid: string) => {
+    return await batteryService.setPowerPlan(guid)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BATTERY.GENERATE_REPORT, async () => {
+    return await batteryService.generateHtmlReport()
   })
 }
 

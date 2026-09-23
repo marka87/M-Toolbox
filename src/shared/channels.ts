@@ -104,6 +104,11 @@ export const IPC_CHANNELS = {
     CLEAN_WINDOWS: 'ram:clean-windows',
     DISABLE_STARTUP: 'ram:disable-startup'
   },
+  BATTERY: {
+    GET_INFO: 'battery:get-info',
+    SET_POWER_PLAN: 'battery:set-power-plan',
+    GENERATE_REPORT: 'battery:generate-report'
+  },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',
     MINIMIZE_WINDOW: 'system:minimize-window',
