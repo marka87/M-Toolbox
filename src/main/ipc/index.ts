@@ -436,8 +436,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   })
 
   // Battery Manager IPC
-  ipcMain.handle(IPC_CHANNELS.BATTERY.GET_INFO, async () => {
-    return await batteryService.getBatteryInfo()
+  ipcMain.handle(IPC_CHANNELS.BATTERY.GET_INFO, async (_, includeDrainProcesses?: boolean) => {
+    return await batteryService.getBatteryInfo(includeDrainProcesses ?? true)
   })
 
   ipcMain.handle(IPC_CHANNELS.BATTERY.SET_POWER_PLAN, async (_, guid: string) => {

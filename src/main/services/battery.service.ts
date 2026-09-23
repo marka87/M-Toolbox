@@ -34,6 +34,8 @@ export class BatteryService {
   private staticCache: CachedStaticData | null = null
   private readonly STATIC_CACHE_TTL = 300000 // 5 minutes cache for static specs
   private hasBatteryHardware: boolean | null = null
+  private cachedPowerPlans: { active: PowerPlanItem | null; available: PowerPlanItem[] } | null = null
+  private lastPowerPlansTime = 0
 
   private constructor() {}
 
@@ -130,6 +132,11 @@ export class BatteryService {
     active: PowerPlanItem | null
     available: PowerPlanItem[]
   }> {
+    const now = Date.now()
+    if (this.cachedPowerPlans && now - this.lastPowerPlansTime < 60000) {
+      return this.cachedPowerPlans
+    }
+
     const plans: PowerPlanItem[] = []
     let active: PowerPlanItem | null = null
 
@@ -155,14 +162,16 @@ export class BatteryService {
       console.warn('[BatteryService] Failed to query power plans:', err)
     }
 
-    return { active, available: plans }
+    this.cachedPowerPlans = { active, available: plans }
+    this.lastPowerPlansTime = now
+    return this.cachedPowerPlans
   }
 
   /**
    * Fetches real-time battery status combined with static capacity info,
    * live discharge/charge wattage, and top energy-draining processes.
    */
-  public async getBatteryInfo(): Promise<BatteryInfo> {
+  public async getBatteryInfo(includeDrainProcesses = true): Promise<BatteryInfo> {
     try {
       // 1. Check live power status, WMI battery status & sample process CPU delta
       const psScript = `
@@ -174,25 +183,27 @@ export class BatteryService {
 
       $hasBat = ($b -ne $null) -or ($wmi -ne $null) -or ($p.BatteryChargeStatus.ToString() -ne 'NoSystemBattery')
 
-      # Measure process CPU delta over 250ms
-      $p1 = @{}
-      Get-Process | ForEach-Object { if ($_.CPU) { $p1[$_.Id] = $_.CPU } }
-      Start-Sleep -Milliseconds 250
-      $cores = [Environment]::ProcessorCount
+      $apps = @()
+      if (${includeDrainProcesses ? '$true' : '$false'}) {
+        $p1 = @{}
+        Get-Process | ForEach-Object { if ($_.CPU) { $p1[$_.Id] = $_.CPU } }
+        Start-Sleep -Milliseconds 250
+        $cores = [Environment]::ProcessorCount
 
-      $apps = Get-Process | ForEach-Object {
-        if ($_.CPU -and $p1.ContainsKey($_.Id)) {
-          $delta = ($_.CPU - $p1[$_.Id]) / 0.25 / $cores * 100
-          if ($delta -ge 0.3) {
-            [PSCustomObject]@{
-              Id = $_.Id
-              Name = $_.ProcessName
-              CpuPercent = [Math]::Round($delta, 1)
-              MemoryMB = [Math]::Round($_.WorkingSet64 / 1MB)
+        $apps = Get-Process | ForEach-Object {
+          if ($_.CPU -and $p1.ContainsKey($_.Id)) {
+            $delta = ($_.CPU - $p1[$_.Id]) / 0.25 / $cores * 100
+            if ($delta -ge 0.3) {
+              [PSCustomObject]@{
+                Id = $_.Id
+                Name = $_.ProcessName
+                CpuPercent = [Math]::Round($delta, 1)
+                MemoryMB = [Math]::Round($_.WorkingSet64 / 1MB)
+              }
             }
           }
-        }
-      } | Sort-Object CpuPercent -Descending | Select-Object -First 10
+        } | Sort-Object CpuPercent -Descending | Select-Object -First 10
+      }
 
       $chargePct = if ($p.BatteryLifePercent -ge 0) { [int][Math]::Round($p.BatteryLifePercent * 100) } elseif ($b -and $b.EstimatedChargeRemaining) { [int]$b.EstimatedChargeRemaining } else { 100 }
 

@@ -36,9 +36,9 @@ export const MiniHudWidget: React.FC = () => {
       if (state) setIsAlwaysOnTop(state.alwaysOnTop)
     }).catch(() => {})
 
-    // Battery polling every 8s
+    // Battery polling every 8s (lightweight, skips 250ms process scan)
     const fetchBattery = () => {
-      window.mToolbox?.battery?.getInfo().then((info) => {
+      window.mToolbox?.battery?.getInfo(false).then((info) => {
         setBattery(info)
       }).catch(() => {})
     }

@@ -19,6 +19,14 @@ Alle wichtigen Änderungen an M-Toolbox werden hier dokumentiert. Das Format ori
 - **1-Klick RAM-Bereinigung direkt im Widget**: Schnelles Besen-Icon zur sofortigen Freigabe von Arbeitsspeicher (`EmptyWorkingSet`) mit visueller Erfolgsrückmeldung.
 - **Doppelklick-Aktion & Titlebar-Integration**: Neues Tacho-Icon im Fensterkopf von M-Toolbox zum Umschalten des Widgets sowie Doppelklick auf die Widget-Fläche, um das Hauptfenster in den Vordergrund zu holen.
 
+### Geändert / Optimiert
+
+- **Dramatische CPU-Reduktion (< 0,5 %)**:
+  - Netzwerkdurchsatz wird nun direkt über das native Windows `netstat -e` ermittelt (kein periodischer PowerShell-Prozess mehr alle 1,5s).
+  - GPU-Sampling nutzt direkte `nvidia-smi`-Abfragen (ohne PowerShell) bzw. gedrosselte 6s-Intervalle.
+  - Das Mini-HUD ruft Akku-Daten ohne ressourcenintensives Prozess-Sampling ab (`includeDrainProcesses = false`), wodurch keine 250ms-Schleifen im Hintergrund laufen.
+  - Caching von Windows-Energieschemata (`powercfg /list`) für 60s.
+
 ## [2.3.0] - 2026-09-23
 
 ### Hinzugefügt

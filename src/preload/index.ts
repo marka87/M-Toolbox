@@ -163,7 +163,7 @@ export interface MToolboxAPI {
     disableStartup: (itemId: string) => Promise<{ success: boolean; message: string }>
   }
   battery: {
-    getInfo: () => Promise<BatteryInfo>
+    getInfo: (includeDrainProcesses?: boolean) => Promise<BatteryInfo>
     setPowerPlan: (guid: string) => Promise<{ success: boolean; message: string }>
     generateReport: () => Promise<BatteryReportResult>
     killProcess: (pid: number) => Promise<{ success: boolean; message: string }>
@@ -362,7 +362,7 @@ const api: MToolboxAPI = {
     disableStartup: (itemId: string) => ipcRenderer.invoke(IPC_CHANNELS.RAM.DISABLE_STARTUP, itemId)
   },
   battery: {
-    getInfo: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GET_INFO),
+    getInfo: (includeDrainProcesses?: boolean) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GET_INFO, includeDrainProcesses),
     setPowerPlan: (guid: string) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SET_POWER_PLAN, guid),
     generateReport: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GENERATE_REPORT),
     killProcess: (pid: number) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.KILL_PROCESS, pid)
