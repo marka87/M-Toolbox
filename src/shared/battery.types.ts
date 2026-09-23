@@ -31,3 +31,4 @@ export interface BatteryReportResult {
   filePath?: string
   error?: string
 }
+
