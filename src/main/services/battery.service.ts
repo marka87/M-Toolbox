@@ -37,6 +37,7 @@ export class BatteryService {
   private hasBatteryHardware: boolean | null = null
   private cachedPowerPlans: { active: PowerPlanItem | null; available: PowerPlanItem[] } | null = null
   private lastPowerPlansTime = 0
+  private explicitActiveProfile: PowerProfileMode | null = null
 
   private constructor() {}
 
@@ -129,12 +130,12 @@ export class BatteryService {
   /**
    * Reads available and active Windows Power Schemes
    */
-  private async getPowerPlans(): Promise<{
+  private async getPowerPlans(force = false): Promise<{
     active: PowerPlanItem | null
     available: PowerPlanItem[]
   }> {
     const now = Date.now()
-    if (this.cachedPowerPlans && now - this.lastPowerPlansTime < 60000) {
+    if (!force && this.cachedPowerPlans && now - this.lastPowerPlansTime < 10000) {
       return this.cachedPowerPlans
     }
 
@@ -473,6 +474,9 @@ export class BatteryService {
   public async setPowerPlan(guid: string): Promise<{ success: boolean; message: string }> {
     try {
       await execAsync(`powercfg /setactive ${guid}`, { timeout: 3000 })
+      this.cachedPowerPlans = null
+      this.lastPowerPlansTime = 0
+      this.explicitActiveProfile = null
       return { success: true, message: 'Energieschema erfolgreich aktiviert.' }
     } catch (err: any) {
       return { success: false, message: err?.message || 'Fehler beim Wechseln des Energieschemas.' }
@@ -503,9 +507,34 @@ export class BatteryService {
    * Returns predefined power profiles with active status
    */
   public async getPowerProfiles(): Promise<PowerProfileInfo[]> {
-    const { active } = await this.getPowerPlans().catch(() => ({ active: null }))
+    const { active } = await this.getPowerPlans(true).catch(() => ({ active: null }))
     const activeGuid = active?.guid?.toLowerCase() || ''
     const activeName = active?.name?.toLowerCase() || ''
+
+    // Detect active scheme strictly and mutually exclusively:
+    let activeMode: PowerProfileMode = 'balanced'
+
+    if (
+      this.explicitActiveProfile === 'eco' ||
+      activeGuid.includes('a1841308') ||
+      activeName.includes('energiespar') ||
+      activeName.includes('stromspar') ||
+      activeName.includes('saver')
+    ) {
+      activeMode = 'eco'
+    } else if (
+      this.explicitActiveProfile === 'performance' ||
+      activeGuid.includes('8c5e7fda') ||
+      activeGuid.includes('e9a42b02') ||
+      activeGuid.includes('1fc9b93e') ||
+      activeName.includes('leistung') ||
+      activeName.includes('performance') ||
+      activeName.includes('high')
+    ) {
+      activeMode = 'performance'
+    } else {
+      activeMode = 'balanced'
+    }
 
     return [
       {
@@ -517,7 +546,7 @@ export class BatteryService {
         cpuMaxPercentAc: 100,
         screenTimeoutMinutesBattery: 3,
         screenTimeoutMinutesAc: 10,
-        isActive: activeGuid.includes('a1841308') || activeName.includes('energiespar')
+        isActive: activeMode === 'eco'
       },
       {
         mode: 'balanced',
@@ -528,7 +557,7 @@ export class BatteryService {
         cpuMaxPercentAc: 100,
         screenTimeoutMinutesBattery: 10,
         screenTimeoutMinutesAc: 20,
-        isActive: activeGuid.includes('381b4222') || activeName.includes('ausbalanciert')
+        isActive: activeMode === 'balanced'
       },
       {
         mode: 'performance',
@@ -539,11 +568,7 @@ export class BatteryService {
         cpuMaxPercentAc: 100,
         screenTimeoutMinutesBattery: 15,
         screenTimeoutMinutesAc: 0,
-        isActive:
-          activeGuid.includes('8c5e7fda') ||
-          activeGuid.includes('e9a42b02') ||
-          activeGuid.includes('1fc9b93e') ||
-          activeName.includes('leistung')
+        isActive: activeMode === 'performance'
       }
     ]
   }
@@ -553,11 +578,35 @@ export class BatteryService {
    */
   public async setPowerProfile(mode: PowerProfileMode): Promise<{ success: boolean; message: string }> {
     try {
-      let targetGuid = '381b4222-f694-41f0-9685-ff5bb260df2e'
+      // 1. Check existing plans to see if one matches this mode already
+      const { available } = await this.getPowerPlans(true).catch(() => ({ available: [] }))
+      let targetGuid = ''
+
       if (mode === 'eco') {
-        targetGuid = 'a1841308-3541-4fab-bc81-f71556f20b4a'
+        const found = available.find(
+          (p) =>
+            p.guid.toLowerCase().includes('a1841308') ||
+            p.name.toLowerCase().includes('energiespar') ||
+            p.name.toLowerCase().includes('saver')
+        )
+        targetGuid = found ? found.guid : 'a1841308-3541-4fab-bc81-f71556f20b4a'
       } else if (mode === 'performance') {
-        targetGuid = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
+        const found = available.find(
+          (p) =>
+            p.guid.toLowerCase().includes('8c5e7fda') ||
+            p.guid.toLowerCase().includes('e9a42b02') ||
+            p.name.toLowerCase().includes('leistung') ||
+            p.name.toLowerCase().includes('performance')
+        )
+        targetGuid = found ? found.guid : '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
+      } else {
+        const found = available.find(
+          (p) =>
+            p.guid.toLowerCase().includes('381b4222') ||
+            p.name.toLowerCase().includes('ausbalanciert') ||
+            p.name.toLowerCase().includes('balanced')
+        )
+        targetGuid = found ? found.guid : '381b4222-f694-41f0-9685-ff5bb260df2e'
       }
 
       // Try activating scheme, duplicate if needed
@@ -593,8 +642,10 @@ export class BatteryService {
         await execAsync(`powercfg /change monitor-timeout-ac 0`, { timeout: 3000 }).catch(() => {})
       }
 
-      // Force refresh power plans cache
-      this.powerPlansCache = null
+      // Explicitly set active mode and immediately clear cache
+      this.explicitActiveProfile = mode
+      this.cachedPowerPlans = null
+      this.lastPowerPlansTime = 0
 
       const titles: Record<PowerProfileMode, string> = {
         eco: '🌱 Eco / Energiesparmodus aktiviert (CPU-Spitzen auf 80 % gedeckelt)',

@@ -7,6 +7,7 @@ export function useBattery() {
   const [powerProfiles, setPowerProfiles] = useState<PowerProfileInfo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSwitchingPlan, setIsSwitchingPlan] = useState(false)
+  const [switchingMode, setSwitchingMode] = useState<PowerProfileMode | null>(null)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const [reportResult, setReportResult] = useState<BatteryReportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -142,6 +143,16 @@ export function useBattery() {
     async (mode: PowerProfileMode) => {
       if (!window.mToolbox?.battery?.setPowerProfile) return { success: false, message: 'API nicht verfügbar' }
       setIsSwitchingPlan(true)
+      setSwitchingMode(mode)
+
+      // Optimistic instant UI update: mark clicked profile active immediately
+      setPowerProfiles((prev) =>
+        prev.map((p) => ({
+          ...p,
+          isActive: p.mode === mode
+        }))
+      )
+
       try {
         const res = await window.mToolbox.battery.setPowerProfile(mode)
         if (isMounted.current) {
@@ -149,10 +160,14 @@ export function useBattery() {
         }
         return res
       } catch (err: any) {
+        if (isMounted.current) {
+          await fetchInfo()
+        }
         return { success: false, message: err?.message || 'Fehler beim Wechseln des Profils.' }
       } finally {
         if (isMounted.current) {
           setIsSwitchingPlan(false)
+          setSwitchingMode(null)
         }
       }
     },
@@ -164,6 +179,7 @@ export function useBattery() {
     powerProfiles,
     isLoading,
     isSwitchingPlan,
+    switchingMode,
     isGeneratingReport,
     isLiveMonitoring,
     killingPid,

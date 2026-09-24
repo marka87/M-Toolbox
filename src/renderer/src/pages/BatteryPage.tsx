@@ -17,7 +17,8 @@ import {
   X,
   Skull,
   Leaf,
-  Gauge
+  Gauge,
+  Loader2
 } from 'lucide-react'
 import { useBattery } from '../hooks/useBattery'
 import { Card } from '../components/ui/Card'
@@ -45,6 +46,7 @@ export const BatteryPage: React.FC = () => {
     powerProfiles,
     isLoading,
     isSwitchingPlan,
+    switchingMode,
     isGeneratingReport,
     isLiveMonitoring,
     killingPid,
@@ -721,10 +723,19 @@ export const BatteryPage: React.FC = () => {
                       className={`w-full mt-2 py-2 rounded-xl text-xs font-semibold transition-all ${
                         p.isActive
                           ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 cursor-default'
-                          : 'bg-fluent-card border border-fluent-border hover:bg-fluent-accent hover:text-white hover:border-transparent text-fluent-text'
+                          : 'bg-fluent-card border border-fluent-border hover:bg-fluent-accent hover:text-white hover:border-transparent text-fluent-text disabled:opacity-50 disabled:cursor-not-allowed'
                       }`}
                     >
-                      {p.isActive ? 'Profil ist aktiv' : isSwitchingPlan ? 'Wird aktiviert...' : 'Aktivieren'}
+                      {p.isActive ? (
+                        'Profil ist aktiv'
+                      ) : switchingMode === p.mode ? (
+                        <span className="flex items-center justify-center gap-1.5">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Wird aktiviert...</span>
+                        </span>
+                      ) : (
+                        'Aktivieren'
+                      )}
                     </button>
                   </div>
                 </div>
