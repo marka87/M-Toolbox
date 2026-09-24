@@ -26,14 +26,23 @@ const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
 
 // --- MEMOIZED HUD TILES (Clean Tabular Typography, Equal Sizing) ---
 
+const HudProgressBar: React.FC<{ percent: number; colorClass: string }> = ({ percent, colorClass }) => (
+  <div className="w-full bg-slate-800 rounded-full h-1.5 mt-1.5 overflow-hidden">
+    <div
+      className={`h-full ${colorClass}`}
+      style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+    />
+  </div>
+)
+
 const CpuTile = React.memo<{ cpuVal: number }>(({ cpuVal }) => {
   const color = getMetricColor(cpuVal)
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col justify-between">
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
       {/* Row 1: Label left | Value right */}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2 leading-none">
-        <div className="flex items-baseline gap-1.5 min-w-0">
-          <Cpu className="w-3.5 h-3.5 text-sky-400 shrink-0 self-center" />
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-1 leading-none">
+        <div className="flex items-baseline gap-1 min-w-0">
+          <Cpu className="w-3 h-3 text-sky-400 shrink-0 self-center" />
           <span className="text-[11px] font-semibold text-slate-300 truncate">CPU</span>
         </div>
         <span
@@ -42,13 +51,7 @@ const CpuTile = React.memo<{ cpuVal: number }>(({ cpuVal }) => {
           {formatHudPercent(cpuVal)}
         </span>
       </div>
-      {/* Row 2: Fixed height progress bar without transitions */}
-      <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
-        <div
-          className={`h-full ${color.bg}`}
-          style={{ width: `${Math.min(100, Math.max(0, cpuVal))}%` }}
-        />
-      </div>
+      <HudProgressBar percent={cpuVal} colorClass={color.bg} />
     </div>
   )
 })
@@ -57,14 +60,14 @@ CpuTile.displayName = 'CpuTile'
 const RamTile = React.memo<{ ramVal: number; ramGB: number }>(({ ramVal, ramGB }) => {
   const color = getMetricColor(ramVal)
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col justify-between">
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
       {/* Row 1: Label + dimmed extra left | Value right */}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2 leading-none">
-        <div className="flex items-baseline gap-1.5 min-w-0">
-          <Activity className="w-3.5 h-3.5 text-indigo-400 shrink-0 self-center" />
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-1 leading-none">
+        <div className="flex items-baseline gap-1 min-w-0">
+          <Activity className="w-3 h-3 text-indigo-400 shrink-0 self-center" />
           <span className="text-[11px] font-semibold text-slate-300 truncate">RAM</span>
-          <span className="text-[10px] text-slate-500 font-normal truncate">
-            ({formatHudRamGB(ramGB)})
+          <span className="text-[9.5px] text-slate-500 font-normal truncate">
+            {formatHudRamGB(ramGB)}
           </span>
         </div>
         <span
@@ -73,13 +76,7 @@ const RamTile = React.memo<{ ramVal: number; ramGB: number }>(({ ramVal, ramGB }
           {formatHudPercent(ramVal)}
         </span>
       </div>
-      {/* Row 2: Fixed height progress bar */}
-      <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
-        <div
-          className={`h-full ${color.bg}`}
-          style={{ width: `${Math.min(100, Math.max(0, ramVal))}%` }}
-        />
-      </div>
+      <HudProgressBar percent={ramVal} colorClass={color.bg} />
     </div>
   )
 })
@@ -88,11 +85,11 @@ RamTile.displayName = 'RamTile'
 const GpuTile = React.memo<{ gpuVal: number }>(({ gpuVal }) => {
   const color = getMetricColor(gpuVal)
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col justify-between">
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
       {/* Row 1: Label left | Value right */}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2 leading-none">
-        <div className="flex items-baseline gap-1.5 min-w-0">
-          <Layers className="w-3.5 h-3.5 text-purple-400 shrink-0 self-center" />
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-1 leading-none">
+        <div className="flex items-baseline gap-1 min-w-0">
+          <Layers className="w-3 h-3 text-purple-400 shrink-0 self-center" />
           <span className="text-[11px] font-semibold text-slate-300 truncate">GPU</span>
         </div>
         <span
@@ -101,13 +98,7 @@ const GpuTile = React.memo<{ gpuVal: number }>(({ gpuVal }) => {
           {formatHudPercent(gpuVal)}
         </span>
       </div>
-      {/* Row 2: Fixed height progress bar */}
-      <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
-        <div
-          className={`h-full ${color.bg}`}
-          style={{ width: `${Math.min(100, Math.max(0, gpuVal))}%` }}
-        />
-      </div>
+      <HudProgressBar percent={gpuVal} colorClass={color.bg} />
     </div>
   )
 })
@@ -127,7 +118,7 @@ const BatteryTile = React.memo<{
 
   return (
     <div
-      className={`bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col justify-between ${
+      className={`bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between ${
         spanFull ? 'col-span-2' : ''
       }`}
     >
@@ -159,15 +150,7 @@ const BatteryTile = React.memo<{
         </span>
       </div>
 
-      {/* Row 2: Fixed height progress bar */}
-      <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
-        <div
-          className={`h-full ${barColor}`}
-          style={{
-            width: `${Math.min(100, Math.max(0, chargePercent))}%`
-          }}
-        />
-      </div>
+      <HudProgressBar percent={chargePercent} colorClass={barColor} />
     </div>
   )
 })
@@ -499,10 +482,6 @@ export const MiniHudWidget: React.FC = () => {
     ? chargeWatts
     : !isAcOnline && dischargeWatts > 0
     ? -dischargeWatts
-    : chargeWatts > 0
-    ? chargeWatts
-    : dischargeWatts > 0
-    ? -dischargeWatts
     : 0
 
   return (
@@ -516,31 +495,31 @@ export const MiniHudWidget: React.FC = () => {
       title="Doppelklick: M-Toolbox öffnen | Gedrückt halten zum Verschieben"
     >
       {/* Top Header Bar */}
-      <div className="flex items-center justify-between px-1 pt-0.5">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-          <span className="text-[11px] font-bold tracking-wider text-slate-300 uppercase font-mono">
+      <div className="flex items-center justify-between pt-0.5 pb-1">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+          <span className="text-[10px] font-bold tracking-wide text-slate-300 uppercase font-mono whitespace-nowrap shrink-0">
             M-TOOLBOX HUD
           </span>
           {isDemoMode && (
-            <span className="px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-mono font-bold border border-amber-500/30">
+            <span className="px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[8px] font-mono font-bold border border-amber-500/30 shrink-0">
               DEMO
             </span>
           )}
         </div>
 
         {/* Action Buttons (Non-draggable) */}
-        <div className="flex items-center gap-1" style={noDragStyle}>
+        <div className="flex items-center gap-0.5" style={noDragStyle}>
           {/* Quick RAM Clean */}
           <button
             onClick={handleCleanRam}
             disabled={isCleaningRam}
-            className="p-1 rounded-md text-slate-400 hover:text-cyan-300 hover:bg-slate-800 relative transition-colors"
+            className="p-0.5 rounded text-slate-400 hover:text-cyan-300 hover:bg-slate-800 relative transition-colors"
             title="Arbeitsspeicher bereinigen (EmptyWorkingSet)"
           >
             <Sparkles className={`w-3.5 h-3.5 ${isCleaningRam ? 'animate-spin text-cyan-400' : ''}`} />
             {cleanFeedback && (
-              <span className="absolute -bottom-5 right-0 text-[10px] font-bold font-mono text-cyan-400 bg-slate-900 px-1.5 py-0.5 rounded border border-cyan-500/50 whitespace-nowrap shadow-md">
+              <span className="absolute -bottom-5 right-0 text-[10px] font-bold font-mono text-cyan-400 bg-slate-900 px-1.5 py-0.5 rounded border border-cyan-500/50 whitespace-nowrap shadow-md z-10">
                 {cleanFeedback}
               </span>
             )}
@@ -549,7 +528,7 @@ export const MiniHudWidget: React.FC = () => {
           {/* Opacity Cycle */}
           <button
             onClick={handleCycleOpacity}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+            className="p-0.5 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
             title={`Transparenz umschalten (aktuell ${Math.round(opacity * 100)}%)`}
           >
             <Eye className="w-3.5 h-3.5" />
@@ -558,7 +537,7 @@ export const MiniHudWidget: React.FC = () => {
           {/* Click-Through Toggle */}
           <button
             onClick={handleToggleClickThrough}
-            className={`p-1 rounded-md transition-colors ${
+            className={`p-0.5 rounded transition-colors ${
               isClickThrough
                 ? 'text-sky-400 hover:bg-slate-800'
                 : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
@@ -571,7 +550,7 @@ export const MiniHudWidget: React.FC = () => {
           {/* Always on top toggle */}
           <button
             onClick={handleTogglePin}
-            className={`p-1 rounded-md transition-colors ${
+            className={`p-0.5 rounded transition-colors ${
               isAlwaysOnTop
                 ? 'text-amber-400 hover:bg-slate-800'
                 : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
@@ -588,7 +567,7 @@ export const MiniHudWidget: React.FC = () => {
           {/* Close / Hide Widget */}
           <button
             onClick={handleClose}
-            className="p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+            className="p-0.5 rounded text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
             title="Widget schließen"
           >
             <X className="w-3.5 h-3.5" />
@@ -597,7 +576,7 @@ export const MiniHudWidget: React.FC = () => {
       </div>
 
       {/* Metrics Grid with React.memo tiles: Equal columns, consistent gap and padding */}
-      <div className="grid grid-cols-2 gap-1.5 mt-2">
+      <div className="grid grid-cols-2 gap-1.5 mt-1.5">
         <CpuTile cpuVal={cpuVal} />
         <RamTile ramVal={ramVal} ramGB={ramGB} />
         {showGpuUsage && <GpuTile gpuVal={gpuVal} />}
