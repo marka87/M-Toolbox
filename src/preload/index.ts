@@ -206,6 +206,7 @@ export interface MToolboxAPI {
     setOpacity: (opacity: number) => Promise<void>
     restoreMainWindow: () => Promise<void>
     close: () => Promise<void>
+    setHeight: (height: number) => Promise<void>
   }
 }
 
@@ -438,7 +439,8 @@ const api: MToolboxAPI = {
     setClickThrough: (clickThrough: boolean) => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.SET_CLICK_THROUGH, clickThrough),
     setOpacity: (opacity: number) => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.SET_OPACITY, opacity),
     restoreMainWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.RESTORE_MAIN),
-    close: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.CLOSE)
+    close: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.CLOSE),
+    setHeight: (height: number) => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.SET_HEIGHT, height)
   }
 }
 

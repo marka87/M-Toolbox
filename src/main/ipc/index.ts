@@ -644,5 +644,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.WIDGET.CLOSE, () => {
     widgetService.closeWidget()
   })
+
+  ipcMain.handle(IPC_CHANNELS.WIDGET.SET_HEIGHT, (_, height: number) => {
+    widgetService.setHeight(height)
+  })
 }
 

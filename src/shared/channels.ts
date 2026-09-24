@@ -137,6 +137,7 @@ export const IPC_CHANNELS = {
     SET_CLICK_THROUGH: 'widget:set-click-through',
     SET_OPACITY: 'widget:set-opacity',
     RESTORE_MAIN: 'widget:restore-main',
-    CLOSE: 'widget:close'
+    CLOSE: 'widget:close',
+    SET_HEIGHT: 'widget:set-height'
   }
 } as const

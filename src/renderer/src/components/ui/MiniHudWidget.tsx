@@ -14,33 +14,38 @@ import {
   Eye
 } from 'lucide-react'
 import type { LiveMetrics, TelemetryMetric } from '../../../../shared/types'
+import {
+  formatHudPercent,
+  formatHudWattage,
+  formatHudRamGB,
+  getMetricColor
+} from '../../utils/hud-formatter'
 
 const dragStyle = { WebkitAppRegion: 'drag' } as React.CSSProperties
 const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
 
-function getMetricColor(val: number): string {
-  if (val < 60) return 'bg-emerald-400 text-emerald-400'
-  if (val < 85) return 'bg-amber-400 text-amber-400'
-  return 'bg-rose-500 text-rose-500'
-}
-
-// --- MEMOIZED HUD TILES (Clean Typography, Zero-Transition, Lightweight) ---
+// --- MEMOIZED HUD TILES (Clean Tabular Typography, Equal Sizing) ---
 
 const CpuTile = React.memo<{ cpuVal: number }>(({ cpuVal }) => {
   const color = getMetricColor(cpuVal)
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 flex flex-col justify-between">
-      <div className="flex items-center justify-between leading-none">
-        <span className="flex items-center gap-1.5 text-slate-300 font-medium text-[11px]">
-          <Cpu className="w-3.5 h-3.5 text-sky-400 shrink-0" /> CPU
-        </span>
-        <span className={`font-mono text-xs font-bold ${color.split(' ')[1]}`}>
-          {cpuVal}%
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col justify-between">
+      {/* Row 1: Label left | Value right */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2 leading-none">
+        <div className="flex items-baseline gap-1.5 min-w-0">
+          <Cpu className="w-3.5 h-3.5 text-sky-400 shrink-0 self-center" />
+          <span className="text-[11px] font-semibold text-slate-300 truncate">CPU</span>
+        </div>
+        <span
+          className={`font-mono text-xs font-bold [font-variant-numeric:tabular-nums] text-right whitespace-nowrap shrink-0 min-w-[5ch] ${color.text}`}
+        >
+          {formatHudPercent(cpuVal)}
         </span>
       </div>
-      <div className="w-full bg-slate-800 rounded-full h-1 mt-1.5 overflow-hidden">
+      {/* Row 2: Fixed height progress bar without transitions */}
+      <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
         <div
-          className={`h-full ${color.split(' ')[0]}`}
+          className={`h-full ${color.bg}`}
           style={{ width: `${Math.min(100, Math.max(0, cpuVal))}%` }}
         />
       </div>
@@ -52,18 +57,26 @@ CpuTile.displayName = 'CpuTile'
 const RamTile = React.memo<{ ramVal: number; ramGB: number }>(({ ramVal, ramGB }) => {
   const color = getMetricColor(ramVal)
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 flex flex-col justify-between">
-      <div className="flex items-center justify-between leading-none">
-        <span className="flex items-center gap-1.5 text-slate-300 font-medium text-[11px]">
-          <Activity className="w-3.5 h-3.5 text-indigo-400 shrink-0" /> RAM
-        </span>
-        <span className={`font-mono text-xs font-bold ${color.split(' ')[1]} flex items-baseline gap-1`}>
-          {ramVal}% <span className="text-[10px] font-normal text-slate-400">({ramGB}G)</span>
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col justify-between">
+      {/* Row 1: Label + dimmed extra left | Value right */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2 leading-none">
+        <div className="flex items-baseline gap-1.5 min-w-0">
+          <Activity className="w-3.5 h-3.5 text-indigo-400 shrink-0 self-center" />
+          <span className="text-[11px] font-semibold text-slate-300 truncate">RAM</span>
+          <span className="text-[10px] text-slate-500 font-normal truncate">
+            ({formatHudRamGB(ramGB)})
+          </span>
+        </div>
+        <span
+          className={`font-mono text-xs font-bold [font-variant-numeric:tabular-nums] text-right whitespace-nowrap shrink-0 min-w-[5ch] ${color.text}`}
+        >
+          {formatHudPercent(ramVal)}
         </span>
       </div>
-      <div className="w-full bg-slate-800 rounded-full h-1 mt-1.5 overflow-hidden">
+      {/* Row 2: Fixed height progress bar */}
+      <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
         <div
-          className={`h-full ${color.split(' ')[0]}`}
+          className={`h-full ${color.bg}`}
           style={{ width: `${Math.min(100, Math.max(0, ramVal))}%` }}
         />
       </div>
@@ -75,18 +88,23 @@ RamTile.displayName = 'RamTile'
 const GpuTile = React.memo<{ gpuVal: number }>(({ gpuVal }) => {
   const color = getMetricColor(gpuVal)
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 flex flex-col justify-between">
-      <div className="flex items-center justify-between leading-none">
-        <span className="flex items-center gap-1.5 text-slate-300 font-medium text-[11px]">
-          <Layers className="w-3.5 h-3.5 text-purple-400 shrink-0" /> GPU
-        </span>
-        <span className={`font-mono text-xs font-bold ${color.split(' ')[1]}`}>
-          {gpuVal}%
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col justify-between">
+      {/* Row 1: Label left | Value right */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2 leading-none">
+        <div className="flex items-baseline gap-1.5 min-w-0">
+          <Layers className="w-3.5 h-3.5 text-purple-400 shrink-0 self-center" />
+          <span className="text-[11px] font-semibold text-slate-300 truncate">GPU</span>
+        </div>
+        <span
+          className={`font-mono text-xs font-bold [font-variant-numeric:tabular-nums] text-right whitespace-nowrap shrink-0 min-w-[5ch] ${color.text}`}
+        >
+          {formatHudPercent(gpuVal)}
         </span>
       </div>
-      <div className="w-full bg-slate-800 rounded-full h-1 mt-1.5 overflow-hidden">
+      {/* Row 2: Fixed height progress bar */}
+      <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
         <div
-          className={`h-full ${color.split(' ')[0]}`}
+          className={`h-full ${color.bg}`}
           style={{ width: `${Math.min(100, Math.max(0, gpuVal))}%` }}
         />
       </div>
@@ -96,60 +114,57 @@ const GpuTile = React.memo<{ gpuVal: number }>(({ gpuVal }) => {
 GpuTile.displayName = 'GpuTile'
 
 const BatteryTile = React.memo<{
-  hasBattery: boolean
   isAcOnline: boolean
   isCharging: boolean
   chargePercent: number
-  wattageText: string
+  watts: number
   spanFull?: boolean
-}>(({ hasBattery, isAcOnline, isCharging, chargePercent, wattageText, spanFull }) => {
+}>(({ isAcOnline, isCharging, chargePercent, watts, spanFull }) => {
+  const percentColor = chargePercent > 20 ? 'text-emerald-400' : 'text-rose-400'
+  const barColor = chargePercent > 20 ? 'bg-emerald-400' : 'bg-rose-500'
+
+  const statusText = isCharging ? 'LADEN' : isAcOnline ? 'NETZ' : 'AKKU'
+
   return (
     <div
-      className={`bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 flex flex-col justify-between ${
+      className={`bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col justify-between ${
         spanFull ? 'col-span-2' : ''
       }`}
     >
-      <div className="flex items-center justify-between leading-none">
-        <span className="flex items-center gap-1.5 text-slate-300 font-medium text-[11px]">
-          {!hasBattery ? (
-            <Plug className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          ) : isCharging ? (
-            <BatteryCharging className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+      {/* Row 1: Label left | 2 Fixed Right Slots (Percent 5ch & Wattage 8ch) */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-2 leading-none">
+        <div className="flex items-baseline gap-1.5 min-w-0">
+          {isCharging ? (
+            <BatteryCharging className="w-3.5 h-3.5 text-emerald-400 shrink-0 self-center" />
           ) : isAcOnline ? (
-            <Plug className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <Plug className="w-3.5 h-3.5 text-emerald-400 shrink-0 self-center" />
           ) : (
-            <Battery className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <Battery className="w-3.5 h-3.5 text-amber-400 shrink-0 self-center" />
           )}
-          {!hasBattery ? 'NETZ' : isCharging ? 'LADEN' : isAcOnline ? 'NETZ' : 'AKKU'}
+          <span className="text-[11px] font-semibold text-slate-300 truncate">
+            {statusText}
+          </span>
+        </div>
+
+        {/* Slot 1: Percent (Right-aligned, tabular 5ch) */}
+        <span
+          className={`font-mono text-xs font-bold [font-variant-numeric:tabular-nums] text-right whitespace-nowrap shrink-0 min-w-[5ch] ${percentColor}`}
+        >
+          {formatHudPercent(chargePercent)}
         </span>
-        <span className="font-mono text-xs font-bold text-slate-100 flex items-baseline gap-1.5 shrink-0">
-          {!hasBattery ? (
-            <span className="text-emerald-400 text-xs">AC Power</span>
-          ) : (
-            <>
-              <span className={chargePercent > 20 ? 'text-emerald-400' : 'text-rose-400'}>
-                {chargePercent}%
-              </span>
-              {wattageText && (
-                <span className="text-[10px] font-normal text-slate-400">
-                  {wattageText}
-                </span>
-              )}
-            </>
-          )}
+
+        {/* Slot 2: Wattage (Right-aligned, tabular 8ch) */}
+        <span className="font-mono text-xs font-semibold [font-variant-numeric:tabular-nums] text-right whitespace-nowrap shrink-0 min-w-[8ch] text-slate-300">
+          {formatHudWattage(watts)}
         </span>
       </div>
-      <div className="w-full bg-slate-800 rounded-full h-1 mt-1.5 overflow-hidden">
+
+      {/* Row 2: Fixed height progress bar */}
+      <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
         <div
-          className={`h-full ${
-            !hasBattery
-              ? 'bg-emerald-400'
-              : chargePercent > 20
-              ? 'bg-emerald-400'
-              : 'bg-rose-500'
-          }`}
+          className={`h-full ${barColor}`}
           style={{
-            width: `${!hasBattery ? 100 : Math.min(100, Math.max(0, chargePercent))}%`
+            width: `${Math.min(100, Math.max(0, chargePercent))}%`
           }}
         />
       </div>
@@ -167,6 +182,16 @@ interface HudBatteryState {
   dischargeRateWatts: number
 }
 
+// Dev-only extreme test values for layout stress testing
+const DEMO_STEPS = [
+  { cpu: 0, ram: 5, ramGB: 8, bat: 5, watts: -5.2, isCharging: false, isAc: false },
+  { cpu: 4, ram: 45, ramGB: 14, bat: 87, watts: -17.0, isCharging: false, isAc: false },
+  { cpu: 9, ram: 100, ramGB: 64, bat: 100, watts: -105.5, isCharging: false, isAc: false },
+  { cpu: 10, ram: 45, ramGB: 14, bat: 87, watts: 65.0, isCharging: true, isAc: true },
+  { cpu: 45, ram: 5, ramGB: 8, bat: 100, watts: 0.0, isCharging: false, isAc: true },
+  { cpu: 100, ram: 100, ramGB: 64, bat: 5, watts: -17.0, isCharging: false, isAc: false }
+]
+
 export const MiniHudWidget: React.FC = () => {
   const [metrics, setMetrics] = useState<LiveMetrics | null>(null)
   const [battery, setBattery] = useState<HudBatteryState | null>(null)
@@ -177,11 +202,52 @@ export const MiniHudWidget: React.FC = () => {
   const [isCleaningRam, setIsCleaningRam] = useState(false)
   const [cleanFeedback, setCleanFeedback] = useState<string | null>(null)
 
+  // Demo mode state
+  const isDemoMode = useMemo(() => {
+    if (typeof window === 'undefined') return false
+    return (
+      window.location.search.includes('demo=1') ||
+      window.location.hash.includes('demo=1') ||
+      localStorage.getItem('M_TOOLBOX_HUD_DEMO') === '1' ||
+      (window as any).__M_TOOLBOX_HUD_DEMO__ === true
+    )
+  }, [])
+  const [demoStepIndex, setDemoStepIndex] = useState(0)
+
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const isMounted = useRef<boolean>(true)
   const lastUpdateRef = useRef<number>(0)
   const pendingMetricsRef = useRef<LiveMetrics | null>(null)
   const throttleTimerRef = useRef<NodeJS.Timeout | null>(null)
   const isVisibleRef = useRef<boolean>(true)
+
+  // Dynamic window content-size adjustment via ResizeObserver
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el || !window.mToolbox?.widget?.setHeight) return
+
+    let rafId: number | null = null
+
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height =
+          entry.borderBoxSize?.[0]?.blockSize ?? entry.target.getBoundingClientRect().height
+        if (height > 0) {
+          if (rafId) cancelAnimationFrame(rafId)
+          rafId = requestAnimationFrame(() => {
+            window.mToolbox?.widget?.setHeight(Math.ceil(height))
+          })
+        }
+      }
+    })
+
+    ro.observe(el)
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId)
+      ro.disconnect()
+    }
+  }, [])
 
   useEffect(() => {
     isMounted.current = true
@@ -193,6 +259,15 @@ export const MiniHudWidget: React.FC = () => {
       }
     }
   }, [])
+
+  // Demo mode 2s cycle interval
+  useEffect(() => {
+    if (!isDemoMode) return
+    const timer = setInterval(() => {
+      setDemoStepIndex((prev) => (prev + 1) % DEMO_STEPS.length)
+    }, 2000)
+    return () => clearInterval(timer)
+  }, [isDemoMode])
 
   // Visibility tracking (suspend renderer updates when hidden/minimized/locked)
   useEffect(() => {
@@ -403,34 +478,40 @@ export const MiniHudWidget: React.FC = () => {
     window.mToolbox?.widget?.restoreMainWindow()
   }, [])
 
-  const cpuVal = metrics?.cpuUsagePercent ?? 0
-  const ramVal = metrics?.ramUsagePercent ?? 0
-  const ramGB = metrics?.ramUsedGB ?? 0
+  // Resolve values (Live vs Demo)
+  const currentDemo = isDemoMode ? DEMO_STEPS[demoStepIndex] : null
+
+  const cpuVal = currentDemo ? currentDemo.cpu : metrics?.cpuUsagePercent ?? 0
+  const ramVal = currentDemo ? currentDemo.ram : metrics?.ramUsagePercent ?? 0
+  const ramGB = currentDemo ? currentDemo.ramGB : metrics?.ramUsedGB ?? 0
   const gpuVal = metrics?.gpuUsagePercent ?? 0
 
-  const isAcOnline = battery?.isAcOnline ?? true
-  const hasBattery = battery?.hasBattery ?? false
-  const chargePercent = battery?.chargePercent ?? 0
-  const isCharging = battery?.isCharging ?? false
+  const hasBattery = currentDemo ? true : battery?.hasBattery ?? false
+  const isAcOnline = currentDemo ? currentDemo.isAc : battery?.isAcOnline ?? true
+  const chargePercent = currentDemo ? currentDemo.bat : battery?.chargePercent ?? 0
+  const isCharging = currentDemo ? currentDemo.isCharging : battery?.isCharging ?? false
   const dischargeWatts = battery?.dischargeRateWatts ?? 0
   const chargeWatts = battery?.chargeRateWatts ?? 0
 
-  const wattageText = useMemo(() => {
-    if (isCharging) {
-      return chargeWatts > 0 ? `+${chargeWatts.toFixed(0)}W` : 'Laden'
-    }
-    if (!isAcOnline) {
-      return dischargeWatts > 0 ? `-${dischargeWatts.toFixed(0)}W` : ''
-    }
-    return ''
-  }, [isCharging, chargeWatts, isAcOnline, dischargeWatts])
+  const wattsNumber = currentDemo
+    ? currentDemo.watts
+    : isCharging && chargeWatts > 0
+    ? chargeWatts
+    : !isAcOnline && dischargeWatts > 0
+    ? -dischargeWatts
+    : chargeWatts > 0
+    ? chargeWatts
+    : dischargeWatts > 0
+    ? -dischargeWatts
+    : 0
 
   return (
     <div
+      ref={rootRef}
       onDoubleClick={handleDoubleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="w-full h-full select-none cursor-move flex flex-col justify-between p-2 rounded-xl bg-slate-950/95 border border-slate-800 text-slate-100 font-sans antialiased"
+      className="w-[240px] select-none cursor-move flex flex-col p-2 rounded-xl bg-slate-950/95 border border-slate-800 text-slate-100 font-sans antialiased box-border"
       style={dragStyle}
       title="Doppelklick: M-Toolbox öffnen | Gedrückt halten zum Verschieben"
     >
@@ -441,13 +522,15 @@ export const MiniHudWidget: React.FC = () => {
           <span className="text-[11px] font-bold tracking-wider text-slate-300 uppercase font-mono">
             M-TOOLBOX HUD
           </span>
+          {isDemoMode && (
+            <span className="px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-mono font-bold border border-amber-500/30">
+              DEMO
+            </span>
+          )}
         </div>
 
         {/* Action Buttons (Non-draggable) */}
-        <div
-          className="flex items-center gap-1"
-          style={noDragStyle}
-        >
+        <div className="flex items-center gap-1" style={noDragStyle}>
           {/* Quick RAM Clean */}
           <button
             onClick={handleCleanRam}
@@ -476,7 +559,9 @@ export const MiniHudWidget: React.FC = () => {
           <button
             onClick={handleToggleClickThrough}
             className={`p-1 rounded-md transition-colors ${
-              isClickThrough ? 'text-sky-400 hover:bg-slate-800' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+              isClickThrough
+                ? 'text-sky-400 hover:bg-slate-800'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
             }`}
             title={isClickThrough ? 'Click-Through aktiv (Klicks gehen durch)' : 'Click-Through inaktiv'}
           >
@@ -487,9 +572,15 @@ export const MiniHudWidget: React.FC = () => {
           <button
             onClick={handleTogglePin}
             className={`p-1 rounded-md transition-colors ${
-              isAlwaysOnTop ? 'text-amber-400 hover:bg-slate-800' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+              isAlwaysOnTop
+                ? 'text-amber-400 hover:bg-slate-800'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
             }`}
-            title={isAlwaysOnTop ? 'Always-on-Top aktiv (klicken zum Lösen)' : 'Always-on-Top inaktiv (klicken zum Anheften)'}
+            title={
+              isAlwaysOnTop
+                ? 'Always-on-Top aktiv (klicken zum Lösen)'
+                : 'Always-on-Top inaktiv (klicken zum Anheften)'
+            }
           >
             {isAlwaysOnTop ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
           </button>
@@ -505,19 +596,20 @@ export const MiniHudWidget: React.FC = () => {
         </div>
       </div>
 
-      {/* Metrics Grid with React.memo tiles */}
-      <div className="grid grid-cols-2 gap-1.5 mt-1.5 flex-1">
+      {/* Metrics Grid with React.memo tiles: Equal columns, consistent gap and padding */}
+      <div className="grid grid-cols-2 gap-1.5 mt-2">
         <CpuTile cpuVal={cpuVal} />
         <RamTile ramVal={ramVal} ramGB={ramGB} />
         {showGpuUsage && <GpuTile gpuVal={gpuVal} />}
-        <BatteryTile
-          hasBattery={hasBattery}
-          isAcOnline={isAcOnline}
-          isCharging={isCharging}
-          chargePercent={chargePercent}
-          wattageText={wattageText}
-          spanFull={!showGpuUsage}
-        />
+        {hasBattery && (
+          <BatteryTile
+            isAcOnline={isAcOnline}
+            isCharging={isCharging}
+            chargePercent={chargePercent}
+            watts={wattsNumber}
+            spanFull={!showGpuUsage}
+          />
+        )}
       </div>
     </div>
   )

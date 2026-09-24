@@ -130,6 +130,39 @@ export class WidgetService {
     }
   }
 
+  public setHeight(newHeight: number): void {
+    if (!this.widgetWindow || this.widgetWindow.isDestroyed()) return
+
+    // Clamp between 60px and 350px, rounded up (DPI-safe)
+    const clampedHeight = Math.max(60, Math.min(350, Math.ceil(newHeight)))
+    const currentBounds = this.widgetWindow.getBounds()
+    if (currentBounds.height === clampedHeight) return
+
+    const display = screen.getDisplayMatching(currentBounds)
+    const workArea = display.workArea
+
+    // If widget is placed in the bottom half of the work area, anchor to bottom
+    const isBottomAnchored = (currentBounds.y + currentBounds.height) > (workArea.y + workArea.height / 2)
+    let newY = currentBounds.y
+    if (isBottomAnchored) {
+      newY = currentBounds.y + (currentBounds.height - clampedHeight)
+    }
+
+    // Keep within display boundaries
+    if (newY < workArea.y) {
+      newY = workArea.y
+    } else if (newY + clampedHeight > workArea.y + workArea.height) {
+      newY = workArea.y + workArea.height - clampedHeight
+    }
+
+    this.widgetWindow.setBounds({
+      x: currentBounds.x,
+      y: Math.round(newY),
+      width: currentBounds.width || 240,
+      height: clampedHeight
+    })
+  }
+
   private createWidgetWindow(): void {
     const saved = this.loadBounds()
 
@@ -195,11 +228,15 @@ export class WidgetService {
 
     const rendererDist = path.join(process.env.APP_ROOT || path.join(__dirname, '../..'), 'dist')
 
+    const isDemo = process.env.M_TOOLBOX_HUD_DEMO === '1'
     if (process.env.VITE_DEV_SERVER_URL) {
-      this.widgetWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}?view=widget`)
+      const demoParam = isDemo ? '&demo=1' : ''
+      this.widgetWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}?view=widget${demoParam}`)
     } else {
+      const queryParams: Record<string, string> = { view: 'widget' }
+      if (isDemo) queryParams.demo = '1'
       this.widgetWindow.loadFile(path.join(rendererDist, 'index.html'), {
-        query: { view: 'widget' },
+        query: queryParams,
         hash: 'widget'
       })
     }
