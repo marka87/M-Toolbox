@@ -50,6 +50,15 @@ Voraussetzungen:
 - Winget für das Software Center
 - PowerShell 5.1 oder neuer
 
+### 💡 Energie- und Laptop-Tipp (Nvidia Optimus / Hybrid-Grafik)
+
+Auf Notebooks mit zwei Grafikkarten (integrierte Intel/AMD iGPU + dedizierte Nvidia dGPU) empfiehlt es sich, M-Toolbox der stromsparenden Grafikeinheit zuzuweisen, damit die dedizierte GPU im Leerlauf und Akkubetrieb im stromsparenden Ruhezustand (Zero-Power-State) verbleibt:
+1. Öffne **Windows-Einstellungen → System → Anzeige → Grafik**.
+2. Wähle **M-Toolbox** in der Liste (oder füge `M-Toolbox.exe` hinzu).
+3. Klicke auf **Optionen** und wähle **„Energiesparen“** (integrierte GPU).
+
+> Ergänzend: In den M-Toolbox-Einstellungen ist die Option *„GPU-Auslastung anzeigen“* standardmäßig deaktiviert, sodass weder `nvidia-smi` noch WMI-GPU-Zähler abgefragt werden und die dGPU ungestört schlafen kann.
+
 ## Entwicklung
 
 ```powershell

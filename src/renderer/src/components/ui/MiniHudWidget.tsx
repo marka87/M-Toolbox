@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import {
   Cpu,
   Activity,
@@ -13,7 +13,7 @@ import {
   MousePointer,
   Eye
 } from 'lucide-react'
-import type { LiveMetrics } from '../../../../shared/types'
+import type { LiveMetrics, TelemetryMetric } from '../../../../shared/types'
 
 const dragStyle = { WebkitAppRegion: 'drag' } as React.CSSProperties
 const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
@@ -24,15 +24,15 @@ function getMetricColor(val: number): string {
   return 'bg-rose-500 text-rose-500'
 }
 
-// --- MEMOIZED HUD TILES (Aufgabe 7) ---
+// --- MEMOIZED HUD TILES (Zero-Transition, Lightweight) ---
 
 const CpuTile = React.memo<{ cpuVal: number }>(({ cpuVal }) => {
   const color = getMetricColor(cpuVal)
   return (
-    <div className="bg-slate-900/70 border border-slate-800/80 rounded-lg p-1.5 flex flex-col justify-between">
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
       <div className="flex items-center justify-between text-[10px]">
         <span className="flex items-center gap-1 text-slate-400 font-semibold">
-          <Cpu className="w-3 h-3 text-sky-400" /> CPU
+          <Cpu className="w-3 h-3 text-sky-400 shrink-0" /> CPU
         </span>
         <span className={`font-mono font-bold ${color.split(' ')[1]}`}>
           {cpuVal}%
@@ -40,7 +40,7 @@ const CpuTile = React.memo<{ cpuVal: number }>(({ cpuVal }) => {
       </div>
       <div className="w-full bg-slate-800 rounded-full h-1 mt-1 overflow-hidden">
         <div
-          className={`h-full transition-all duration-500 ${color.split(' ')[0]}`}
+          className={`h-full ${color.split(' ')[0]}`}
           style={{ width: `${Math.min(100, Math.max(0, cpuVal))}%` }}
         />
       </div>
@@ -52,10 +52,10 @@ CpuTile.displayName = 'CpuTile'
 const RamTile = React.memo<{ ramVal: number; ramGB: number }>(({ ramVal, ramGB }) => {
   const color = getMetricColor(ramVal)
   return (
-    <div className="bg-slate-900/70 border border-slate-800/80 rounded-lg p-1.5 flex flex-col justify-between">
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
       <div className="flex items-center justify-between text-[10px]">
         <span className="flex items-center gap-1 text-slate-400 font-semibold">
-          <Activity className="w-3 h-3 text-indigo-400" /> RAM
+          <Activity className="w-3 h-3 text-indigo-400 shrink-0" /> RAM
         </span>
         <span className={`font-mono font-bold ${color.split(' ')[1]}`}>
           {ramVal}% <span className="text-[8px] font-normal text-slate-400">({ramGB}G)</span>
@@ -63,7 +63,7 @@ const RamTile = React.memo<{ ramVal: number; ramGB: number }>(({ ramVal, ramGB }
       </div>
       <div className="w-full bg-slate-800 rounded-full h-1 mt-1 overflow-hidden">
         <div
-          className={`h-full transition-all duration-500 ${color.split(' ')[0]}`}
+          className={`h-full ${color.split(' ')[0]}`}
           style={{ width: `${Math.min(100, Math.max(0, ramVal))}%` }}
         />
       </div>
@@ -75,10 +75,10 @@ RamTile.displayName = 'RamTile'
 const GpuTile = React.memo<{ gpuVal: number }>(({ gpuVal }) => {
   const color = getMetricColor(gpuVal)
   return (
-    <div className="bg-slate-900/70 border border-slate-800/80 rounded-lg p-1.5 flex flex-col justify-between">
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
       <div className="flex items-center justify-between text-[10px]">
         <span className="flex items-center gap-1 text-slate-400 font-semibold">
-          <Layers className="w-3 h-3 text-purple-400" /> GPU
+          <Layers className="w-3 h-3 text-purple-400 shrink-0" /> GPU
         </span>
         <span className={`font-mono font-bold ${color.split(' ')[1]}`}>
           {gpuVal}%
@@ -86,7 +86,7 @@ const GpuTile = React.memo<{ gpuVal: number }>(({ gpuVal }) => {
       </div>
       <div className="w-full bg-slate-800 rounded-full h-1 mt-1 overflow-hidden">
         <div
-          className={`h-full transition-all duration-500 ${color.split(' ')[0]}`}
+          className={`h-full ${color.split(' ')[0]}`}
           style={{ width: `${Math.min(100, Math.max(0, gpuVal))}%` }}
         />
       </div>
@@ -103,21 +103,21 @@ const BatteryTile = React.memo<{
   wattageText: string
 }>(({ hasBattery, isAcOnline, isCharging, chargePercent, wattageText }) => {
   return (
-    <div className="bg-slate-900/70 border border-slate-800/80 rounded-lg p-1.5 flex flex-col justify-between">
+    <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
       <div className="flex items-center justify-between text-[10px]">
-        <span className="flex items-center gap-1 text-slate-400 font-semibold">
+        <span className="flex items-center gap-1 text-slate-400 font-semibold truncate">
           {!hasBattery ? (
-            <Plug className="w-3 h-3 text-emerald-400" />
+            <Plug className="w-3 h-3 text-emerald-400 shrink-0" />
           ) : isCharging ? (
-            <BatteryCharging className="w-3 h-3 text-emerald-400" />
+            <BatteryCharging className="w-3 h-3 text-emerald-400 shrink-0" />
           ) : isAcOnline ? (
-            <Plug className="w-3 h-3 text-emerald-400" />
+            <Plug className="w-3 h-3 text-emerald-400 shrink-0" />
           ) : (
-            <Battery className="w-3 h-3 text-amber-400" />
+            <Battery className="w-3 h-3 text-amber-400 shrink-0" />
           )}
           {!hasBattery ? 'NETZ' : isCharging ? 'LADEN' : isAcOnline ? 'NETZ' : 'AKKU'}
         </span>
-        <span className="font-mono font-bold text-slate-100 flex items-center gap-0.5">
+        <span className="font-mono font-bold text-slate-100 flex items-center gap-0.5 shrink-0">
           {!hasBattery ? (
             <span className="text-emerald-400 text-[10px]">AC Power</span>
           ) : (
@@ -136,7 +136,7 @@ const BatteryTile = React.memo<{
       </div>
       <div className="w-full bg-slate-800 rounded-full h-1 mt-1 overflow-hidden">
         <div
-          className={`h-full transition-all duration-500 ${
+          className={`h-full ${
             !hasBattery
               ? 'bg-emerald-400'
               : chargePercent > 20
@@ -165,43 +165,145 @@ interface HudBatteryState {
 export const MiniHudWidget: React.FC = () => {
   const [metrics, setMetrics] = useState<LiveMetrics | null>(null)
   const [battery, setBattery] = useState<HudBatteryState | null>(null)
+  const [showGpuUsage, setShowGpuUsage] = useState<boolean>(false)
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(true)
   const [isClickThrough, setIsClickThrough] = useState(false)
   const [opacity, setOpacity] = useState(0.92)
   const [isCleaningRam, setIsCleaningRam] = useState(false)
   const [cleanFeedback, setCleanFeedback] = useState<string | null>(null)
 
+  const isMounted = useRef<boolean>(true)
+  const lastUpdateRef = useRef<number>(0)
+  const pendingMetricsRef = useRef<LiveMetrics | null>(null)
+  const throttleTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const isVisibleRef = useRef<boolean>(true)
+
   useEffect(() => {
-    // Start live metrics stream from TelemetryService (HUD requires cpu, ram, gpu, battery, watts)
-    window.mToolbox?.dashboard?.startMetricsStream({
-      metrics: ['cpu', 'ram', 'gpu', 'battery', 'watts']
-    })
-    const unsubscribe = window.mToolbox?.dashboard?.onLiveMetrics((data) => {
-      setMetrics(data)
-      if (data.battery) {
-        setBattery({
-          hasBattery: data.battery.hasBattery,
-          isAcOnline: data.battery.isAcOnline,
-          chargePercent: data.battery.percent,
-          isCharging: data.battery.isCharging,
-          chargeRateWatts: data.battery.chargeRateWatts,
-          dischargeRateWatts: data.battery.dischargeRateWatts
-        })
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+      if (throttleTimerRef.current) {
+        clearTimeout(throttleTimerRef.current)
+        throttleTimerRef.current = null
       }
-    })
+    }
+  }, [])
+
+  // Visibility tracking (suspend renderer updates when hidden/minimized/locked)
+  useEffect(() => {
+    const handleVisChange = () => {
+      isVisibleRef.current = document.visibilityState === 'visible'
+      if (isVisibleRef.current && pendingMetricsRef.current && isMounted.current) {
+        lastUpdateRef.current = Date.now()
+        setMetrics(pendingMetricsRef.current)
+        pendingMetricsRef.current = null
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisChange)
+
+    let unbindWinVis: (() => void) | undefined
+    if (window.mToolbox?.system?.onVisibilityChange) {
+      unbindWinVis = window.mToolbox.system.onVisibilityChange((vis) => {
+        isVisibleRef.current = vis && document.visibilityState === 'visible'
+        if (isVisibleRef.current && pendingMetricsRef.current && isMounted.current) {
+          lastUpdateRef.current = Date.now()
+          setMetrics(pendingMetricsRef.current)
+          pendingMetricsRef.current = null
+        }
+      })
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisChange)
+      if (unbindWinVis) unbindWinVis()
+    }
+  }, [])
+
+  useEffect(() => {
+    let unsubscribeMetrics: (() => void) | undefined
+
+    const setupHud = async () => {
+      let enableGpu = false
+      try {
+        if (window.mToolbox?.settings?.getSettings) {
+          const s = await window.mToolbox.settings.getSettings()
+          enableGpu = Boolean(s?.showGpuUsage)
+          if (isMounted.current) {
+            setShowGpuUsage(enableGpu)
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      if (!isMounted.current) return
+
+      const metricsList: TelemetryMetric[] = ['cpu', 'ram', 'battery', 'watts']
+      if (enableGpu) {
+        metricsList.push('gpu')
+      }
+
+      await window.mToolbox?.dashboard?.startMetricsStream({ metrics: metricsList })
+
+      unsubscribeMetrics = window.mToolbox?.dashboard?.onLiveMetrics((data) => {
+        if (data.battery) {
+          setBattery({
+            hasBattery: data.battery.hasBattery,
+            isAcOnline: data.battery.isAcOnline,
+            chargePercent: data.battery.percent,
+            isCharging: data.battery.isCharging,
+            chargeRateWatts: data.battery.chargeRateWatts,
+            dischargeRateWatts: data.battery.dischargeRateWatts
+          })
+        }
+
+        if (!isMounted.current || !isVisibleRef.current) {
+          pendingMetricsRef.current = data
+          return
+        }
+
+        const isEco = data.battery?.hasBattery && !data.battery?.isAcOnline
+        const minInterval = isEco ? 2000 : 1000
+        const now = Date.now()
+        const elapsed = now - lastUpdateRef.current
+
+        if (elapsed >= minInterval) {
+          lastUpdateRef.current = now
+          if (throttleTimerRef.current) {
+            clearTimeout(throttleTimerRef.current)
+            throttleTimerRef.current = null
+          }
+          setMetrics(data)
+        } else {
+          pendingMetricsRef.current = data
+          if (!throttleTimerRef.current) {
+            throttleTimerRef.current = setTimeout(() => {
+              throttleTimerRef.current = null
+              if (pendingMetricsRef.current && isMounted.current && isVisibleRef.current) {
+                lastUpdateRef.current = Date.now()
+                setMetrics(pendingMetricsRef.current)
+                pendingMetricsRef.current = null
+              }
+            }, minInterval - elapsed)
+          }
+        }
+      })
+    }
+
+    setupHud()
 
     // Sync widget state
     window.mToolbox?.widget?.getState().then((state) => {
-      if (state) {
+      if (state && isMounted.current) {
         setIsAlwaysOnTop(state.alwaysOnTop)
         if (typeof state.clickThrough === 'boolean') setIsClickThrough(state.clickThrough)
         if (typeof state.opacity === 'number') setOpacity(state.opacity)
       }
     }).catch(() => {})
 
-    // Initial battery fetch (no polling loop needed!)
+    // Initial battery fetch
     window.mToolbox?.battery?.getInfo(false).then((info) => {
-      if (info) {
+      if (info && isMounted.current) {
         setBattery({
           hasBattery: info.hasBattery,
           isAcOnline: info.isAcOnline,
@@ -214,7 +316,8 @@ export const MiniHudWidget: React.FC = () => {
     }).catch(() => {})
 
     return () => {
-      if (unsubscribe) unsubscribe()
+      if (unsubscribeMetrics) unsubscribeMetrics()
+      window.mToolbox?.dashboard?.stopMetricsStream()
     }
   }, [])
 
@@ -322,14 +425,14 @@ export const MiniHudWidget: React.FC = () => {
       onDoubleClick={handleDoubleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="w-full h-full select-none cursor-move flex flex-col justify-between p-2 rounded-2xl bg-slate-950/85 backdrop-blur-xl border border-slate-700/60 shadow-2xl shadow-black/60 text-slate-100 hover:border-slate-500/80 transition-colors"
+      className="w-full h-full select-none cursor-move flex flex-col justify-between p-2 rounded-2xl bg-slate-950/95 border border-slate-800 text-slate-100"
       style={dragStyle}
       title="Doppelklick: M-Toolbox öffnen | Gedrückt halten zum Verschieben"
     >
       {/* Top Header Bar */}
       <div className="flex items-center justify-between px-0.5">
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/50" />
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
           <span className="text-[10px] font-black tracking-wider text-slate-300">M-TOOLBOX HUD</span>
         </div>
 
@@ -342,7 +445,7 @@ export const MiniHudWidget: React.FC = () => {
           <button
             onClick={handleCleanRam}
             disabled={isCleaningRam}
-            className="p-1 rounded-md text-slate-400 hover:text-cyan-300 hover:bg-slate-800 transition-colors relative"
+            className="p-1 rounded-md text-slate-400 hover:text-cyan-300 hover:bg-slate-800 relative"
             title="Arbeitsspeicher bereinigen (EmptyWorkingSet)"
           >
             <Sparkles className={`w-3 h-3 ${isCleaningRam ? 'animate-spin text-cyan-400' : ''}`} />
@@ -353,19 +456,19 @@ export const MiniHudWidget: React.FC = () => {
             )}
           </button>
 
-          {/* Opacity Cycle (Aufgabe 7) */}
+          {/* Opacity Cycle */}
           <button
             onClick={handleCycleOpacity}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800"
             title={`Transparenz umschalten (aktuell ${Math.round(opacity * 100)}%)`}
           >
             <Eye className="w-3 h-3" />
           </button>
 
-          {/* Click-Through Toggle (Aufgabe 7) */}
+          {/* Click-Through Toggle */}
           <button
             onClick={handleToggleClickThrough}
-            className={`p-1 rounded-md transition-colors ${
+            className={`p-1 rounded-md ${
               isClickThrough ? 'text-sky-400 hover:bg-slate-800' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
             }`}
             title={isClickThrough ? 'Click-Through aktiv (Klicks gehen durch)' : 'Click-Through inaktiv'}
@@ -376,7 +479,7 @@ export const MiniHudWidget: React.FC = () => {
           {/* Always on top toggle */}
           <button
             onClick={handleTogglePin}
-            className={`p-1 rounded-md transition-colors ${
+            className={`p-1 rounded-md ${
               isAlwaysOnTop ? 'text-amber-400 hover:bg-slate-800' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
             }`}
             title={isAlwaysOnTop ? 'Always-on-Top aktiv (klicken zum Lösen)' : 'Always-on-Top inaktiv (klicken zum Anheften)'}
@@ -387,7 +490,7 @@ export const MiniHudWidget: React.FC = () => {
           {/* Close / Hide Widget */}
           <button
             onClick={handleClose}
-            className="p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-slate-800"
             title="Widget schließen"
           >
             <X className="w-3 h-3" />
@@ -395,11 +498,11 @@ export const MiniHudWidget: React.FC = () => {
         </div>
       </div>
 
-      {/* 2x2 Mini Metrics Grid with React.memo tiles */}
-      <div className="grid grid-cols-2 gap-1.5 mt-1.5 flex-1">
+      {/* Metrics Grid with React.memo tiles */}
+      <div className={`grid ${showGpuUsage ? 'grid-cols-2' : 'grid-cols-3'} gap-1.5 mt-1.5 flex-1`}>
         <CpuTile cpuVal={cpuVal} />
         <RamTile ramVal={ramVal} ramGB={ramGB} />
-        <GpuTile gpuVal={gpuVal} />
+        {showGpuUsage && <GpuTile gpuVal={gpuVal} />}
         <BatteryTile
           hasBattery={hasBattery}
           isAcOnline={isAcOnline}

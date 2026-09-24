@@ -15,7 +15,7 @@ interface LiveMetricCardProps {
   }[]
 }
 
-export const LiveMetricCard: React.FC<LiveMetricCardProps> = ({
+export const LiveMetricCard: React.FC<LiveMetricCardProps> = React.memo(({
   title,
   value,
   subValue,
@@ -37,7 +37,7 @@ export const LiveMetricCard: React.FC<LiveMetricCardProps> = ({
   }
 
   return (
-    <div className="bg-fluent-card/90 border border-fluent-border rounded-fluent-lg p-5 shadow-fluent relative overflow-hidden transition-all duration-200 hover:border-fluent-border/90">
+    <div className="bg-fluent-card/90 border border-fluent-border rounded-fluent-lg p-5 shadow-fluent relative overflow-hidden hover:border-fluent-border/90">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-fluent bg-fluent-accent-muted/40 text-fluent-accent">
@@ -66,7 +66,7 @@ export const LiveMetricCard: React.FC<LiveMetricCardProps> = ({
         <div className="mt-3">
           <div className="w-full bg-fluent-sidebar h-2 rounded-full overflow-hidden border border-fluent-border/60">
             <div
-              className={`h-full ${getProgressColor(status)} rounded-full transition-all duration-500`}
+              className={`h-full ${getProgressColor(status)} rounded-full`}
               style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
             />
           </div>
@@ -85,4 +85,5 @@ export const LiveMetricCard: React.FC<LiveMetricCardProps> = ({
       )}
     </div>
   )
-}
+})
+LiveMetricCard.displayName = 'LiveMetricCard'

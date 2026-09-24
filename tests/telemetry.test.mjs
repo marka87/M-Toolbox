@@ -105,4 +105,88 @@ describe('Telemetry Service Logic & Parser Tests', () => {
     const state5 = { ...state1, battery: { ...state1.battery, healthPercent: 94 } }
     assert.notEqual(makeSignature(state1), makeSignature(state5))
   })
+
+  test('showGpuUsage setting default and backward compatibility migration', () => {
+    const DEFAULT_SETTINGS = {
+      theme: 'dark',
+      accentColor: 'blue',
+      startModule: 'dashboard',
+      autoStart: false,
+      minimizeToTray: false,
+      transparencyEffects: true,
+      hardwareAcceleration: true,
+      experimentalHybridGpuCounters: false,
+      showGpuUsage: false
+    }
+
+    // Default is false
+    assert.equal(DEFAULT_SETTINGS.showGpuUsage, false)
+
+    // Legacy settings file from disk without showGpuUsage field
+    const legacyParsedDiskSettings = {
+      theme: 'dark',
+      accentColor: 'indigo',
+      autoStart: true
+    }
+
+    const merged = { ...DEFAULT_SETTINGS, ...legacyParsedDiskSettings }
+    assert.equal(merged.showGpuUsage, false)
+    assert.equal(merged.accentColor, 'indigo')
+    assert.equal(merged.autoStart, true)
+
+    // User explicitly enabled showGpuUsage
+    const userEnabled = { ...DEFAULT_SETTINGS, ...legacyParsedDiskSettings, showGpuUsage: true }
+    assert.equal(userEnabled.showGpuUsage, true)
+  })
+
+  test('Metrics subscription excludes "gpu" when showGpuUsage is false', () => {
+    const getRequestedMetrics = (component, showGpu) => {
+      if (component === 'hud') {
+        const list = ['cpu', 'ram', 'battery', 'watts']
+        if (showGpu) list.push('gpu')
+        return list
+      }
+      if (component === 'dashboard') {
+        const list = ['cpu', 'ram', 'net']
+        if (showGpu) list.push('gpu')
+        return list
+      }
+      return []
+    }
+
+    // Default: showGpu = false -> neither requests gpu
+    const hudDefault = getRequestedMetrics('hud', false)
+    assert.ok(!hudDefault.includes('gpu'), 'HUD default must not contain gpu')
+    assert.ok(hudDefault.includes('watts'), 'HUD must contain watts')
+
+    const dashDefault = getRequestedMetrics('dashboard', false)
+    assert.ok(!dashDefault.includes('gpu'), 'Dashboard default must not contain gpu')
+
+    // Enabled: showGpu = true -> both contain gpu
+    const hudGpu = getRequestedMetrics('hud', true)
+    assert.ok(hudGpu.includes('gpu'), 'HUD must contain gpu when enabled')
+
+    const dashGpu = getRequestedMetrics('dashboard', true)
+    assert.ok(dashGpu.includes('gpu'), 'Dashboard must contain gpu when enabled')
+  })
+
+  test('Renderer throttling limits updates to 1s on AC and 2s on battery', () => {
+    const shouldUpdate = (now, lastUpdate, isAcOnline, hasBattery) => {
+      const isEco = hasBattery && !isAcOnline
+      const minInterval = isEco ? 2000 : 1000
+      return (now - lastUpdate) >= minInterval
+    }
+
+    const last = 10000
+    // AC power (1s threshold)
+    assert.equal(shouldUpdate(10500, last, true, true), false) // 500ms elapsed -> throttled
+    assert.equal(shouldUpdate(10999, last, true, true), false) // 999ms elapsed -> throttled
+    assert.equal(shouldUpdate(11000, last, true, true), true)  // 1000ms elapsed -> pass
+
+    // Battery / Eco power (2s threshold)
+    assert.equal(shouldUpdate(11500, last, false, true), false) // 1500ms elapsed -> throttled
+    assert.equal(shouldUpdate(11999, last, false, true), false) // 1999ms elapsed -> throttled
+    assert.equal(shouldUpdate(12000, last, false, true), true)  // 2000ms elapsed -> pass
+  })
 })
+

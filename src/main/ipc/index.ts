@@ -27,29 +27,35 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   widgetService.setMainWindow(mainWindow)
 
   // Forward window visibility & power events to renderer
-  const sendVisibility = (visible: boolean) => {
-    if (!mainWindow.isDestroyed()) {
+  const broadcastVisibility = (visible: boolean) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+        win.webContents.send(IPC_CHANNELS.SYSTEM.WINDOW_VISIBILITY_EVENT, visible)
+      }
+    }
+  }
+
+  const sendMainVisibility = (visible: boolean) => {
+    if (!mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
       mainWindow.webContents.send(IPC_CHANNELS.SYSTEM.WINDOW_VISIBILITY_EVENT, visible)
     }
   }
 
-  mainWindow.on('minimize', () => sendVisibility(false))
-  mainWindow.on('hide', () => sendVisibility(false))
-  mainWindow.on('restore', () => sendVisibility(true))
-  mainWindow.on('show', () => sendVisibility(true))
+  mainWindow.on('minimize', () => sendMainVisibility(false))
+  mainWindow.on('hide', () => sendMainVisibility(false))
+  mainWindow.on('restore', () => sendMainVisibility(true))
+  mainWindow.on('show', () => sendMainVisibility(true))
 
   try {
     powerMonitor.on('on-ac', () => batteryService.clearPowerPlansCache())
     powerMonitor.on('on-battery', () => batteryService.clearPowerPlansCache())
-    powerMonitor.on('lock-screen', () => sendVisibility(false))
-    powerMonitor.on('suspend', () => sendVisibility(false))
+    powerMonitor.on('lock-screen', () => broadcastVisibility(false))
+    powerMonitor.on('suspend', () => broadcastVisibility(false))
     powerMonitor.on('unlock-screen', () => {
-      const isVis = !mainWindow.isDestroyed() && mainWindow.isVisible() && !mainWindow.isMinimized()
-      sendVisibility(isVis)
+      broadcastVisibility(true)
     })
     powerMonitor.on('resume', () => {
-      const isVis = !mainWindow.isDestroyed() && mainWindow.isVisible() && !mainWindow.isMinimized()
-      sendVisibility(isVis)
+      broadcastVisibility(true)
     })
   } catch {}
 

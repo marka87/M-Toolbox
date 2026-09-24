@@ -20,7 +20,7 @@ import { DiskBar } from '../components/ui/DiskBar'
 import { StatusBadge, StatusType } from '../components/ui/StatusBadge'
 
 export const DashboardPage: React.FC = () => {
-  const { systemInfo, liveMetrics, isLoading, error, refresh } = useDashboard()
+  const { systemInfo, liveMetrics, showGpuUsage, isLoading, error, refresh } = useDashboard()
 
   const formatUptime = (seconds: number): string => {
     const d = Math.floor(seconds / (3600 * 24))
@@ -39,6 +39,7 @@ export const DashboardPage: React.FC = () => {
 
   const cpuPercent = liveMetrics?.cpuUsagePercent ?? 0
   const ramPercent = liveMetrics?.ramUsagePercent ?? systemInfo?.ram.usagePercent ?? 0
+  const gpuPercent = liveMetrics?.gpuUsagePercent ?? 0
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto overflow-y-auto max-h-[calc(100vh-2.5rem)] pb-12">
@@ -71,7 +72,7 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* 1. Live Telemetry Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className={`grid grid-cols-1 ${showGpuUsage ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
         <LiveMetricCard
           title="CPU Auslastung"
           value={`${cpuPercent}%`}
@@ -117,6 +118,35 @@ export const DashboardPage: React.FC = () => {
             }
           ]}
         />
+
+        {showGpuUsage && (
+          <LiveMetricCard
+            title="GPU Auslastung"
+            value={`${gpuPercent}%`}
+            subValue={systemInfo?.gpus?.[0]?.name ? systemInfo.gpus[0].name.slice(0, 24) : undefined}
+            percentage={gpuPercent}
+            icon={<Zap className="w-5 h-5" />}
+            status={getMetricStatus(gpuPercent)}
+            statusText={gpuPercent >= 90 ? 'Hoch' : gpuPercent >= 70 ? 'Mittel' : 'Normal'}
+            secondaryInfo={
+              systemInfo?.gpus?.[0]
+                ? [
+                    {
+                      label: 'Treiber',
+                      value: systemInfo.gpus[0].driverVersion || '-'
+                    },
+                    {
+                      label: 'VRAM',
+                      value:
+                        systemInfo.gpus[0].adapterRAMMB > 0
+                          ? `${systemInfo.gpus[0].adapterRAMMB} MB`
+                          : 'Gemeinsam'
+                    }
+                  ]
+                : undefined
+            }
+          />
+        )}
 
         <LiveMetricCard
           title="Netzwerk Live"

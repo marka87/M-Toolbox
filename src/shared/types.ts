@@ -617,6 +617,7 @@ export interface AppSettings {
   transparencyEffects: boolean
   hardwareAcceleration: boolean
   experimentalHybridGpuCounters?: boolean
+  showGpuUsage?: boolean
 }
 
 export interface UpdateCheckResult {
