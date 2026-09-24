@@ -28,13 +28,13 @@ function formatMWh(mwh: number): string {
 }
 
 function formatRemainingTime(seconds: number): string {
-  if (seconds <= 0) return 'Berechne Restzeit...'
+  if (seconds <= 0 || seconds > 172800) return 'Wird berechnet...'
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
   if (hours > 0) {
     return `${hours} Std. ${minutes} Min.`
   }
-  return `${minutes} Minuten`
+  return `${minutes} Min.`
 }
 
 export const BatteryPage: React.FC = () => {
@@ -352,11 +352,17 @@ export const BatteryPage: React.FC = () => {
                     : 'Verbleibende Laufzeit'}
                 </span>
                 <span className="font-semibold text-fluent-text">
-                  {info.remainingSeconds > 0
-                    ? formatRemainingTime(info.remainingSeconds)
-                    : info.isAcOnline
-                    ? 'Dauerbetrieb am Netzteil'
-                    : 'Wird berechnet...'}
+                  {info.isCharging
+                    ? info.remainingSeconds > 0 && info.remainingSeconds < 172800
+                      ? `ca. ${formatRemainingTime(info.remainingSeconds)} bis 100%`
+                      : info.chargePercent >= 100
+                      ? 'Vollständig geladen'
+                      : 'Wird berechnet...'
+                    : info.isDischarging
+                    ? info.remainingSeconds > 0 && info.remainingSeconds < 172800
+                      ? formatRemainingTime(info.remainingSeconds)
+                      : 'Wird berechnet...'
+                    : 'Dauerbetrieb am Netzteil'}
                 </span>
               </div>
             </Card>

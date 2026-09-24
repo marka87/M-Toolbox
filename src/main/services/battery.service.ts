@@ -212,7 +212,7 @@ export class BatteryService {
         ChargePercent = $chargePct
         ChargeStatus = $p.BatteryChargeStatus.ToString()
         PowerLine = $p.PowerLineStatus.ToString()
-        RemainingSeconds = if ($p.BatteryLifeRemaining -gt 0) { $p.BatteryLifeRemaining } elseif ($b -and $b.EstimatedRunTime -gt 0) { $b.EstimatedRunTime * 60 } else { -1 }
+        RemainingSeconds = if ($p.BatteryLifeRemaining -gt 0 -and $p.BatteryLifeRemaining -lt 172800) { $p.BatteryLifeRemaining } elseif ($b -and $b.EstimatedRunTime -gt 0 -and $b.EstimatedRunTime -lt 2880) { $b.EstimatedRunTime * 60 } else { -1 }
         DischargeRate = if ($wmi) { [int]$wmi.DischargeRate } else { 0 }
         ChargeRate = if ($wmi) { [int]$wmi.ChargeRate } else { 0 }
         Charging = if ($wmi) { [bool]$wmi.Charging } else { $false }
@@ -359,14 +359,44 @@ export class BatteryService {
       statusText = 'Akkubetrieb (Entlädt)'
     }
 
+    // Calculate realistic remainingSeconds:
+    let remainingSeconds = -1
+    const currentPct = Math.min(100, Math.max(0, liveData.ChargePercent))
+    const fullCapMWh = staticData?.fullChargeCapacityMWh || 0
+
+    if (isCharging) {
+      if (currentPct >= 100) {
+        remainingSeconds = 0
+      } else if (fullCapMWh > 0 && chargeRateWatts > 0) {
+        // Remaining energy needed in Wh = (fullCapMWh * (1 - currentPct / 100)) / 1000
+        const remainingWh = (fullCapMWh * (1 - currentPct / 100)) / 1000
+        const hoursNeeded = remainingWh / chargeRateWatts
+        const calculatedSec = Math.round(hoursNeeded * 3600)
+        if (calculatedSec > 0 && calculatedSec < 172800) {
+          remainingSeconds = calculatedSec
+        }
+      }
+    } else if (isDischarging) {
+      const rawSec = typeof liveData.RemainingSeconds === 'number' ? liveData.RemainingSeconds : -1
+      if (rawSec > 0 && rawSec < 172800) {
+        remainingSeconds = rawSec
+      } else if (fullCapMWh > 0 && dischargeRateWatts > 0 && currentPct > 0) {
+        const currentEnergyWh = (fullCapMWh * (currentPct / 100)) / 1000
+        const calculatedSec = Math.round((currentEnergyWh / dischargeRateWatts) * 3600)
+        if (calculatedSec > 0 && calculatedSec < 172800) {
+          remainingSeconds = calculatedSec
+        }
+      }
+    }
+
     return {
       hasBattery,
-      chargePercent: Math.min(100, Math.max(0, liveData.ChargePercent)),
+      chargePercent: currentPct,
       statusText,
       isCharging,
       isDischarging,
       isAcOnline,
-      remainingSeconds: liveData.RemainingSeconds,
+      remainingSeconds,
       designCapacityMWh: staticData?.designCapacityMWh || 0,
       fullChargeCapacityMWh: staticData?.fullChargeCapacityMWh || 0,
       healthPercent: staticData?.healthPercent || 100,
