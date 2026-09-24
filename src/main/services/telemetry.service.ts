@@ -548,31 +548,66 @@ export class TelemetryService {
     if (this.isSamplingNet) return
     this.isSamplingNet = true
     const now = Date.now()
+
+    let currentRx = -1
+    let currentTx = -1
+
+    // 1. Primary approach: Query persistent worker via .NET NetworkInterface (zero extra processes)
     try {
-      const { stdout } = await execAsync('netstat -e', { timeout: 1500, windowsHide: true })
-      const match = stdout.match(/Bytes\s+(\d+)\s+(\d+)/i)
-      if (!match) return
-
-      const currentRx = parseInt(match[1], 10)
-      const currentTx = parseInt(match[2], 10)
-
-      if (!this.lastNetStats) {
-        this.lastNetStats = { rxBytes: currentRx, txBytes: currentTx, timestamp: now }
-        return
+      const psScript = `
+        $nics = [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() | Where-Object { $_.NetworkInterfaceType -ne 'Loopback' -and $_.OperationalStatus -eq 'Up' }
+        $rx = [int64]0; $tx = [int64]0
+        foreach ($n in $nics) {
+          $s = $n.GetIPStatistics()
+          $rx += $s.BytesReceived
+          $tx += $s.BytesSent
+        }
+        [PSCustomObject]@{ Rx = $rx; Tx = $tx } | ConvertTo-Json -Compress
+      `
+      const raw = await powerShellWorker.runCommand(psScript, 2500)
+      if (raw && raw.trim()) {
+        const parsed = JSON.parse(raw.trim())
+        if (typeof parsed.Rx === 'number' && typeof parsed.Tx === 'number') {
+          currentRx = parsed.Rx
+          currentTx = parsed.Tx
+        }
       }
-
-      const timeDeltaSeconds = (now - this.lastNetStats.timestamp) / 1000
-      if (timeDeltaSeconds <= 0) return
-
-      const rxDelta = Math.max(0, currentRx - this.lastNetStats.rxBytes)
-      const txDelta = Math.max(0, currentTx - this.lastNetStats.txBytes)
-      this.lastNetStats = { rxBytes: currentRx, txBytes: currentTx, timestamp: now }
-
-      this.cache.networkReceiveKBps = Math.round(rxDelta / 1024 / timeDeltaSeconds)
-      this.cache.networkSendKBps = Math.round(txDelta / 1024 / timeDeltaSeconds)
-      this.cache.timestamp = now
     } catch {
-      // keep cached
+      // Worker query failed, fall back to netstat -e
+    }
+
+    // 2. Fallback approach: netstat -e
+    if (currentRx < 0 || currentTx < 0) {
+      try {
+        const { stdout } = await execAsync('netstat -e', { timeout: 1500, windowsHide: true })
+        const match = stdout.match(/Bytes\s+(\d+)\s+(\d+)/i)
+        if (match) {
+          currentRx = parseInt(match[1], 10)
+          currentTx = parseInt(match[2], 10)
+        }
+      } catch {
+        // Fallback failed
+      }
+    }
+
+    try {
+      if (currentRx >= 0 && currentTx >= 0) {
+        if (!this.lastNetStats) {
+          this.lastNetStats = { rxBytes: currentRx, txBytes: currentTx, timestamp: now }
+          return
+        }
+
+        const timeDeltaSeconds = (now - this.lastNetStats.timestamp) / 1000
+        if (timeDeltaSeconds > 0) {
+          const rxDelta = Math.max(0, currentRx - this.lastNetStats.rxBytes)
+          const txDelta = Math.max(0, currentTx - this.lastNetStats.txBytes)
+          this.lastNetStats = { rxBytes: currentRx, txBytes: currentTx, timestamp: now }
+
+          this.cache.networkReceiveKBps = Math.round(rxDelta / 1024 / timeDeltaSeconds)
+          this.cache.networkSendKBps = Math.round(txDelta / 1024 / timeDeltaSeconds)
+          this.cache.timestamp = now
+        }
+      }
     } finally {
       this.isSamplingNet = false
     }
