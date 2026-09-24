@@ -1,9 +1,9 @@
+import { exec } from 'child_process'
+import { promisify } from 'util'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import { shell } from 'electron'
-import { execAsync } from '../utils/exec'
-import { powershellService } from './powershell.service'
 import type {
   BatteryInfo,
   PowerPlanItem,
@@ -13,6 +13,8 @@ import type {
   BatteryDrainImpact
 } from '../../shared/battery.types'
 import type { PowerProfileInfo, PowerProfileMode } from '../../shared/types'
+
+const execAsync = promisify(exec)
 
 interface CachedStaticData {
   designCapacityMWh: number
@@ -51,7 +53,7 @@ export class BatteryService {
   }
 
   /**
-   * Reads static battery hardware parameters via powercfg /batteryreport /xml
+   * Reads static battery hardware parameters via root/wmi without generating XML battery reports
    */
   private async getStaticBatteryData(): Promise<CachedStaticData | null> {
     const now = Date.now()
@@ -59,32 +61,32 @@ export class BatteryService {
       return this.staticCache
     }
 
-    const xmlPath = path.join(os.tmpdir(), `mtoolbox_bat_${Date.now()}.xml`)
     try {
-      await execAsync(`powercfg /batteryreport /output "${xmlPath}" /xml`, { timeout: 6000 })
-      if (!fs.existsSync(xmlPath)) {
+      const psScript = `
+        $static = Get-CimInstance -Namespace root/wmi -ClassName BatteryStaticData -ErrorAction SilentlyContinue | Select-Object -First 1
+        $full = Get-CimInstance -Namespace root/wmi -ClassName BatteryFullChargedCapacity -ErrorAction SilentlyContinue | Select-Object -First 1
+        [PSCustomObject]@{
+          Designed = [int64]$static.DesignedCapacity
+          Full = [int64]$full.FullChargedCapacity
+          DeviceName = [string]$static.DeviceName
+          ManufactureName = [string]$static.ManufactureName
+          SerialNumber = [string]$static.SerialNumber
+          Technology = [string]$static.Technology
+        } | ConvertTo-Json -Compress
+      `.replace(/\r?\n\s*/g, ' ')
+
+      const raw = await this.runPowerShell(psScript, 4000)
+      if (!raw || !raw.trim() || raw.trim() === 'null') {
         return null
       }
 
-      const xmlContent = await fs.promises.readFile(xmlPath, 'utf-8')
-      await fs.promises.unlink(xmlPath).catch(() => {})
-
-      // Simple regex extraction from batteryreport XML to avoid heavy XML parser dependencies
-      const designMatch = xmlContent.match(/<DesignCapacity[^>]*>(\d+)<\/DesignCapacity>/i)
-      const fullMatch = xmlContent.match(/<FullChargeCapacity[^>]*>(\d+)<\/FullChargeCapacity>/i)
-      const cycleMatch = xmlContent.match(/<CycleCount[^>]*>(\d+)<\/CycleCount>/i)
-      const mfgMatch = xmlContent.match(/<Manufacturer[^>]*>([^<]+)<\/Manufacturer>/i)
-      const idMatch = xmlContent.match(/<Id[^>]*>([^<]+)<\/Id>/i)
-      const serialMatch = xmlContent.match(/<SerialNumber[^>]*>([^<]+)<\/SerialNumber>/i)
-      const chemMatch = xmlContent.match(/<Chemistry[^>]*>([^<]+)<\/Chemistry>/i)
-
-      const design = designMatch ? parseInt(designMatch[1], 10) : 0
-      const full = fullMatch ? parseInt(fullMatch[1], 10) : 0
-      const cycles = cycleMatch ? parseInt(cycleMatch[1], 10) : 0
-      const mfg = mfgMatch ? mfgMatch[1].trim() : 'Unbekannt'
-      const id = idMatch ? idMatch[1].trim() : 'Standard-Akku'
-      const serial = serialMatch ? serialMatch[1].trim() : undefined
-      const chem = chemMatch ? chemMatch[1].trim() : 'Li-Ion'
+      const parsed = JSON.parse(raw.trim())
+      const design = Number(parsed.Designed || 0)
+      const full = Number(parsed.Full || 0)
+      const mfg = parsed.ManufactureName ? String(parsed.ManufactureName).trim() : 'Unbekannt'
+      const id = parsed.DeviceName ? String(parsed.DeviceName).trim() : 'Standard-Akku'
+      const serial = parsed.SerialNumber ? String(parsed.SerialNumber).trim() : undefined
+      const chem = parsed.Technology ? String(parsed.Technology).trim() : 'Li-Ion'
 
       let health = 100
       let wear = 0
@@ -104,7 +106,7 @@ export class BatteryService {
         healthPercent: health,
         wearLevelPercent: wear,
         healthRating: rating,
-        cycleCount: cycles,
+        cycleCount: 0,
         manufacturer: mfg,
         modelId: id,
         serialNumber: serial,
@@ -115,7 +117,7 @@ export class BatteryService {
       this.staticCache = data
       return data
     } catch (err) {
-      console.warn('[BatteryService] Failed to read static battery report:', err)
+      console.warn('[BatteryService] Failed to read static battery data:', err)
       return null
     }
   }

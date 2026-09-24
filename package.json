@@ -10,6 +10,7 @@
     "build:portable": "tsc && vite build && electron-builder --win portable",
     "build:renderer": "tsc && vite build",
     "typecheck": "tsc --noEmit",
+    "test": "node --test tests/**/*.test.mjs",
     "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "keywords": [
