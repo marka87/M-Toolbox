@@ -40,6 +40,14 @@ export class PowerShellWorker {
     return this.consecutiveErrors
   }
 
+  private spawnCount = 0
+
+  public getAndResetSpawnsCount(): number {
+    const count = this.spawnCount
+    this.spawnCount = 0
+    return count
+  }
+
   /**
    * Runs a PowerShell command via persistent worker queue.
    * If worker has failed 3 times consecutively, falls back to one-shot powershellService.
@@ -81,6 +89,7 @@ export class PowerShellWorker {
         }
       )
 
+      this.spawnCount++
       this.buffer = ''
       this.isReady = false
 

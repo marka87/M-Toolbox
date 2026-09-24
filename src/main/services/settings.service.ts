@@ -16,7 +16,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   autoStart: false,
   minimizeToTray: false,
   transparencyEffects: true,
-  hardwareAcceleration: true
+  hardwareAcceleration: true,
+  experimentalHybridGpuCounters: false
 }
 
 export class SettingsService {

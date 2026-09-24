@@ -616,6 +616,7 @@ export interface AppSettings {
   minimizeToTray: boolean
   transparencyEffects: boolean
   hardwareAcceleration: boolean
+  experimentalHybridGpuCounters?: boolean
 }
 
 export interface UpdateCheckResult {

@@ -4,6 +4,7 @@ import { execAsync } from '../utils/exec'
 import { powershellService } from './powershell.service'
 import { powerShellWorker } from './powershell-worker.service'
 import { batteryService } from './battery.service'
+import { SettingsService } from './settings.service'
 import type { LiveMetrics, TelemetryMetric } from '../../shared/types'
 
 export type { TelemetryMetric }
@@ -101,7 +102,10 @@ export class TelemetryService {
   private lastNetStats: { rxBytes: number; txBytes: number; timestamp: number } | null = null
 
   // Mutexes & concurrency control
-  private hasNvidia = true
+  private nvidiaAvailable = true
+  private nvidiaConsecutiveErrors = 0
+  private nvidiaRetryTimer: NodeJS.Timeout | null = null
+  private debugIntervalTimer: NodeJS.Timeout | null = null
   private isSamplingGpu = false
   private isSamplingBattery = false
   private isSamplingNet = false
@@ -349,8 +353,24 @@ export class TelemetryService {
   }
 
   private startLoop(): void {
+    if (process.env.M_TOOLBOX_TELEMETRY_LEGACY === '1') {
+      this.startLegacyLoop()
+      return
+    }
+
     this.isRunning = true
     this.isPaused = false
+
+    if (process.env.M_TOOLBOX_TELEMETRY_DEBUG === '1' && !this.debugIntervalTimer) {
+      this.debugIntervalTimer = setInterval(() => {
+        const active = Array.from(this.getActiveRequestedMetrics()).join(', ')
+        const psStatus = powerShellWorker.isAlive() ? 'alive' : 'dead'
+        const spawns = powerShellWorker.getAndResetSpawnsCount()
+        console.log(
+          `[Telemetry] Active metrics: [${active}] | PS worker: ${psStatus} | Process spawns in last 10s: ${spawns}`
+        )
+      }, 10000)
+    }
 
     // Sample battery health once at startup
     this.sampleBatteryHealthOnce().catch(() => {})
@@ -359,9 +379,28 @@ export class TelemetryService {
     })
   }
 
+  private startLegacyLoop(): void {
+    this.isRunning = true
+    this.isPaused = false
+    this.sampleImmediate()
+    this.mainLoopTimer = setInterval(() => {
+      if (!this.isPaused && this.subscribers.size > 0) {
+        this.sampleImmediate()
+      }
+    }, 500)
+  }
+
   private stopLoop(): void {
     this.isRunning = false
     this.clearTimer()
+    if (this.debugIntervalTimer) {
+      clearInterval(this.debugIntervalTimer)
+      this.debugIntervalTimer = null
+    }
+    if (this.nvidiaRetryTimer) {
+      clearTimeout(this.nvidiaRetryTimer)
+      this.nvidiaRetryTimer = null
+    }
   }
 
   public dispose(): void {
@@ -619,27 +658,58 @@ export class TelemetryService {
   }
 
   /**
-   * Samples GPU utilization on demand.
+   * Samples GPU utilization and GPU temperature in a single call.
    * Avoids persistent loop processes to allow dGPU (Nvidia Optimus) to enter D3cold sleep.
    */
   private sampleGpu(): void {
     if (this.isSamplingGpu) return
     this.isSamplingGpu = true
 
-    if (this.hasNvidia) {
-      execAsync('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits', {
-        timeout: 1500,
-        windowsHide: true
-      })
+    if (this.nvidiaAvailable && this.nvidiaConsecutiveErrors < 3) {
+      execAsync(
+        'nvidia-smi --query-gpu=utilization.gpu,temperature.gpu --format=csv,noheader,nounits',
+        {
+          timeout: 1500,
+          windowsHide: true
+        }
+      )
         .then(({ stdout }) => {
-          const val = parseInt(stdout.trim(), 10)
-          if (!isNaN(val)) {
-            this.cache.gpuUsagePercent = Math.min(100, Math.max(0, val))
-            this.cache.timestamp = Date.now()
+          this.nvidiaConsecutiveErrors = 0
+          this.nvidiaAvailable = true
+          const firstLine = stdout.trim().split(/\r?\n/)[0]
+          if (firstLine) {
+            const parts = firstLine.split(',').map((s) => parseInt(s.trim(), 10))
+            if (parts.length >= 1 && !isNaN(parts[0])) {
+              this.cache.gpuUsagePercent = Math.min(100, Math.max(0, parts[0]))
+              this.cache.timestamp = Date.now()
+            }
+            if (parts.length >= 2 && !isNaN(parts[1])) {
+              this.cache.temperatures = {
+                ...this.cache.temperatures,
+                gpu: parts[1]
+              }
+            }
           }
         })
-        .catch(() => {
-          this.hasNvidia = false
+        .catch((err: any) => {
+          const errMsg = String(err?.message || '')
+          const isNotFound =
+            err?.code === 'ENOENT' ||
+            errMsg.includes('not found') ||
+            errMsg.includes('not recognized') ||
+            errMsg.includes('CommandNotFound')
+
+          if (isNotFound) {
+            this.nvidiaAvailable = false
+          } else {
+            this.nvidiaConsecutiveErrors++
+            if (this.nvidiaConsecutiveErrors >= 3 && !this.nvidiaRetryTimer) {
+              this.nvidiaRetryTimer = setTimeout(() => {
+                this.nvidiaRetryTimer = null
+                this.nvidiaConsecutiveErrors = 0
+              }, 300000) // 5 minutes retry
+            }
+          }
           this.sampleGpuViaWmi()
         })
         .finally(() => {
@@ -654,17 +724,29 @@ export class TelemetryService {
    * GPU WMI fallback constrained to engtype_3D and bounded to 0-100%
    */
   private sampleGpuViaWmi(): void {
-    const cmd = `(Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Where-Object { $_.Name -like '*engtype_3D*' } | Measure-Object -Property UtilizationPercentage -Sum).Sum`
+    let useSum = false
+    try {
+      const settings = SettingsService.getInstance().getSettings()
+      useSum = Boolean(settings.experimentalHybridGpuCounters)
+    } catch {}
+
+    const measureProp = useSum ? '-Sum).Sum' : '-Maximum).Maximum'
+    const cmd = `(Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Where-Object { $_.Name -like '*engtype_3D*' } | Measure-Object -Property UtilizationPercentage ${measureProp}`
+
     powerShellWorker
-      .runCommand(cmd, 3000)
+      .runCommand(cmd, 2500)
       .then((raw) => {
         const val = parseInt(raw.trim(), 10)
         if (!isNaN(val)) {
           this.cache.gpuUsagePercent = Math.min(100, Math.max(0, val))
           this.cache.timestamp = Date.now()
+        } else {
+          this.cache.gpuUsagePercent = 0
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        this.cache.gpuUsagePercent = 0
+      })
       .finally(() => {
         this.isSamplingGpu = false
       })
@@ -771,22 +853,8 @@ export class TelemetryService {
   }
 
   private sampleTemperatures(): void {
-    if (this.hasNvidia) {
-      execAsync('nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits', {
-        timeout: 1500,
-        windowsHide: true
-      })
-        .then(({ stdout }) => {
-          const gpuTemp = parseInt(stdout.trim(), 10)
-          if (!isNaN(gpuTemp)) {
-            this.cache.temperatures = {
-              ...this.cache.temperatures,
-              gpu: gpuTemp
-            }
-          }
-        })
-        .catch(() => {})
-    }
+    if (!this.nvidiaAvailable) return
+    this.sampleGpu()
   }
 
   private sampleSmartStatus(): void {
