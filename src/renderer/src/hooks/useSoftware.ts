@@ -163,6 +163,16 @@ export function useSoftware() {
     }
   }
 
+  const searchOnline = useCallback(async (query: string): Promise<SoftwarePackage[]> => {
+    if (!window.mToolbox?.software?.search) return []
+    try {
+      return await window.mToolbox.software.search(query)
+    } catch (err) {
+      console.error('[useSoftware] searchOnline error:', err)
+      return []
+    }
+  }, [])
+
   return {
     catalog,
     installed,
@@ -180,7 +190,8 @@ export function useSoftware() {
     uninstallPackage,
     upgradePackage,
     upgradeAll,
-    installBatch
+    installBatch,
+    searchOnline
   }
 }
 

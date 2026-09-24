@@ -91,7 +91,7 @@ export const DriverPage: React.FC = () => {
     handleOpenWindowsUpdateSettings
   } = useDriver()
 
-  const [viewMode, setViewMode] = useState<DriverViewMode>('normal')
+  const [viewMode, setViewMode] = useState<DriverViewMode>('compact')
 
   return (
     <div className="h-full bg-fluent-bg text-fluent-text p-8 overflow-y-auto space-y-6">

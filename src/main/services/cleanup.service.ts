@@ -33,6 +33,18 @@ export class CleanupService {
     return CleanupService.instance
   }
 
+  private async checkElevation(): Promise<boolean> {
+    try {
+      const { stdout } = await execAsync(
+        `powershell -NoProfile -Command "([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)"`,
+        { timeout: 5000 }
+      )
+      return stdout.trim().toLowerCase() === 'true'
+    } catch {
+      return false
+    }
+  }
+
   private getCategoryDefinitions(): CategoryDefinition[] {
     const localAppData = process.env.LOCALAPPDATA || path.join(process.env.USERPROFILE || 'C:\\Users\\Default', 'AppData', 'Local')
     const appData = process.env.APPDATA || path.join(process.env.USERPROFILE || 'C:\\Users\\Default', 'AppData', 'Roaming')
@@ -419,6 +431,70 @@ export class CleanupService {
           cleanedCategories.push(def.name)
         } catch (err) {
           console.warn('[CleanupService] Fehler beim Leeren des Papierkorbs:', err)
+        }
+      } else if (def.id === 'windows_update_cache') {
+        try {
+          const paths = def.getPaths()
+          let beforeBytes = 0
+          let beforeFiles = 0
+          for (const p of paths) {
+            if (fs.existsSync(p)) {
+              const scan = await this.scanDirectory(p)
+              beforeBytes += scan.sizeBytes
+              beforeFiles += scan.fileCount
+            }
+          }
+
+          if (beforeFiles > 0) {
+            const isAdmin = await this.checkElevation()
+            const cleanScript = [
+              'Stop-Service -Name wuauserv,bits,dosvc -Force -ErrorAction SilentlyContinue',
+              'Get-ChildItem -Path "$env:SystemRoot\\SoftwareDistribution\\Download\\*" -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue',
+              'Start-Service -Name wuauserv,bits,dosvc -ErrorAction SilentlyContinue'
+            ].join('; ')
+
+            try {
+              if (isAdmin) {
+                await execAsync(`powershell.exe -NoProfile -Command "${cleanScript}"`, { timeout: 45000 })
+              } else {
+                const scriptBase64 = Buffer.from(cleanScript, 'utf16le').toString('base64')
+                const psRunner = `Start-Process powershell.exe -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '-NoProfile', '-EncodedCommand', '${scriptBase64}'`
+                await execAsync(`powershell.exe -NoProfile -Command "${psRunner}"`, { timeout: 60000 })
+              }
+            } catch (err) {
+              console.warn('[CleanupService] Windows Update Cache bereinigen fehlgeschlagen oder abgebrochen:', err)
+            }
+
+            // Ergänzender Durchlauf
+            for (const p of paths) {
+              if (fs.existsSync(p)) {
+                await this.cleanDirectory(p, def.filter)
+              }
+            }
+
+            let afterBytes = 0
+            let afterFiles = 0
+            for (const p of paths) {
+              if (fs.existsSync(p)) {
+                const scan = await this.scanDirectory(p)
+                afterBytes += scan.sizeBytes
+                afterFiles += scan.fileCount
+              }
+            }
+
+            const freed = Math.max(0, beforeBytes - afterBytes)
+            const deleted = Math.max(0, beforeFiles - afterFiles)
+            const skipped = afterFiles
+
+            totalFreedBytes += freed
+            totalDeletedFiles += deleted
+            totalSkippedFiles += skipped
+            if (deleted > 0 || freed > 0) {
+              cleanedCategories.push(def.name)
+            }
+          }
+        } catch (wuErr) {
+          console.error('[CleanupService] Fehler bei Windows Update Bereinigung:', wuErr)
         }
       } else {
         const paths = def.getPaths()

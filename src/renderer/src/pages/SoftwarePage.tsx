@@ -12,12 +12,13 @@ import {
   XCircle,
   LayoutGrid,
   List,
-  Grid
+  Grid,
+  Globe
 } from 'lucide-react'
 import { useSoftware } from '../hooks/useSoftware'
 import { PackageCard, type SoftwareViewMode } from '../components/ui/PackageCard'
 import { BatchActionBar } from '../components/ui/BatchActionBar'
-import type { SoftwareCategory } from '@shared/types'
+import type { SoftwareCategory, SoftwarePackage } from '@shared/types'
 
 type ActiveTab = 'catalog' | 'installed' | 'updates'
 
@@ -50,16 +51,44 @@ export const SoftwarePage: React.FC = () => {
     uninstallPackage,
     upgradePackage,
     upgradeAll,
-    installBatch
+    installBatch,
+    searchOnline
   } = useSoftware()
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('catalog')
   const [selectedCategory, setSelectedCategory] = useState<SoftwareCategory>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [viewMode, setViewMode] = useState<SoftwareViewMode>('normal')
+  const [viewMode, setViewMode] = useState<SoftwareViewMode>('compact')
   const [installedSort, setInstalledSort] = useState<'name' | 'version'>('name')
   const [showLogs, setShowLogs] = useState(false)
+  const [onlineResults, setOnlineResults] = useState<SoftwarePackage[]>([])
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false)
+  const [hasSearchedOnline, setHasSearchedOnline] = useState(false)
   const logContainerRef = useRef<HTMLDivElement>(null)
+
+  // Clear online search results when query is cleared
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setOnlineResults([])
+      setHasSearchedOnline(false)
+    }
+  }, [searchQuery])
+
+  const handleSearchOnline = async () => {
+    const q = searchQuery.trim()
+    if (!q || q.length < 2) return
+    setIsSearchingOnline(true)
+    setHasSearchedOnline(true)
+    try {
+      const results = await searchOnline(q)
+      setOnlineResults(results)
+    } catch (err) {
+      console.error('[SoftwarePage] handleSearchOnline error:', err)
+      setOnlineResults([])
+    } finally {
+      setIsSearchingOnline(false)
+    }
+  }
 
   // Auto-open logs when an operation starts
   useEffect(() => {
@@ -246,16 +275,37 @@ export const SoftwarePage: React.FC = () => {
               type="text"
               placeholder={
                 activeTab === 'catalog'
-                  ? 'Katalog durchsuchen...'
+                  ? 'Katalog durchsuchen (Enter für Online-Winget-Suche)...'
                   : activeTab === 'installed'
                   ? 'Installierte Software durchsuchen...'
                   : 'Updates durchsuchen...'
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && activeTab === 'catalog' && searchQuery.trim().length >= 2) {
+                  handleSearchOnline()
+                }
+              }}
               className="w-full pl-9 pr-4 py-2 rounded-lg bg-fluent-card border border-fluent-border text-xs text-slate-100 placeholder:text-fluent-muted focus:outline-none focus:border-fluent-accent transition-colors"
             />
           </div>
+
+          {activeTab === 'catalog' && searchQuery.trim().length >= 2 && (
+            <button
+              onClick={handleSearchOnline}
+              disabled={isSearchingOnline || isOperating}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-fluent-card border border-fluent-border hover:border-fluent-accent text-xs font-semibold text-slate-200 hover:text-white transition-all shrink-0 shadow-fluent-sm disabled:opacity-50"
+              title="Offizielles Microsoft Winget Online-Repository durchsuchen"
+            >
+              {isSearchingOnline ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-fluent-accent" />
+              ) : (
+                <Globe className="w-3.5 h-3.5 text-fluent-accent" />
+              )}
+              <span>Online in Winget suchen</span>
+            </button>
+          )}
 
           {activeTab === 'installed' && (
             <label className="inline-flex items-center gap-2 text-xs text-fluent-muted whitespace-nowrap">
@@ -322,9 +372,64 @@ export const SoftwarePage: React.FC = () => {
               <RefreshCw className="w-8 h-8 animate-spin text-fluent-accent" />
               <p className="text-xs">Lade Softwarekatalog und prüfe Systemstatus...</p>
             </div>
+          ) : filteredCatalog.length === 0 && isSearchingOnline ? (
+            <div className="py-20 flex flex-col items-center justify-center space-y-3 text-fluent-muted">
+              <RefreshCw className="w-8 h-8 animate-spin text-fluent-accent" />
+              <p className="text-sm font-semibold text-slate-100">
+                Suche &quot;{searchQuery}&quot; online im Microsoft Winget-Katalog...
+              </p>
+              <p className="text-xs text-fluent-muted">Durchsuche das offizielle Windows-Paket-Repository...</p>
+            </div>
+          ) : filteredCatalog.length === 0 && hasSearchedOnline && onlineResults.length > 0 ? (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-fluent bg-fluent-card border border-fluent-accent/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-fluent-accent/15 border border-fluent-accent/30 flex items-center justify-center text-fluent-accent shrink-0">
+                    <Globe className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-100">
+                      Winget Online-Treffer für &quot;{searchQuery}&quot; ({onlineResults.length} Pakete gefunden)
+                    </h3>
+                    <p className="text-xs text-fluent-muted">
+                      Diese Apps stammen direkt aus Microsoft Winget und können per Klick installiert werden.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {renderCatalogPackages(onlineResults)}
+            </div>
+          ) : filteredCatalog.length === 0 && hasSearchedOnline && onlineResults.length === 0 ? (
+            <div className="py-16 text-center space-y-3 max-w-md mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-fluent-card border border-fluent-border flex items-center justify-center mx-auto text-fluent-muted">
+                <Search className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-200">Keine Software gefunden</h3>
+              <p className="text-xs text-fluent-muted leading-relaxed">
+                Weder im kuratierten Katalog noch online im Winget-Katalog wurde ein passendes Paket für &quot;{searchQuery}&quot; gefunden.
+              </p>
+            </div>
           ) : filteredCatalog.length === 0 ? (
-            <div className="py-16 text-center text-fluent-muted text-xs">
-              Keine Software gefunden für &quot;{searchQuery}&quot;.
+            <div className="py-14 text-center max-w-lg mx-auto space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-fluent-card border border-fluent-border flex items-center justify-center mx-auto text-fluent-muted">
+                <Search className="w-6 h-6 text-fluent-accent" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-200">
+                  Nicht im kuratierten Katalog gefunden
+                </h3>
+                <p className="text-xs text-fluent-muted mt-1 leading-relaxed">
+                  &quot;{searchQuery}&quot; ist nicht in den kuratierten Standard-Empfehlungen vorhanden. Möchtest du im gesamten Microsoft Winget-Onlinekatalog suchen?
+                </p>
+              </div>
+              <button
+                onClick={handleSearchOnline}
+                disabled={isSearchingOnline}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-fluent-accent hover:bg-fluent-accent-hover text-white text-xs font-semibold shadow-fluent-sm transition-all"
+              >
+                <Globe className="w-4 h-4" />
+                <span>Online im Winget-Katalog nach &quot;{searchQuery}&quot; suchen</span>
+              </button>
             </div>
           ) : (
             <div className="flex flex-col lg:flex-row items-start gap-6">
@@ -412,6 +517,21 @@ export const SoftwarePage: React.FC = () => {
                       )
                     })
                   : renderCatalogPackages(filteredCatalog)}
+
+                {/* Additional Online Search Results (if user searched while in filtered catalog) */}
+                {onlineResults.length > 0 && (
+                  <section aria-labelledby="online-results" className="pt-4 border-t border-fluent-border/60">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Globe className="w-4 h-4 text-fluent-accent" />
+                      <h2 id="online-results" className="text-sm font-semibold text-slate-100">
+                        Winget Online-Ergebnisse
+                      </h2>
+                      <span className="text-[10px] text-fluent-muted">{onlineResults.length} weitere Pakete</span>
+                      <div className="h-px flex-1 bg-fluent-border/60" />
+                    </div>
+                    {renderCatalogPackages(onlineResults)}
+                  </section>
+                )}
               </div>
             </div>
           )}

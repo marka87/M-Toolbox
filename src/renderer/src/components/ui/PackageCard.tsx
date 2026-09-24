@@ -54,15 +54,21 @@ export const PackageCard: React.FC<PackageCardProps> = ({
   const Icon = CATEGORY_ICONS[pkg.category] || Wrench
 
   // Action button renderer
-  const renderActionButtons = (size: 'sm' | 'md' = 'md') => {
+  const renderActionButtons = (size: 'sm' | 'md' = 'md', isIconTile = false) => {
     if (isCurrentActive) {
       return (
         <button
           disabled
-          className={`inline-flex items-center gap-1.5 ${size === 'sm' ? 'px-2 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'} rounded font-medium bg-fluent-accent/40 text-white cursor-wait`}
+          className={`${
+            isIconTile
+              ? 'w-full justify-center px-1.5 py-1 text-[10px]'
+              : size === 'sm'
+              ? 'px-2 py-1 text-[11px]'
+              : 'px-3 py-1.5 text-xs'
+          } inline-flex items-center gap-1.5 rounded font-medium bg-fluent-accent/40 text-white cursor-wait shrink-0`}
         >
-          <Loader2 className={`${size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'} animate-spin`} />
-          <span>Verarbeite...</span>
+          <Loader2 className={`${size === 'sm' || isIconTile ? 'w-3 h-3' : 'w-3.5 h-3.5'} animate-spin shrink-0`} />
+          <span className="truncate">{isIconTile ? 'Läuft...' : 'Verarbeite...'}</span>
         </button>
       )
     }
@@ -72,10 +78,17 @@ export const PackageCard: React.FC<PackageCardProps> = ({
         <button
           onClick={() => onUpgrade(pkg.id)}
           disabled={isOperating}
-          className={`inline-flex items-center gap-1.5 ${size === 'sm' ? 'px-2 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'} rounded font-medium bg-fluent-status-yellow/20 hover:bg-fluent-status-yellow/30 text-fluent-status-yellow border border-fluent-status-yellow/30 transition-colors disabled:opacity-50`}
+          className={`${
+            isIconTile
+              ? 'w-full justify-center px-1.5 py-1 text-[10px]'
+              : size === 'sm'
+              ? 'px-2 py-1 text-[11px]'
+              : 'px-3 py-1.5 text-xs'
+          } inline-flex items-center gap-1.5 rounded font-medium bg-fluent-status-yellow/20 hover:bg-fluent-status-yellow/30 text-fluent-status-yellow border border-fluent-status-yellow/30 transition-colors disabled:opacity-50 shrink-0`}
+          title="Update verfügbar"
         >
-          <ArrowUpCircle className={`${size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
-          <span>Update</span>
+          <ArrowUpCircle className={`${size === 'sm' || isIconTile ? 'w-3 h-3' : 'w-3.5 h-3.5'} shrink-0`} />
+          <span className="truncate">Update</span>
         </button>
       )
     }
@@ -85,11 +98,17 @@ export const PackageCard: React.FC<PackageCardProps> = ({
         <button
           onClick={() => onUninstall(pkg.id)}
           disabled={isOperating}
-          className={`inline-flex items-center gap-1.5 ${size === 'sm' ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-xs'} rounded font-medium text-fluent-muted hover:text-fluent-status-red hover:bg-fluent-status-red/10 border border-transparent hover:border-fluent-status-red/30 transition-colors disabled:opacity-50`}
+          className={`${
+            isIconTile
+              ? 'w-full justify-center px-1.5 py-1 text-[10px]'
+              : size === 'sm'
+              ? 'px-2 py-1 text-[11px]'
+              : 'px-2.5 py-1.5 text-xs'
+          } inline-flex items-center gap-1.5 rounded font-medium text-fluent-muted hover:text-fluent-status-red hover:bg-fluent-status-red/10 border border-transparent hover:border-fluent-status-red/30 transition-colors disabled:opacity-50 shrink-0`}
           title="Deinstallieren"
         >
-          <Trash2 className={`${size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
-          <span>Deinstallieren</span>
+          <Trash2 className={`${size === 'sm' || isIconTile ? 'w-3 h-3' : 'w-3.5 h-3.5'} shrink-0`} />
+          <span className="truncate">{isIconTile ? 'Löschen' : 'Deinstallieren'}</span>
         </button>
       )
     }
@@ -98,10 +117,17 @@ export const PackageCard: React.FC<PackageCardProps> = ({
       <button
         onClick={() => onInstall(pkg.id)}
         disabled={isOperating}
-        className={`inline-flex items-center gap-1.5 ${size === 'sm' ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'} rounded font-medium bg-fluent-accent hover:bg-fluent-accent-hover text-white shadow-fluent-sm transition-colors disabled:opacity-50`}
+        className={`${
+          isIconTile
+            ? 'w-full justify-center px-1.5 py-1 text-[10px]'
+            : size === 'sm'
+            ? 'px-2.5 py-1 text-[11px]'
+            : 'px-3 py-1.5 text-xs'
+        } inline-flex items-center gap-1.5 rounded font-medium bg-fluent-accent hover:bg-fluent-accent-hover text-white shadow-fluent-sm transition-colors disabled:opacity-50 shrink-0`}
+        title="Installieren"
       >
-        <Download className={`${size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
-        <span>Installieren</span>
+        <Download className={`${size === 'sm' || isIconTile ? 'w-3 h-3' : 'w-3.5 h-3.5'} shrink-0`} />
+        <span className="truncate">Installieren</span>
       </button>
     )
   }
@@ -123,24 +149,24 @@ export const PackageCard: React.FC<PackageCardProps> = ({
               checked={isSelected}
               onChange={() => onToggleSelect(pkg.id)}
               disabled={isOperating}
-              className="w-3.5 h-3.5 rounded border-fluent-border text-fluent-accent focus:ring-fluent-accent/40 bg-fluent-bg cursor-pointer"
+              className="w-3.5 h-3.5 rounded border-fluent-border text-fluent-accent focus:ring-fluent-accent/40 bg-fluent-bg cursor-pointer shrink-0"
             />
           ) : (
-            <div className="w-3.5 h-3.5" />
+            <div className="w-3.5 h-3.5 shrink-0" />
           )}
 
           {pkg.status === 'installed' && (
-            <span className="w-2 h-2 rounded-full bg-fluent-status-green" title={`Installiert (v${pkg.installedVersion || ''})`} />
+            <span className="w-2 h-2 rounded-full bg-fluent-status-green shrink-0" title={`Installiert (v${pkg.installedVersion || ''})`} />
           )}
           {pkg.status === 'update_available' && (
-            <span className="w-2 h-2 rounded-full bg-fluent-status-yellow animate-pulse" title={`Update verfügbar: v${pkg.latestVersion}`} />
+            <span className="w-2 h-2 rounded-full bg-fluent-status-yellow animate-pulse shrink-0" title={`Update verfügbar: v${pkg.latestVersion}`} />
           )}
           {pkg.status === 'not_installed' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-fluent-muted/40" />
+            <span className="w-1.5 h-1.5 rounded-full bg-fluent-muted/40 shrink-0" />
           )}
         </div>
 
-        <div className="w-10 h-10 rounded-xl bg-fluent-bg/90 border border-fluent-border/50 flex items-center justify-center text-fluent-accent my-1 shadow-sm">
+        <div className="w-10 h-10 rounded-xl bg-fluent-bg/90 border border-fluent-border/50 flex items-center justify-center text-fluent-accent my-1 shadow-sm shrink-0">
           <Icon className="w-5 h-5" />
         </div>
 
@@ -158,7 +184,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
         </div>
 
         <div className="w-full mt-2">
-          {renderActionButtons('sm')}
+          {renderActionButtons('sm', true)}
         </div>
       </div>
     )
@@ -232,7 +258,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
     )
   }
 
-  // --- View Mode 3: Normal Card (Default) ---
+  // --- View Mode 3: Normal Card ---
   return (
     <div
       className={`p-4 rounded-fluent border transition-all duration-200 flex flex-col justify-between relative bg-fluent-card/70 hover:bg-fluent-card ${
@@ -243,38 +269,48 @@ export const PackageCard: React.FC<PackageCardProps> = ({
     >
       {/* Top row: Checkbox, Icon, Title, Publisher */}
       <div>
-        <div className="flex items-start justify-between gap-3 mb-2.5">
-          <div className="flex items-center gap-3">
+        <div className="flex items-start justify-between gap-2.5 mb-2.5">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             {pkg.status === 'not_installed' && (
               <input
                 type="checkbox"
                 checked={isSelected}
                 onChange={() => onToggleSelect(pkg.id)}
                 disabled={isOperating}
-                className="w-4 h-4 rounded border-fluent-border text-fluent-accent focus:ring-fluent-accent/40 bg-fluent-bg cursor-pointer"
+                className="w-4 h-4 rounded border-fluent-border text-fluent-accent focus:ring-fluent-accent/40 bg-fluent-bg cursor-pointer shrink-0"
               />
             )}
             <div className="w-10 h-10 rounded-lg bg-fluent-bg/80 border border-fluent-border/50 flex items-center justify-center shrink-0 text-fluent-accent">
               <Icon className="w-5 h-5" />
             </div>
-            <div className="min-w-0">
-              <h4 className="text-sm font-semibold text-slate-100 truncate">{pkg.name}</h4>
-              <p className="text-[11px] text-fluent-muted truncate">{pkg.publisher || pkg.id}</p>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-semibold text-slate-100 truncate" title={pkg.name}>
+                {pkg.name}
+              </h4>
+              <p className="text-[11px] text-fluent-muted truncate" title={pkg.publisher || pkg.id}>
+                {pkg.publisher || pkg.id}
+              </p>
             </div>
           </div>
 
           {/* Status Badge */}
-          <div className="shrink-0">
+          <div className="shrink-0 ml-1">
             {pkg.status === 'installed' && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-green/15 text-fluent-status-green border border-fluent-status-green/20">
-                <CheckCircle2 className="w-3 h-3" />
-                <span>v{pkg.installedVersion || 'installiert'}</span>
+              <span
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-green/15 text-fluent-status-green border border-fluent-status-green/20 max-w-[130px] truncate"
+                title={`v${pkg.installedVersion || 'installiert'}`}
+              >
+                <CheckCircle2 className="w-3 h-3 shrink-0" />
+                <span className="truncate">v{pkg.installedVersion || 'installiert'}</span>
               </span>
             )}
             {pkg.status === 'update_available' && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-yellow/15 text-fluent-status-yellow border border-fluent-status-yellow/20">
-                <ArrowUpCircle className="w-3 h-3" />
-                <span>Update: v{pkg.latestVersion}</span>
+              <span
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-yellow/15 text-fluent-status-yellow border border-fluent-status-yellow/20 max-w-[135px] truncate"
+                title={`Update: v${pkg.latestVersion}`}
+              >
+                <ArrowUpCircle className="w-3 h-3 shrink-0" />
+                <span className="truncate">Update: v{pkg.latestVersion}</span>
               </span>
             )}
             {pkg.status === 'not_installed' && (
@@ -292,12 +328,12 @@ export const PackageCard: React.FC<PackageCardProps> = ({
       </div>
 
       {/* Action Button Footer */}
-      <div className="pt-2 border-t border-fluent-border/40 flex items-center justify-between">
-        <span className="text-[10px] text-fluent-muted truncate">
+      <div className="pt-2 border-t border-fluent-border/40 flex items-center justify-between gap-2">
+        <span className="text-[10px] text-fluent-muted truncate min-w-0 flex-1" title={pkg.id}>
           {pkg.id}
         </span>
 
-        <div>{renderActionButtons('md')}</div>
+        <div className="shrink-0">{renderActionButtons('md')}</div>
       </div>
     </div>
   )

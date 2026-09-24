@@ -6,8 +6,30 @@ Alle wichtigen Änderungen an M-Toolbox werden hier dokumentiert. Das Format ori
 
 ### Geplant
 
-- Weitere kuratierte Winget-Pakete
-- Verbesserte Release- und Community-Dokumentation
+- Performance-Modus (Ausschalten unnötiger Windows-Effekte, Game-Mode Optimierungen)
+- Erweiterte Energiespar- & Normal-Profile
+- Erkennung & Entfernung von Windows-Bloatware
+
+## [2.4.1] - 2026-09-24
+
+### Hinzugefügt
+
+- **Software Center - Online Winget-Katalogsuche**:
+  - Wenn eine gesuchte Anwendung nicht im kuratierten Katalog vorkommt (oder wenn direkt nach externen Paketen gesucht werden soll), kann direkt per Button oder per `Enter`-Taste das gesamte offizielle Microsoft Winget-Repository online durchsucht werden.
+  - Gefundene Online-Pakete werden nahtlos mit Icon, Versionsnummer und Quelle dargestellt und können mit einem Klick installiert werden.
+  - Erkennung bereits auf dem Rechner installierter Versionen auch bei Online-Suchergebnissen.
+
+### Geändert / Behoben
+
+- **Standard-Listenansicht**:
+  - Software Center und Driver Center starten nun standardmäßig in der übersichtlichen, kompakten Listenansicht (`compact`).
+- **Software Center UI-Kollisionsfix**:
+  - Behoben: Badges kollidierten mit Checkboxen und Texten auf schmalen Karten (`media_1790232865463.png`). Checkboxen, App-Icons, Titel und Badges verfügen nun über dedizierte Breitenbegrenzungen (`shrink-0`, `min-w-0 flex-1`, Textkürzungen).
+  - Behoben: Aktionsbuttons ("Deinstallieren" / "Installieren") überlappten den Kachelrand im Kachel-Modus (`media_1790232888276.png`). Die Buttons passen sich nun dynamisch der Kachelbreite an, kürzen überlange Texte sauber und nutzen in Kacheln die kompaktere Beschriftung "Löschen".
+- **Cleanup Center - Windows Update Cache Reparatur**:
+  - Behoben: Der Windows Update Cache (`C:\Windows\SoftwareDistribution\Download`) wurde zuvor durch Dateisperren der Windows-Update-Dienste (`wuauserv`, `bits`, `dosvc`) und fehlende Berechtigungen übersprungen.
+  - Automatische UAC-Erhöhung und sauberes Anhalten der sperrenden Windows-Dienste vor dem Löschen des Download-Ordners sowie sicherer Neustart der Dienste.
+  - Exakte Vorher-/Nachher-Messung der freigegebenen Bytes und gelöschten Dateien.
 
 ## [2.4.0] - 2026-09-23
 

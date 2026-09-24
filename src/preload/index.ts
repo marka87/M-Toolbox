@@ -70,6 +70,7 @@ export interface MToolboxAPI {
     getCatalog: () => Promise<SoftwarePackage[]>
     getInstalled: () => Promise<InstalledPackage[]>
     getUpdates: () => Promise<PackageUpdate[]>
+    search: (query: string) => Promise<SoftwarePackage[]>
     install: (packageId: string) => Promise<{ success: boolean; error?: string }>
     uninstall: (packageId: string) => Promise<{ success: boolean; error?: string }>
     upgrade: (packageId: string) => Promise<{ success: boolean; error?: string }>
@@ -208,6 +209,7 @@ const api: MToolboxAPI = {
     getCatalog: () => ipcRenderer.invoke(IPC_CHANNELS.SOFTWARE.GET_CATALOG),
     getInstalled: () => ipcRenderer.invoke(IPC_CHANNELS.SOFTWARE.GET_INSTALLED),
     getUpdates: () => ipcRenderer.invoke(IPC_CHANNELS.SOFTWARE.GET_UPDATES),
+    search: (query: string) => ipcRenderer.invoke(IPC_CHANNELS.SOFTWARE.SEARCH, query),
     install: (packageId: string) => ipcRenderer.invoke(IPC_CHANNELS.SOFTWARE.INSTALL, packageId),
     uninstall: (packageId: string) => ipcRenderer.invoke(IPC_CHANNELS.SOFTWARE.UNINSTALL, packageId),
     upgrade: (packageId: string) => ipcRenderer.invoke(IPC_CHANNELS.SOFTWARE.UPGRADE, packageId),

@@ -114,6 +114,10 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     })
   })
 
+  ipcMain.handle(IPC_CHANNELS.SOFTWARE.SEARCH, async (_, query: string) => {
+    return await softwareService.searchPackages(query)
+  })
+
   // Backup & Restore IPC
   const backupService = BackupService.getInstance()
 

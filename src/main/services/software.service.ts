@@ -684,7 +684,7 @@ export class SoftwareService {
     if (sepIndex <= 0) return []
 
     const headerLine = lines[sepIndex - 1]
-    const headerRegex = /\b(name|id|version|available|verfügbar|source|quelle)\b/gi
+    const headerRegex = /\b(name|id|version|available|verfügbar|source|quelle|match|übereinstimmung)\b/gi
     const headerMatches = [...headerLine.matchAll(headerRegex)]
     if (headerMatches.length === 0) return []
 
@@ -965,5 +965,87 @@ export class SoftwareService {
         'Aktualisierungsprozess beendet'
       )
     })
+  }
+
+  /**
+   * Searches online winget packages matching query
+   */
+  public async searchPackages(query: string): Promise<SoftwarePackage[]> {
+    const cleanQuery = query.replace(/["`$;]/g, '').trim()
+    if (cleanQuery.length < 2) return []
+
+    try {
+      const res = await this.ps.executeCommand(
+        `winget search "${cleanQuery}" --accept-source-agreements`,
+        25000
+      )
+      const rows = this.parseWingetTable(res.stdout)
+      if (rows.length === 0) return []
+
+      // Correlate with installed packages
+      const installedList = await this.getInstalledPackages()
+      const installedMap = new Map<string, InstalledPackage>()
+      for (const item of installedList) {
+        installedMap.set(item.id.toLowerCase(), item)
+      }
+
+      const results: SoftwarePackage[] = []
+      const seenIds = new Set<string>()
+
+      for (const r of rows) {
+        const id = r['id'] || ''
+        const name = r['name'] || id
+        const version = r['version'] || ''
+        const source = r['source'] || r['quelle'] || 'winget'
+        const lowerId = id.toLowerCase()
+
+        if (!id || seenIds.has(lowerId)) continue
+        seenIds.add(lowerId)
+
+        const installed = installedMap.get(lowerId)
+        let status: SoftwarePackage['status'] = 'not_installed'
+        let installedVersion: string | undefined
+
+        if (installed) {
+          status = 'installed'
+          installedVersion = installed.version
+        }
+
+        // Categorization heuristic
+        let category: SoftwareCategory = 'utilities'
+        const lowerName = name.toLowerCase()
+        if (/browser|chrome|firefox|brave|opera|vivaldi|edge|tor/i.test(lowerName) || /browser/i.test(lowerId)) {
+          category = 'browser'
+        } else if (/code|git|studio|python|node|compiler|terminal|sdk|jdk/i.test(lowerName) || /dev/i.test(lowerId)) {
+          category = 'dev'
+        } else if (/player|vlc|music|video|audio|photo|gimp|media|stream/i.test(lowerName)) {
+          category = 'media'
+        } else if (/chat|discord|telegram|signal|slack|teams|skype|mail/i.test(lowerName)) {
+          category = 'communication'
+        } else if (/game|steam|launcher|epic|gog|play/i.test(lowerName)) {
+          category = 'gaming'
+        } else if (/redist|runtime|vcredist|framework|\.net/i.test(lowerName)) {
+          category = 'runtimes'
+        }
+
+        results.push({
+          id,
+          name,
+          description: `Winget Paket (${id}) • Quelle: ${source}`,
+          category,
+          publisher: source,
+          latestVersion: version && version !== 'Unknown' ? version : undefined,
+          installedVersion,
+          status
+        })
+
+        if (results.length >= 40) break
+      }
+
+      return results
+    } catch (err) {
+      console.error('[SoftwareService] searchPackages error:', err)
+      return []
+    }
   }
 }
