@@ -195,6 +195,7 @@ export interface MToolboxAPI {
     maximize: () => Promise<void>
     close: () => Promise<void>
     openExternal: (url: string) => Promise<void>
+    onVisibilityChange: (callback: (visible: boolean) => void) => () => void
   }
   widget: {
     toggle: () => Promise<boolean>
@@ -418,6 +419,15 @@ const api: MToolboxAPI = {
     maximize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MAXIMIZE_WINDOW),
     close: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.CLOSE_WINDOW),
     openExternal: (url) => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.OPEN_EXTERNAL, url),
+    onVisibilityChange: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, visible: boolean) => {
+        callback(visible)
+      }
+      ipcRenderer.on(IPC_CHANNELS.SYSTEM.WINDOW_VISIBILITY_EVENT, listener)
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.SYSTEM.WINDOW_VISIBILITY_EVENT, listener)
+      }
+    }
   },
   widget: {
     toggle: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.TOGGLE),

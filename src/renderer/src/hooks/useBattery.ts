@@ -51,12 +51,42 @@ export function useBattery() {
     }
   }, [])
 
+  const [isWindowVisible, setIsWindowVisible] = useState(true)
+  const [isDocVisible, setIsDocVisible] = useState(() => {
+    return typeof document !== 'undefined' ? document.visibilityState === 'visible' : true
+  })
+
+  // Listen to document.visibilityState
   useEffect(() => {
+    const handleVisChange = () => {
+      setIsDocVisible(document.visibilityState === 'visible')
+    }
+    document.addEventListener('visibilitychange', handleVisChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisChange)
+    }
+  }, [])
+
+  // Listen to native window/power visibility events from Electron Main
+  useEffect(() => {
+    if (!window.mToolbox?.system?.onVisibilityChange) return
+    const unbind = window.mToolbox.system.onVisibilityChange((visible) => {
+      setIsWindowVisible(visible)
+    })
+    return () => {
+      unbind()
+    }
+  }, [])
+
+  useEffect(() => {
+    const isVisible = isLiveMonitoring && isDocVisible && isWindowVisible
+
+    if (!isVisible) return
+
+    // Immediately fetch fresh snapshot when becoming visible/active
     fetchInfo()
 
-    if (!isLiveMonitoring) return
-
-    // Poll live battery status & drain every 8 seconds (optimal energy efficiency)
+    // Poll live battery status every 8 seconds only while visible
     const interval = setInterval(() => {
       fetchInfo()
     }, 8000)
@@ -64,7 +94,7 @@ export function useBattery() {
     return () => {
       clearInterval(interval)
     }
-  }, [fetchInfo, isLiveMonitoring])
+  }, [fetchInfo, isLiveMonitoring, isDocVisible, isWindowVisible])
 
   const toggleLiveMonitoring = useCallback(() => {
     setIsLiveMonitoring((prev) => !prev)

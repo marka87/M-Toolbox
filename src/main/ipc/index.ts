@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, shell, dialog } from 'electron'
+import { ipcMain, BrowserWindow, shell, dialog, powerMonitor } from 'electron'
 import { IPC_CHANNELS } from '../../shared/channels'
 import { DashboardService } from '../services/dashboard.service'
 import { SoftwareService } from '../services/software.service'
@@ -25,6 +25,31 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
   const widgetService = WidgetService.getInstance()
   widgetService.setMainWindow(mainWindow)
+
+  // Forward window visibility & power events to renderer
+  const sendVisibility = (visible: boolean) => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(IPC_CHANNELS.SYSTEM.WINDOW_VISIBILITY_EVENT, visible)
+    }
+  }
+
+  mainWindow.on('minimize', () => sendVisibility(false))
+  mainWindow.on('hide', () => sendVisibility(false))
+  mainWindow.on('restore', () => sendVisibility(true))
+  mainWindow.on('show', () => sendVisibility(true))
+
+  try {
+    powerMonitor.on('lock-screen', () => sendVisibility(false))
+    powerMonitor.on('suspend', () => sendVisibility(false))
+    powerMonitor.on('unlock-screen', () => {
+      const isVis = !mainWindow.isDestroyed() && mainWindow.isVisible() && !mainWindow.isMinimized()
+      sendVisibility(isVis)
+    })
+    powerMonitor.on('resume', () => {
+      const isVis = !mainWindow.isDestroyed() && mainWindow.isVisible() && !mainWindow.isMinimized()
+      sendVisibility(isVis)
+    })
+  } catch {}
 
   // Map of windowId -> { unsubscribe: () => void, cleanup: () => void }
   const windowMetricStreams = new Map<number, { unsubscribe: () => void; cleanup: () => void }>()

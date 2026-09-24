@@ -127,6 +127,7 @@ export const IPC_CHANNELS = {
     MINIMIZE_WINDOW: 'system:minimize-window',
     MAXIMIZE_WINDOW: 'system:maximize-window',
     CLOSE_WINDOW: 'system:close-window',
+    WINDOW_VISIBILITY_EVENT: 'system:window-visibility-event'
   },
   WIDGET: {
     TOGGLE: 'widget:toggle',
