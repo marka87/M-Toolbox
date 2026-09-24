@@ -106,6 +106,11 @@ export class TelemetryService {
   private isSamplingBattery = false
   private isSamplingNet = false
 
+  // Battery hardware caching & health sample timestamp
+  private hasBatteryHardware: boolean | null = null
+  private lastBatteryHealthSampleTime = 0
+  private readonly HEALTH_SAMPLE_INTERVAL_MS = 3600000 // 1 hour
+
   // Last broadcasted metrics (for dirty-checking)
   private lastBroadcastJson = ''
 
@@ -196,7 +201,7 @@ export class TelemetryService {
 
   private async handleWakeUpOrUnlock(): Promise<void> {
     this.clearTimer()
-    await this.sampleBatteryHealthOnce()
+    await this.sampleBatteryHealthOnce(true)
     await this.sampleImmediate()
     this.scheduleNextTick()
   }
@@ -372,8 +377,8 @@ export class TelemetryService {
     if (all || activeMetrics.has('ram')) this.sampleRam()
     if (all || activeMetrics.has('net')) await this.sampleNetwork()
     if (all || activeMetrics.has('gpu')) this.sampleGpu()
-    if (all || activeMetrics.has('battery') || activeMetrics.has('watts')) {
-      await this.sampleBattery()
+    if ((all || activeMetrics.has('battery') || activeMetrics.has('watts')) && this.hasBatteryHardware !== false) {
+      await this.sampleBattery(all || activeMetrics.has('watts'))
     }
     if (activeMetrics.has('temps')) this.sampleTemperatures()
     if (activeMetrics.has('smart')) this.sampleSmartStatus()
@@ -408,7 +413,7 @@ export class TelemetryService {
     if (activeMetrics.has('temps')) {
       intervals.push(Math.max(50, this.lastTempSampleTime + 3000 * multiplier - now))
     }
-    if (activeMetrics.has('battery') || activeMetrics.has('watts')) {
+    if (this.hasBatteryHardware !== false && (activeMetrics.has('battery') || activeMetrics.has('watts'))) {
       const isForeground =
         this.hasActiveForegroundSubscriber('battery') || this.hasActiveForegroundSubscriber('watts')
       const batBaseInterval = !isForeground ? 60000 : activeMetrics.has('watts') ? 3000 : 30000
@@ -477,14 +482,14 @@ export class TelemetryService {
         this.sampleTemperatures()
       }
 
-      // 6. Unified Battery & Wattage
-      if (activeMetrics.has('battery') || activeMetrics.has('watts')) {
+      // 6. Unified Battery & Wattage (3s/6s if watts, 30s/60s if percentage only, 60s background)
+      if (this.hasBatteryHardware !== false && (activeMetrics.has('battery') || activeMetrics.has('watts'))) {
         const isForeground =
           this.hasActiveForegroundSubscriber('battery') || this.hasActiveForegroundSubscriber('watts')
         const batBaseInterval = !isForeground ? 60000 : activeMetrics.has('watts') ? 3000 : 30000
         if (now - this.lastBatterySampleTime >= batBaseInterval * multiplier) {
           this.lastBatterySampleTime = now
-          await this.sampleBattery()
+          await this.sampleBattery(activeMetrics.has('watts'))
           hasChanges = true
         }
       }
@@ -669,16 +674,20 @@ export class TelemetryService {
    * Unified battery, power status & wattage query.
    * Combines PowerStatus and BatteryStatus into ONE lightweight call.
    */
-  private async sampleBattery(): Promise<void> {
+  private async sampleBattery(queryWatts = true): Promise<void> {
+    if (this.hasBatteryHardware === false) return
     if (this.isSamplingBattery) return
     this.isSamplingBattery = true
 
     const script = `
       $ProgressPreference = 'SilentlyContinue';
       $p = [System.Windows.Forms.SystemInformation]::PowerStatus;
-      $wmi = Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction SilentlyContinue | Select-Object -First 1;
+      $hasBat = ($p.BatteryChargeStatus.ToString() -ne 'NoSystemBattery');
+      $wmi = if ($hasBat -and ${queryWatts ? '$true' : '$false'}) {
+        Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction SilentlyContinue | Select-Object -First 1
+      } else { $null };
       [PSCustomObject]@{
-        HasBat = ($p.BatteryChargeStatus.ToString() -ne 'NoSystemBattery');
+        HasBat = $hasBat;
         LineStatus = $p.PowerLineStatus.ToString();
         Percent = [int]($p.BatteryLifePercent * 100);
         Status = $p.BatteryChargeStatus.ToString();
@@ -692,22 +701,33 @@ export class TelemetryService {
       if (stdout && stdout.trim() && stdout.trim() !== 'null') {
         const parsed = JSON.parse(stdout.trim())
         const hasBattery = Boolean(parsed.HasBat)
+        this.hasBatteryHardware = hasBattery
         this.cache.battery.hasBattery = hasBattery
 
-        if (hasBattery) {
-          const isAcOnline = parsed.LineStatus === 'Online'
-          const isCharging = parsed.Status.includes('Charging') || parsed.ChargeRate > 0
-          const percent = Math.min(100, Math.max(0, parsed.Percent >= 0 ? parsed.Percent : 100))
-          const chargeRate = parsed.ChargeRate ? Math.round((parsed.ChargeRate / 1000) * 10) / 10 : 0
-          const dischargeRate = parsed.DischargeRate ? Math.round((parsed.DischargeRate / 1000) * 10) / 10 : 0
-
-          this.cache.battery.isAcOnline = isAcOnline
-          this.cache.battery.isCharging = isCharging
-          this.cache.battery.percent = percent
-          this.cache.battery.chargeRateWatts = chargeRate
-          this.cache.battery.dischargeRateWatts = dischargeRate
+        if (!hasBattery) {
+          // Desktop PC without battery: permanently configure clean static state
+          this.cache.battery.percent = 100
+          this.cache.battery.isAcOnline = true
+          this.cache.battery.isCharging = false
+          this.cache.battery.chargeRateWatts = 0
+          this.cache.battery.dischargeRateWatts = 0
+          this.cache.battery.healthPercent = 100
           this.cache.timestamp = Date.now()
+          return
         }
+
+        const isAcOnline = parsed.LineStatus === 'Online'
+        const isCharging = parsed.Status.includes('Charging') || parsed.ChargeRate > 0
+        const percent = Math.min(100, Math.max(0, parsed.Percent >= 0 ? parsed.Percent : 100))
+        const chargeRate = parsed.ChargeRate ? Math.round((parsed.ChargeRate / 1000) * 10) / 10 : 0
+        const dischargeRate = parsed.DischargeRate ? Math.round((parsed.DischargeRate / 1000) * 10) / 10 : 0
+
+        this.cache.battery.isAcOnline = isAcOnline
+        this.cache.battery.isCharging = isCharging
+        this.cache.battery.percent = percent
+        this.cache.battery.chargeRateWatts = chargeRate
+        this.cache.battery.dischargeRateWatts = dischargeRate
+        this.cache.timestamp = Date.now()
       }
     } catch {
       // Keep cached
@@ -720,10 +740,26 @@ export class TelemetryService {
    * Sample battery health / wear level once from BatteryService's cached static data.
    * Eliminates duplicate XML report generation and extra WMI queries.
    */
-  private async sampleBatteryHealthOnce(): Promise<void> {
+  private async sampleBatteryHealthOnce(force = false): Promise<void> {
+    if (this.hasBatteryHardware === false) {
+      this.cache.battery.healthPercent = 100
+      return
+    }
+
+    const now = Date.now()
+    if (
+      !force &&
+      this.lastBatteryHealthSampleTime > 0 &&
+      now - this.lastBatteryHealthSampleTime < this.HEALTH_SAMPLE_INTERVAL_MS
+    ) {
+      return
+    }
+    this.lastBatteryHealthSampleTime = now
+
     try {
       const staticData = await batteryService.getStaticBatteryData()
       if (staticData && staticData.designCapacityMWh > 0) {
+        this.hasBatteryHardware = true
         this.cache.battery.hasBattery = true
         this.cache.battery.healthPercent = staticData.healthPercent
       } else {
@@ -768,7 +804,7 @@ export class TelemetryService {
   private broadcastIfChanged(): void {
     const metrics = this.getLiveMetrics()
     // Compare key values to avoid spamming renderer IPC if values didn't change
-    const signature = `${metrics.cpuUsagePercent}_${metrics.ramUsagePercent}_${metrics.networkReceiveKBps}_${metrics.networkSendKBps}_${metrics.gpuUsagePercent}_${metrics.battery?.percent}_${metrics.battery?.isCharging}_${metrics.battery?.isAcOnline}_${metrics.battery?.chargeRateWatts}_${metrics.battery?.dischargeRateWatts}`
+    const signature = `${metrics.cpuUsagePercent}_${metrics.ramUsagePercent}_${metrics.networkReceiveKBps}_${metrics.networkSendKBps}_${metrics.gpuUsagePercent}_${metrics.battery?.percent}_${metrics.battery?.isCharging}_${metrics.battery?.isAcOnline}_${metrics.battery?.chargeRateWatts}_${metrics.battery?.dischargeRateWatts}_${metrics.battery?.healthPercent}`
 
     if (signature === this.lastBroadcastJson) {
       return

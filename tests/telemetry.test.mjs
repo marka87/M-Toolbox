@@ -68,9 +68,9 @@ describe('Telemetry Service Logic & Parser Tests', () => {
     assert.equal(getMultiplier(false, false), 1) // Desktop PC (no battery)
   })
 
-  test('Signature dirty-checking for IPC push prevention', () => {
+  test('Signature dirty-checking for IPC push prevention (including healthPercent)', () => {
     const makeSignature = (metrics) => {
-      return `${metrics.cpuUsagePercent}_${metrics.ramUsagePercent}_${metrics.networkReceiveKBps}_${metrics.networkSendKBps}_${metrics.gpuUsagePercent}_${metrics.battery?.percent}_${metrics.battery?.isCharging}_${metrics.battery?.isAcOnline}_${metrics.battery?.chargeRateWatts}_${metrics.battery?.dischargeRateWatts}`
+      return `${metrics.cpuUsagePercent}_${metrics.ramUsagePercent}_${metrics.networkReceiveKBps}_${metrics.networkSendKBps}_${metrics.gpuUsagePercent}_${metrics.battery?.percent}_${metrics.battery?.isCharging}_${metrics.battery?.isAcOnline}_${metrics.battery?.chargeRateWatts}_${metrics.battery?.dischargeRateWatts}_${metrics.battery?.healthPercent}`
     }
 
     const state1 = {
@@ -79,7 +79,14 @@ describe('Telemetry Service Logic & Parser Tests', () => {
       networkReceiveKBps: 10,
       networkSendKBps: 2,
       gpuUsagePercent: 5,
-      battery: { percent: 80, isCharging: false, isAcOnline: true, chargeRateWatts: 0, dischargeRateWatts: 0 }
+      battery: {
+        percent: 80,
+        isCharging: false,
+        isAcOnline: true,
+        chargeRateWatts: 0,
+        dischargeRateWatts: 0,
+        healthPercent: 95
+      }
     }
 
     const state2 = { ...state1 }
@@ -93,5 +100,9 @@ describe('Telemetry Service Logic & Parser Tests', () => {
     // Battery percent changes
     const state4 = { ...state1, battery: { ...state1.battery, percent: 79 } }
     assert.notEqual(makeSignature(state1), makeSignature(state4))
+
+    // Health percent changes
+    const state5 = { ...state1, battery: { ...state1.battery, healthPercent: 94 } }
+    assert.notEqual(makeSignature(state1), makeSignature(state5))
   })
 })
