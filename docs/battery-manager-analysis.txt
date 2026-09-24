@@ -1,0 +1,80 @@
+================================================================================
+M-Toolbox — Analyse & Optimierungsplan: Batterie-Manager (Live 8s & Drain)
+================================================================================
+Datum:  24. September 2026
+Status: Analyse (Keine Code-Aenderungen durchgefuehrt)
+
+--------------------------------------------------------------------------------
+1. WAS LÄUFT ALLE 8 SEKUNDEN?
+--------------------------------------------------------------------------------
+Hook: src/renderer/src/hooks/useBattery.ts (Zeile 59-67)
+State: isLiveMonitoring = true (Default beim Oeffnen der Seite)
+Timer: setInterval(..., 8000)
+
+Alle 8 Sekunden werden 2 IPC-Aufrufe abgesetzt:
+
+1. window.mToolbox.battery.getInfo()
+   -> battery.service.ts -> getBatteryInfo()
+   -> Startet NEUEN Prozess: powershell.exe (ueber powershellService.runPowerShell)
+   -> Fuehrt aus:
+      - Add-Type -AssemblyName System.Windows.Forms
+      - [System.Windows.Forms.SystemInformation]::PowerStatus
+      - Get-CimInstance root/wmi:BatteryStatus (Spannung/Voltage, Laderate, Entladerate)
+      - Get-CimInstance Win32_Battery (Fallback)
+      - Drain-Inspektor: Get-Process (alle ~200 Prozesse) -> Start-Sleep 250ms -> Get-Process erneut
+   -> getStaticBatteryData(): Liefert Zyklen & Wear-Level (5 Min. Cache)
+
+2. window.mToolbox.battery.getPowerProfiles()
+   -> battery.service.ts -> getPowerProfiles()
+   -> Ruft getPowerPlans(force = true) auf
+   -> Startet NEUEN Prozess: powercfg.exe (powercfg /list via execAsync)
+   -> Umgeht den internen 10s-Cache durch force=true!
+
+--------------------------------------------------------------------------------
+2. ÜBERSICHTSTABELLE
+--------------------------------------------------------------------------------
+
+Komponente             | Datei / Zeile          | Befehl / API         | Intervall | Prozess?       | Unsichtbar / Tray?
+-----------------------+------------------------+----------------------+-----------+----------------+-------------------
+Live-Status & Spannung | battery.service.ts:201 | WMI BatteryStatus    | 8 s       | Ja (powershell)| JA (laeuft blind)
+Drain-Inspektor        | battery.service.ts:210 | Get-Process x 2      | 8 s       | In derselben PS| JA (CPU-Spitzen)
+Energieprofile         | battery.service.ts:532 | powercfg /list       | 8 s       | Ja (powercfg)  | JA (force=true)
+Ladezyklen / Wear      | battery.service.ts:57  | getStaticBatteryData | 5 Min.    | Nur bei Ablauf | Nur bei Ablauf
+Akkubericht (HTML)     | battery.service.ts:517 | powercfg /report     | Klick     | Ja (powercfg)  | Nein (nur Klick)
+
+Bilanz: 2 neue Prozesse alle 8s = 15 Prozessstarts pro Minute bei geoeffnetem Tab.
+
+--------------------------------------------------------------------------------
+3. WARUM ZEIGT DER DRAIN-INSPEKTOR ~5,5 % CPU FÜR M-TOOLBOX?
+--------------------------------------------------------------------------------
+- Das Messfenster ist nur 250 ms kurz (Start-Sleep -Milliseconds 250).
+- Waehrend dieser 250 ms verarbeitet Electron die IPC-Antworten und startet parallel powercfg /list.
+- 15 ms Rechenzeit in einem 250-ms-Fenster entsprechen auf 8 Kernen rechnerisch ca. 6-7 % CPU.
+- Der Inspektor misst also seinen EIGENEN Mess-Overhead.
+
+--------------------------------------------------------------------------------
+4. PONYTAIL-VORSCHLÄGE (RADIKAL EINFACH, MINIMALER CODE)
+--------------------------------------------------------------------------------
+
+(a) Stopp bei Unsichtbarkeit:
+    - In useBattery.ts: document.addEventListener('visibilitychange') + Electron window event.
+    - Wenn Tab nicht sichtbar / Fenster im Tray / Bildschirm gesperrt: Timer stoppen.
+    - Wieder sichtbar: Ein frischer Snapshot.
+
+(b) Persistenter PowerShellWorker statt neuer Prozesse:
+    - battery.service.ts nutzt den bereits existierenden powerShellWorker (aus P3).
+    - getPowerProfiles(): force=true entfernen, 60s Cache nutzen.
+    - Reduziert Prozessstarts von 15/Min auf 0/Min.
+
+(c) Drain-Inspektor entkoppeln:
+    - 8s-Live-Loop sammelt nur leichte Daten (Zellspannung, Watt, %, Status) ohne Drain-Scan.
+    - Drain-Inspektor (Get-Process) nur bei Klick auf "Aktualisieren" ODER alle 60 Sekunden.
+
+(d) Eigenanteil ausblenden:
+    - proc.isSelf existiert bereits. In drainProcesses M-Toolbox / Electron einfach per
+      filter(p => !p.isSelf) ausblenden. Die App drainiert den Akku nicht selbst, wenn der
+      permanente Scan wegfaellt.
+
+(e) Dev-Log:
+    - Getrennte Zaehler in M_TOOLBOX_TELEMETRY_DEBUG=1 fuer TelemetryService vs. BatteryService.
+================================================================================
