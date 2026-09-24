@@ -572,6 +572,10 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     return await batteryService.killProcess(pid)
   })
 
+  ipcMain.handle(IPC_CHANNELS.BATTERY.SCAN_DRAIN_PROCESSES, async () => {
+    return await batteryService.scanDrainProcesses()
+  })
+
   // Bloatware IPC
   ipcMain.handle(IPC_CHANNELS.BLOATWARE.SCAN, async () => {
     return await bloatwareService.scan()

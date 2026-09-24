@@ -51,6 +51,7 @@ export interface BatteryInfo {
   currentWattage: number
   drainProcesses: BatteryDrainProcess[]
   drainAlert: BatteryDrainAlert | null
+  lastDrainScanTimestamp?: number
   activePowerPlan: PowerPlanItem | null
   availablePowerPlans: PowerPlanItem[]
 }

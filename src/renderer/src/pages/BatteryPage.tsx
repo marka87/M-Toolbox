@@ -52,6 +52,8 @@ export const BatteryPage: React.FC = () => {
     killingPid,
     alertDismissed,
     reportResult,
+    lastDrainScanTime,
+    isScanningDrain,
     refresh,
     toggleLiveMonitoring,
     dismissAlert,
@@ -60,6 +62,19 @@ export const BatteryPage: React.FC = () => {
     setPowerProfile,
     generateReport
   } = useBattery()
+
+  const [secondsAgo, setSecondsAgo] = React.useState<number | null>(null)
+  React.useEffect(() => {
+    const update = () => {
+      const ts = lastDrainScanTime || info?.lastDrainScanTimestamp
+      if (ts) {
+        setSecondsAgo(Math.max(0, Math.round((Date.now() - ts) / 1000)))
+      }
+    }
+    update()
+    const timer = setInterval(update, 1000)
+    return () => clearInterval(timer)
+  }, [lastDrainScanTime, info?.lastDrainScanTimestamp])
 
   if (isLoading && !info) {
     return (
@@ -499,9 +514,18 @@ export const BatteryPage: React.FC = () => {
                     Energie-Fresser & Hintergrund-Last (Drain-Inspektor)
                   </h3>
                 </div>
-                <p className="text-xs text-fluent-muted">
-                  Echtzeit-Analyse der laufenden Anwendungen nach CPU- und Energie-Auswirkung:
-                </p>
+                <div className="flex items-center gap-2 text-xs text-fluent-muted">
+                  <span>Echtzeit-Analyse der laufenden Anwendungen:</span>
+                  {isScanningDrain ? (
+                    <span className="text-fluent-accent flex items-center gap-1 font-medium">
+                      <RefreshCw className="w-3 h-3 animate-spin" /> analysiert...
+                    </span>
+                  ) : secondsAgo !== null ? (
+                    <span className="text-[11px] text-slate-400">
+                      • aktualisiert vor {secondsAgo} s
+                    </span>
+                  ) : null}
+                </div>
               </div>
 
               {info.isDischarging && info.dischargeRateWatts > 0 ? (

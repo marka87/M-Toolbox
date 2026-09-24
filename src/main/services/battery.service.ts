@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import { shell } from 'electron'
+import { shell, app } from 'electron'
 import { execAsync } from '../utils/exec'
 import { powershellService } from './powershell.service'
 import { powerShellWorker } from './powershell-worker.service'
@@ -38,6 +38,9 @@ export class BatteryService {
   private cachedPowerPlans: { active: PowerPlanItem | null; available: PowerPlanItem[] } | null = null
   private lastPowerPlansTime = 0
   private explicitActiveProfile: PowerProfileMode | null = null
+  private lastProcessSnapshot: Map<string, { cpu: number; time: number }> = new Map()
+  private cachedDrainProcesses: BatteryDrainProcess[] = []
+  private lastDrainScanTime = 0
 
   private constructor() {}
 
@@ -210,9 +213,160 @@ export class BatteryService {
    * Fetches real-time battery status combined with static capacity info,
    * live discharge/charge wattage, and top energy-draining processes.
    */
+  /**
+   * Scans processes for battery drain using a single snapshot delta.
+   * Keyed by PID + StartTime to correctly handle process termination and PID reuse.
+   * Uses app.getAppMetrics() to honestly report M-Toolbox's total Electron process usage.
+   * Timeout is 10s and does not count towards worker 3-strike backoff.
+   */
+  public async scanDrainProcesses(): Promise<BatteryDrainProcess[]> {
+    const cmd = `Get-Process | Where-Object { $_.CPU } | Select-Object Id, ProcessName, CPU, @{N='StartTime';E={try{$_.StartTime.ToFileTimeUtc()}catch{0}}}, @{N='MemoryMB';E={[Math]::Round($_.WorkingSet64 / 1MB)}} | ConvertTo-Json -Compress`
+
+    const querySnapshot = async (): Promise<any[]> => {
+      try {
+        const raw = await powerShellWorker.runCommand(cmd, 10000, { countTowardsErrors: false })
+        if (!raw || !raw.trim()) return []
+        const parsed = JSON.parse(raw.trim())
+        return Array.isArray(parsed) ? parsed : [parsed]
+      } catch {
+        return []
+      }
+    }
+
+    // On very first scan, take snapshot, wait 250ms in Node, then take second snapshot to calculate initial delta
+    if (this.lastProcessSnapshot.size === 0) {
+      const snap1 = await querySnapshot()
+      const t1 = Date.now()
+      for (const p of snap1) {
+        if (p && p.Id) {
+          const k = `${p.Id}_${p.StartTime || 0}`
+          this.lastProcessSnapshot.set(k, { cpu: typeof p.CPU === 'number' ? p.CPU : 0, time: t1 })
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250))
+    }
+
+    const currentSnap = await querySnapshot()
+    const now = Date.now()
+    const cores = os.cpus().length || 1
+
+    // B4: Aggregate CPU across all M-Toolbox Electron processes (Main, Renderer, GPU, Utility)
+    let mToolboxAppCpu = 0
+    let mToolboxMemoryMb = 0
+    const selfPids = new Set<number>()
+    try {
+      if (app && typeof app.getAppMetrics === 'function') {
+        const appMetrics = app.getAppMetrics()
+        for (const metric of appMetrics) {
+          selfPids.add(metric.pid)
+          if (metric.cpu?.percentCPUUsage) {
+            mToolboxAppCpu += metric.cpu.percentCPUUsage
+          }
+          if (metric.memory?.workingSetSize) {
+            mToolboxMemoryMb += Math.round(metric.memory.workingSetSize / 1024)
+          }
+        }
+        mToolboxAppCpu = Math.round(mToolboxAppCpu * 10) / 10
+      }
+    } catch {
+      mToolboxAppCpu = 0
+    }
+
+    const nextSnapshot = new Map<string, { cpu: number; time: number }>()
+    const calculated: BatteryDrainProcess[] = []
+    let hasSelfInTop = false
+
+    for (const p of currentSnap) {
+      if (!p || !p.Id || !p.ProcessName) continue
+      const key = `${p.Id}_${p.StartTime || 0}`
+      const currentCpu = typeof p.CPU === 'number' ? p.CPU : 0
+      nextSnapshot.set(key, { cpu: currentCpu, time: now })
+
+      const nameLower = (p.ProcessName || '').toLowerCase()
+      const isSelf =
+        selfPids.has(p.Id) ||
+        p.Id === process.pid ||
+        nameLower.includes('m-toolbox') ||
+        nameLower === 'electron'
+
+      let cpuPercent = 0
+      const prev = this.lastProcessSnapshot.get(key)
+      if (prev && prev.time > 0) {
+        const deltaSec = (now - prev.time) / 1000
+        const deltaCpu = currentCpu - prev.cpu
+        if (deltaSec > 0 && deltaCpu >= 0) {
+          cpuPercent = Math.round((deltaCpu / deltaSec / cores) * 1000) / 10
+        }
+      }
+
+      if (isSelf) {
+        // Honest aggregation: use app.getAppMetrics() for the M-Toolbox block
+        cpuPercent = mToolboxAppCpu
+        hasSelfInTop = true
+      }
+
+      if (cpuPercent >= 0.3 || isSelf) {
+        let impactLevel: BatteryDrainImpact = 'Niedrig'
+        if (cpuPercent >= 15) impactLevel = 'Sehr hoch'
+        else if (cpuPercent >= 7) impactLevel = 'Hoch'
+        else if (cpuPercent >= 2) impactLevel = 'Moderat'
+
+        calculated.push({
+          id: p.Id,
+          name: isSelf ? 'M-Toolbox' : p.ProcessName,
+          cpuPercent,
+          memoryMb: isSelf && mToolboxMemoryMb > 0 ? mToolboxMemoryMb : p.MemoryMB || 0,
+          impactLevel,
+          estimatedDrainText: `${cpuPercent}% CPU`,
+          isSelf
+        })
+      }
+    }
+
+    // Ensure M-Toolbox is present if not captured in the scan
+    if (!hasSelfInTop && mToolboxAppCpu > 0) {
+      let impactLevel: BatteryDrainImpact = 'Niedrig'
+      if (mToolboxAppCpu >= 15) impactLevel = 'Sehr hoch'
+      else if (mToolboxAppCpu >= 7) impactLevel = 'Hoch'
+      else if (mToolboxAppCpu >= 2) impactLevel = 'Moderat'
+
+      calculated.push({
+        id: process.pid,
+        name: 'M-Toolbox',
+        cpuPercent: mToolboxAppCpu,
+        memoryMb: mToolboxMemoryMb,
+        impactLevel,
+        estimatedDrainText: `${mToolboxAppCpu}% CPU`,
+        isSelf: true
+      })
+    }
+
+    // Exclude benign Idle and sort descending by CPU
+    const benignNames = ['Idle', 'System Idle Process']
+    const sorted = calculated
+      .filter((proc) => !benignNames.includes(proc.name))
+      .sort((a, b) => b.cpuPercent - a.cpuPercent)
+      .slice(0, 10)
+
+    this.lastProcessSnapshot = nextSnapshot
+    this.cachedDrainProcesses = sorted
+    this.lastDrainScanTime = now
+
+    return sorted
+  }
+
+  /**
+   * Fetches real-time battery status combined with static capacity info,
+   * live discharge/charge wattage, and cached top energy-draining processes.
+   */
   public async getBatteryInfo(includeDrainProcesses = true): Promise<BatteryInfo> {
     try {
-      // 1. Check live power status, WMI battery status & sample process CPU delta
+      // Trigger drain scan in background if cache is empty and drain processes are desired
+      if (includeDrainProcesses && this.cachedDrainProcesses.length === 0) {
+        this.scanDrainProcesses().catch(() => {})
+      }
+
+      // 1. Lightweight live status query via persistent worker (no Get-Process overhead)
       const psScript = `
       $ProgressPreference = 'SilentlyContinue'
       Add-Type -AssemblyName System.Windows.Forms
@@ -221,29 +375,6 @@ export class BatteryService {
       $b = Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue | Select-Object -First 1
 
       $hasBat = ($b -ne $null) -or ($wmi -ne $null) -or ($p.BatteryChargeStatus.ToString() -ne 'NoSystemBattery')
-
-      $apps = @()
-      if (${includeDrainProcesses ? '$true' : '$false'}) {
-        $p1 = @{}
-        Get-Process | ForEach-Object { if ($_.CPU) { $p1[$_.Id] = $_.CPU } }
-        Start-Sleep -Milliseconds 250
-        $cores = [Environment]::ProcessorCount
-
-        $apps = Get-Process | ForEach-Object {
-          if ($_.CPU -and $p1.ContainsKey($_.Id)) {
-            $delta = ($_.CPU - $p1[$_.Id]) / 0.25 / $cores * 100
-            if ($delta -ge 0.3) {
-              [PSCustomObject]@{
-                Id = $_.Id
-                Name = $_.ProcessName
-                CpuPercent = [Math]::Round($delta, 1)
-                MemoryMB = [Math]::Round($_.WorkingSet64 / 1MB)
-              }
-            }
-          }
-        } | Sort-Object CpuPercent -Descending | Select-Object -First 10
-      }
-
       $chargePct = if ($p.BatteryLifePercent -ge 0) { [int][Math]::Round($p.BatteryLifePercent * 100) } elseif ($b -and $b.EstimatedChargeRemaining) { [int]$b.EstimatedChargeRemaining } else { 100 }
 
       [PSCustomObject]@{
@@ -258,133 +389,100 @@ export class BatteryService {
         Discharging = if ($wmi) { [bool]$wmi.Discharging } else { $false }
         PowerOnline = if ($wmi) { [bool]$wmi.PowerOnline } else { ($p.PowerLineStatus.ToString() -eq 'Online') }
         Voltage = if ($wmi -and $wmi.Voltage) { [int]$wmi.Voltage } elseif ($b -and $b.DesignVoltage) { [int]$b.DesignVoltage } else { 0 }
-        TopProcesses = $apps
-      } | ConvertTo-Json -Depth 3 -Compress
+      } | ConvertTo-Json -Compress
     `
 
-    let liveData: any = {
-      HasBattery: this.hasBatteryHardware ?? true,
-      ChargePercent: 100,
-      ChargeStatus: 'Online',
-      PowerLine: 'Online',
-      RemainingSeconds: -1,
-      DischargeRate: 0,
-      ChargeRate: 0,
-      Charging: false,
-      Discharging: false,
-      PowerOnline: true,
-      Voltage: 0,
-      TopProcesses: []
-    }
-
-    try {
-      const stdout = await this.runPowerShell(psScript, 8000)
-      if (stdout && stdout.trim()) {
-        const parsed = JSON.parse(stdout.trim())
-        liveData = parsed
+      let liveData: any = {
+        HasBattery: this.hasBatteryHardware ?? true,
+        ChargePercent: 100,
+        ChargeStatus: 'Online',
+        PowerLine: 'Online',
+        RemainingSeconds: -1,
+        DischargeRate: 0,
+        ChargeRate: 0,
+        Charging: false,
+        Discharging: false,
+        PowerOnline: true,
+        Voltage: 0
       }
-    } catch (err) {
-      console.warn('[BatteryService] Live power status query failed:', err)
-    }
 
-    // 2. Fetch static battery capacities & hardware details
-    const staticData = await this.getStaticBatteryData()
-
-    // Determine battery hardware presence reliably
-    if (this.hasBatteryHardware === null) {
-      if (liveData.HasBattery !== undefined) {
-        this.hasBatteryHardware = Boolean(liveData.HasBattery)
-      } else if (staticData && staticData.designCapacityMWh > 0) {
-        this.hasBatteryHardware = true
-      } else if (liveData.ChargeStatus === 'NoSystemBattery') {
-        this.hasBatteryHardware = false
-      }
-    }
-
-    const hasBattery = this.hasBatteryHardware ?? true
-
-    // 3. Fetch power plans
-    const { active, available } = await this.getPowerPlans()
-
-    const isAcOnline = liveData.PowerOnline ?? (liveData.PowerLine === 'Online')
-    const isCharging = liveData.Charging || liveData.ChargeStatus.toLowerCase().includes('charging')
-    const isDischarging = liveData.Discharging || (!isAcOnline && hasBattery)
-
-    // Wattage calculations (mW -> W)
-    const dischargeRateWatts =
-      liveData.DischargeRate > 0 ? Math.round((liveData.DischargeRate / 1000) * 10) / 10 : 0
-    const chargeRateWatts =
-      liveData.ChargeRate > 0 ? Math.round((liveData.ChargeRate / 1000) * 10) / 10 : 0
-    const voltageMv = liveData.Voltage || 0
-    const voltageV = voltageMv > 0 ? Math.round((voltageMv / 1000) * 100) / 100 : 0
-
-    let currentWattage = 0
-    if (isCharging && chargeRateWatts > 0) {
-      currentWattage = chargeRateWatts
-    } else if (isDischarging && dischargeRateWatts > 0) {
-      currentWattage = -dischargeRateWatts
-    }
-
-    // Map top processes to BatteryDrainProcess
-    const rawProcesses = Array.isArray(liveData.TopProcesses)
-      ? liveData.TopProcesses
-      : liveData.TopProcesses
-      ? [liveData.TopProcesses]
-      : []
-
-    const currentPid = process.pid
-    const drainProcesses: BatteryDrainProcess[] = rawProcesses
-      .filter((p: any) => p && p.Name && !['Idle'].includes(p.Name))
-      .map((p: any) => {
-        const cpu = typeof p.CpuPercent === 'number' ? p.CpuPercent : 0
-        let impactLevel: BatteryDrainImpact = 'Niedrig'
-        if (cpu >= 15) impactLevel = 'Sehr hoch'
-        else if (cpu >= 7) impactLevel = 'Hoch'
-        else if (cpu >= 2) impactLevel = 'Moderat'
-
-        const nameLower = (p.Name || '').toLowerCase()
-        const isSelf =
-          p.Id === currentPid ||
-          nameLower.includes('m-toolbox') ||
-          nameLower === 'electron'
-
-        return {
-          id: p.Id,
-          name: p.Name,
-          cpuPercent: cpu,
-          memoryMb: p.MemoryMB || 0,
-          impactLevel,
-          estimatedDrainText: `${cpu}% CPU`,
-          isSelf
+      try {
+        const stdout = await this.runPowerShell(psScript, 8000)
+        if (stdout && stdout.trim()) {
+          const parsed = JSON.parse(stdout.trim())
+          liveData = parsed
         }
-      })
+      } catch (err) {
+        console.warn('[BatteryService] Live power status query failed:', err)
+      }
 
-    // Battery Drain Alert evaluation - exclude self and benign processes
-    let drainAlert: BatteryDrainAlert | null = null
-    if (isDischarging) {
-      const benignNames = ['Idle', 'System', 'Registry', 'smss', 'csrss']
-      const activeDrainHog = drainProcesses.find(
-        (p) => p.cpuPercent >= 12 && !benignNames.includes(p.name) && !p.isSelf
-      )
+      // 2. Fetch static battery capacities & hardware details
+      const staticData = await this.getStaticBatteryData()
 
-      if (activeDrainHog || (dischargeRateWatts >= 18 && drainProcesses.some((p) => !p.isSelf))) {
-        const primaryHog = activeDrainHog || drainProcesses.find((p) => !p.isSelf)
-        const isCritical =
-          dischargeRateWatts >= 25 || (activeDrainHog && activeDrainHog.cpuPercent >= 25)
+      // Determine battery hardware presence reliably
+      if (this.hasBatteryHardware === null) {
+        if (liveData.HasBattery !== undefined) {
+          this.hasBatteryHardware = Boolean(liveData.HasBattery)
+        } else if (staticData && staticData.designCapacityMWh > 0) {
+          this.hasBatteryHardware = true
+        } else if (liveData.ChargeStatus === 'NoSystemBattery') {
+          this.hasBatteryHardware = false
+        }
+      }
 
-        if (primaryHog) {
-          drainAlert = {
-            title: isCritical ? 'Kritisch hoher Akkuverbrauch' : 'Erhöhter Akkuverbrauch erkannt',
-            message: `"${primaryHog.name}" (PID: ${primaryHog.id}) beansprucht aktuell ${primaryHog.cpuPercent}% CPU und erhöht die Entladerate ${dischargeRateWatts > 0 ? `auf -${dischargeRateWatts} W` : 'spürbar'}.`,
-            processName: primaryHog.name,
-            pid: primaryHog.id,
-            severity: isCritical ? 'critical' : 'warning',
-            cpuPercent: primaryHog.cpuPercent,
-            dischargeWattage: dischargeRateWatts
+      const hasBattery = this.hasBatteryHardware ?? true
+
+      // 3. Fetch power plans (utilizes 60s cache)
+      const { active, available } = await this.getPowerPlans()
+
+      const isAcOnline = liveData.PowerOnline ?? (liveData.PowerLine === 'Online')
+      const isCharging = liveData.Charging || liveData.ChargeStatus.toLowerCase().includes('charging')
+      const isDischarging = liveData.Discharging || (!isAcOnline && hasBattery)
+
+      // Wattage calculations (mW -> W)
+      const dischargeRateWatts =
+        liveData.DischargeRate > 0 ? Math.round((liveData.DischargeRate / 1000) * 10) / 10 : 0
+      const chargeRateWatts =
+        liveData.ChargeRate > 0 ? Math.round((liveData.ChargeRate / 1000) * 10) / 10 : 0
+      const voltageMv = liveData.Voltage || 0
+      const voltageV = voltageMv > 0 ? Math.round((voltageMv / 1000) * 100) / 100 : 0
+
+      let currentWattage = 0
+      if (isCharging && chargeRateWatts > 0) {
+        currentWattage = chargeRateWatts
+      } else if (isDischarging && dischargeRateWatts > 0) {
+        currentWattage = -dischargeRateWatts
+      }
+
+      // Top processes from decoupled drain cache
+      const drainProcesses: BatteryDrainProcess[] = this.cachedDrainProcesses
+
+      // Battery Drain Alert evaluation - exclude self and benign processes
+      let drainAlert: BatteryDrainAlert | null = null
+      if (isDischarging) {
+        const benignNames = ['Idle', 'System', 'Registry', 'smss', 'csrss']
+        const activeDrainHog = drainProcesses.find(
+          (p) => p.cpuPercent >= 12 && !benignNames.includes(p.name) && !p.isSelf
+        )
+
+        if (activeDrainHog || (dischargeRateWatts >= 18 && drainProcesses.some((p) => !p.isSelf))) {
+          const primaryHog = activeDrainHog || drainProcesses.find((p) => !p.isSelf)
+          const isCritical =
+            dischargeRateWatts >= 25 || (activeDrainHog && activeDrainHog.cpuPercent >= 25)
+
+          if (primaryHog) {
+            drainAlert = {
+              title: isCritical ? 'Kritisch hoher Akkuverbrauch' : 'Erhöhter Akkuverbrauch erkannt',
+              message: `"${primaryHog.name}" (PID: ${primaryHog.id}) beansprucht aktuell ${primaryHog.cpuPercent}% CPU und erhöht die Entladerate ${dischargeRateWatts > 0 ? `auf -${dischargeRateWatts} W` : 'spürbar'}.`,
+              processName: primaryHog.name,
+              pid: primaryHog.id,
+              severity: isCritical ? 'critical' : 'warning',
+              cpuPercent: primaryHog.cpuPercent,
+              dischargeWattage: dischargeRateWatts
+            }
           }
         }
       }
-    }
 
     let statusText = 'Normal'
     if (!hasBattery) {
@@ -453,6 +551,7 @@ export class BatteryService {
       currentWattage,
       drainProcesses,
       drainAlert,
+      lastDrainScanTimestamp: this.lastDrainScanTime,
       activePowerPlan: active,
       availablePowerPlans: available
     }

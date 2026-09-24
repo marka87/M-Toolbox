@@ -65,7 +65,7 @@ import type {
   RAMHistoryPoint,
   RAMCleanupResult
 } from '../shared/ram.types'
-import type { BatteryInfo, BatteryReportResult } from '../shared/battery.types'
+import type { BatteryInfo, BatteryReportResult, BatteryDrainProcess } from '../shared/battery.types'
 
 export interface MToolboxAPI {
   dashboard: {
@@ -178,6 +178,7 @@ export interface MToolboxAPI {
     setPowerProfile: (mode: PowerProfileMode) => Promise<{ success: boolean; message: string }>
     generateReport: () => Promise<BatteryReportResult>
     killProcess: (pid: number) => Promise<{ success: boolean; message: string }>
+    scanDrainProcesses: () => Promise<BatteryDrainProcess[]>
   }
   bloatware: {
     scan: () => Promise<BloatwareApp[]>
@@ -393,7 +394,8 @@ const api: MToolboxAPI = {
     getPowerProfiles: (force?: boolean) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GET_POWER_PROFILES, force),
     setPowerProfile: (mode: PowerProfileMode) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SET_POWER_PROFILE, mode),
     generateReport: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GENERATE_REPORT),
-    killProcess: (pid: number) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.KILL_PROCESS, pid)
+    killProcess: (pid: number) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.KILL_PROCESS, pid),
+    scanDrainProcesses: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SCAN_DRAIN_PROCESSES)
   },
   bloatware: {
     scan: () => ipcRenderer.invoke(IPC_CHANNELS.BLOATWARE.SCAN),

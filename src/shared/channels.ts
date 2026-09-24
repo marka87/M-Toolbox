@@ -109,7 +109,8 @@ export const IPC_CHANNELS = {
     GET_POWER_PROFILES: 'battery:get-power-profiles',
     SET_POWER_PROFILE: 'battery:set-power-profile',
     GENERATE_REPORT: 'battery:generate-report',
-    KILL_PROCESS: 'battery:kill-process'
+    KILL_PROCESS: 'battery:kill-process',
+    SCAN_DRAIN_PROCESSES: 'battery:scan-drain-processes'
   },
   BLOATWARE: {
     SCAN: 'bloatware:scan',

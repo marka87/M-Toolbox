@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { BatteryInfo, BatteryReportResult } from '@shared/battery.types'
+import type { BatteryInfo, BatteryReportResult, BatteryDrainProcess } from '@shared/battery.types'
 import type { PowerProfileInfo, PowerProfileMode } from '@shared/types'
 
 export function useBattery() {
   const [info, setInfo] = useState<BatteryInfo | null>(null)
   const [powerProfiles, setPowerProfiles] = useState<PowerProfileInfo[]>([])
+  const [drainProcesses, setDrainProcesses] = useState<BatteryDrainProcess[]>([])
+  const [lastDrainScanTime, setLastDrainScanTime] = useState<number | null>(null)
+  const [isScanningDrain, setIsScanningDrain] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSwitchingPlan, setIsSwitchingPlan] = useState(false)
   const [switchingMode, setSwitchingMode] = useState<PowerProfileMode | null>(null)
@@ -40,6 +43,26 @@ export function useBattery() {
     } finally {
       if (isMounted.current) {
         setIsLoading(false)
+      }
+    }
+  }, [])
+
+  const fetchDrainScan = useCallback(async () => {
+    if (!window.mToolbox?.battery?.scanDrainProcesses) return
+    setIsScanningDrain(true)
+    try {
+      const procs = await window.mToolbox.battery.scanDrainProcesses()
+      if (isMounted.current) {
+        setDrainProcesses(procs)
+        const now = Date.now()
+        setLastDrainScanTime(now)
+        setInfo((prev) => (prev ? { ...prev, drainProcesses: procs, lastDrainScanTimestamp: now } : prev))
+      }
+    } catch (err) {
+      console.warn('[useBattery] scanDrainProcesses error:', err)
+    } finally {
+      if (isMounted.current) {
+        setIsScanningDrain(false)
       }
     }
   }, [])
@@ -96,6 +119,24 @@ export function useBattery() {
     }
   }, [fetchInfo, isLiveMonitoring, isDocVisible, isWindowVisible])
 
+  // Decoupled drain inspector polling every 30s only while visible
+  useEffect(() => {
+    const isVisible = isLiveMonitoring && isDocVisible && isWindowVisible
+
+    if (!isVisible) return
+
+    // Immediately trigger drain scan when page becomes visible
+    fetchDrainScan()
+
+    const drainInterval = setInterval(() => {
+      fetchDrainScan()
+    }, 30000)
+
+    return () => {
+      clearInterval(drainInterval)
+    }
+  }, [fetchDrainScan, isLiveMonitoring, isDocVisible, isWindowVisible])
+
   const toggleLiveMonitoring = useCallback(() => {
     setIsLiveMonitoring((prev) => !prev)
   }, [])
@@ -111,7 +152,7 @@ export function useBattery() {
       try {
         const res = await window.mToolbox.battery.killProcess(pid)
         if (isMounted.current) {
-          await fetchInfo()
+          await Promise.all([fetchInfo(), fetchDrainScan()])
         }
         return res
       } catch (err: any) {
@@ -122,7 +163,7 @@ export function useBattery() {
         }
       }
     },
-    [fetchInfo]
+    [fetchInfo, fetchDrainScan]
   )
 
   const setPowerPlan = useCallback(
@@ -204,6 +245,10 @@ export function useBattery() {
     [fetchInfo]
   )
 
+  const refresh = useCallback(async () => {
+    await Promise.all([fetchInfo(true), fetchDrainScan()])
+  }, [fetchInfo, fetchDrainScan])
+
   return {
     info,
     powerProfiles,
@@ -216,7 +261,11 @@ export function useBattery() {
     alertDismissed,
     reportResult,
     error,
-    refresh: () => fetchInfo(true),
+    drainProcesses,
+    lastDrainScanTime,
+    isScanningDrain,
+    scanDrainProcesses: fetchDrainScan,
+    refresh,
     toggleLiveMonitoring,
     dismissAlert,
     killDrainProcess,
