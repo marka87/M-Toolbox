@@ -2,13 +2,34 @@
 
 Alle wichtigen Änderungen an M-Toolbox werden hier dokumentiert. Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und Semantic Versioning.
 
-## [Unreleased]
+## [2.5.0] - 2026-09-24
 
-### Geplant
+### Hinzugefügt
 
-- Performance-Modus (Ausschalten unnötiger Windows-Effekte, Game-Mode Optimierungen)
-- Erweiterte Energiespar- & Normal-Profile
-- Erkennung & Entfernung von Windows-Bloatware
+- **1-Klick Performance & Gaming-Modus**:
+  - Prominente Master-Card an der Spitze des Tweaks-Bereichs mit 1-Klick Master-Toggle.
+  - Minimiert Systemlatenzen und maximiert FPS: Deaktiviert visuelle Windows-Effekte (`VisualFXSetting = 2`), Fensterminimierungs-Animationen (`MinAnimate = 0`) und Fenstertransparenzen (`EnableTransparency = 0`).
+  - Schaltet Xbox Game DVR Hintergrundaufzeichnungen ab (`AppCaptureEnabled = 0`, `GameDVR_Enabled = 0`).
+  - Pausiert den Windows-Suchindexer (`wsearch`) während des Gaming-Modus zur Entlastung von SSD und CPU.
+  - Aktiviert sofort das Windows-Höchstleistungsprofil (High Performance Scheme mit automatischer Modern-Standby Duplizierung).
+  - Volle Wiederherstellbarkeit: Beim Deaktivieren werden alle ursprünglichen Einstellungen und das zuvor aktive Energieschema exakt auf den Ausgangszustand zurückgesetzt.
+
+- **Kuratierte Energie-Profile im Batterie-Manager**:
+  - 3 interaktive Schnellprofile für Laptops und Desktops:
+    - 🌱 **Eco (Stromsparmodus)**: Deckelt die maximale CPU-Taktfrequenz auf Akkubetrieb auf 80 % (`PROCFREQMAX`), reduziert Display-Timeout auf 3 Minuten und schaltet auf das Energiesparschema um.
+    - ⚖️ **Ausbalanciert**: Volle CPU-Dynamik (100 %) bei 5 Minuten Display-Timeout.
+    - 🚀 **Höchstleistung**: Permanente Maximaltaktung, kein Throttling und 15 Minuten Display-Timeout.
+  - Unterstützt Windows 11 Modern Standby (CS / Connected Standby) durch automatisches Entsperren und Duplizieren verborgener OEM-Schemas (`powercfg -duplicatescheme`).
+
+- **Bloatware-Erkennung & -Entfernung im Cleanup Center**:
+  - Neuer Reiter **"Windows Bloatware"** direkt neben dem Dateimüll-Cleaner.
+  - Scannt installierte Appx- und UWP-Pakete per PowerShell mit systemweiter und lokaler Erkennung.
+  - Sicherheitsklassifizierung mit visuellen Ampelfarben:
+    - 🟢 **Sicher entfernbar** (vorinstallierte Werbe-Apps, MSN Feeds, News, TikTok, Spotify-Shortcuts, Candy Crush, Xing etc.)
+    - 🟡 **Optional** (nicht-kritische Microsoft-Zusatztools wie Skype, Xbox Apps, To Do, Wetter)
+    - 🔴 **Systemrelevant / Geschützt** (Microsoft Store, Rechner, Windows Fotos, Systemkomponenten – standardmäßig gegen versehentliches Löschen geschützt)
+  - 1-Klick-Button "Alle sicheren Apps wählen" für risikofreie Systembereinigung in Sekunden.
+  - Einzelne Deinstallation oder Batch-Deinstallation mit Live-Fortschrittsbalken und detaillierter Bestätigungsabfrage.
 
 ## [2.4.1] - 2026-09-24
 

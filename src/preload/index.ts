@@ -39,7 +39,14 @@ import type {
   AppSettings,
   UpdateCheckResult,
   AppVersionInfo,
-  WidgetState
+  WidgetState,
+  BloatwareApp,
+  BloatwareRemovalResult,
+  BloatwareBatchProgress,
+  PerformanceModeState,
+  PerformanceModeResult,
+  PowerProfileInfo,
+  PowerProfileMode
 } from '../shared/types'
 import type {
   ReinstallArchiveSummary,
@@ -166,8 +173,21 @@ export interface MToolboxAPI {
   battery: {
     getInfo: (includeDrainProcesses?: boolean) => Promise<BatteryInfo>
     setPowerPlan: (guid: string) => Promise<{ success: boolean; message: string }>
+    getPowerProfiles: () => Promise<PowerProfileInfo[]>
+    setPowerProfile: (mode: PowerProfileMode) => Promise<{ success: boolean; message: string }>
     generateReport: () => Promise<BatteryReportResult>
     killProcess: (pid: number) => Promise<{ success: boolean; message: string }>
+  }
+  bloatware: {
+    scan: () => Promise<BloatwareApp[]>
+    uninstall: (appId: string) => Promise<BloatwareRemovalResult>
+    batchUninstall: (appIds: string[]) => Promise<{ succeeded: string[]; failed: string[] }>
+    onProgress: (callback: (event: BloatwareBatchProgress) => void) => () => void
+  }
+  performance: {
+    getState: () => Promise<PerformanceModeState>
+    toggle: () => Promise<PerformanceModeResult>
+    setActive: (active: boolean) => Promise<PerformanceModeResult>
   }
   system: {
     minimize: () => Promise<void>
@@ -366,8 +386,29 @@ const api: MToolboxAPI = {
   battery: {
     getInfo: (includeDrainProcesses?: boolean) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GET_INFO, includeDrainProcesses),
     setPowerPlan: (guid: string) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SET_POWER_PLAN, guid),
+    getPowerProfiles: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GET_POWER_PROFILES),
+    setPowerProfile: (mode: PowerProfileMode) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SET_POWER_PROFILE, mode),
     generateReport: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GENERATE_REPORT),
     killProcess: (pid: number) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.KILL_PROCESS, pid)
+  },
+  bloatware: {
+    scan: () => ipcRenderer.invoke(IPC_CHANNELS.BLOATWARE.SCAN),
+    uninstall: (appId: string) => ipcRenderer.invoke(IPC_CHANNELS.BLOATWARE.UNINSTALL, appId),
+    batchUninstall: (appIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.BLOATWARE.BATCH_UNINSTALL, appIds),
+    onProgress: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, event: BloatwareBatchProgress) => {
+        callback(event)
+      }
+      ipcRenderer.on(IPC_CHANNELS.BLOATWARE.PROGRESS_EVENT, listener)
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.BLOATWARE.PROGRESS_EVENT, listener)
+      }
+    }
+  },
+  performance: {
+    getState: () => ipcRenderer.invoke(IPC_CHANNELS.PERFORMANCE.GET_STATE),
+    toggle: () => ipcRenderer.invoke(IPC_CHANNELS.PERFORMANCE.TOGGLE),
+    setActive: (active: boolean) => ipcRenderer.invoke(IPC_CHANNELS.PERFORMANCE.SET_ACTIVE, active)
   },
   system: {
     minimize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MINIMIZE_WINDOW),

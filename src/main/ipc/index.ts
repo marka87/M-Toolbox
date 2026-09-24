@@ -14,7 +14,10 @@ import { reinstallService } from '../services/reinstall.service'
 import { ramService } from '../services/ram.service'
 import { databaseService } from '../services/database.service'
 import { batteryService } from '../services/battery.service'
+import { bloatwareService } from '../services/bloatware.service'
+import { performanceService } from '../services/performance.service'
 import { WidgetService } from '../services/widget.service'
+import type { PowerProfileMode } from '../../shared/types'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()
@@ -448,12 +451,54 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     return await batteryService.setPowerPlan(guid)
   })
 
+  ipcMain.handle(IPC_CHANNELS.BATTERY.GET_POWER_PROFILES, async () => {
+    return await batteryService.getPowerProfiles()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BATTERY.SET_POWER_PROFILE, async (_, mode: PowerProfileMode) => {
+    return await batteryService.setPowerProfile(mode)
+  })
+
   ipcMain.handle(IPC_CHANNELS.BATTERY.GENERATE_REPORT, async () => {
     return await batteryService.generateHtmlReport()
   })
 
   ipcMain.handle(IPC_CHANNELS.BATTERY.KILL_PROCESS, async (_, pid: number) => {
     return await batteryService.killProcess(pid)
+  })
+
+  // Bloatware IPC
+  ipcMain.handle(IPC_CHANNELS.BLOATWARE.SCAN, async () => {
+    return await bloatwareService.scan()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BLOATWARE.UNINSTALL, async (_, appId: string) => {
+    return await bloatwareService.uninstallApp(appId)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BLOATWARE.BATCH_UNINSTALL, async (_, appIds: string[]) => {
+    return await bloatwareService.batchUninstall(appIds, (event) => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(IPC_CHANNELS.BLOATWARE.PROGRESS_EVENT, event)
+      }
+    })
+  })
+
+  // Performance Mode IPC
+  ipcMain.handle(IPC_CHANNELS.PERFORMANCE.GET_STATE, async () => {
+    return await performanceService.getState()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.PERFORMANCE.TOGGLE, async () => {
+    return await performanceService.toggle()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.PERFORMANCE.SET_ACTIVE, async (_, active: boolean) => {
+    if (active) {
+      return await performanceService.enablePerformanceMode()
+    } else {
+      return await performanceService.disablePerformanceMode()
+    }
   })
 
   // Desktop Widget IPC

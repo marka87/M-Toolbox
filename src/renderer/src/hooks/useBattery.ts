@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { BatteryInfo, BatteryReportResult } from '@shared/battery.types'
+import type { PowerProfileInfo, PowerProfileMode } from '@shared/types'
 
 export function useBattery() {
   const [info, setInfo] = useState<BatteryInfo | null>(null)
+  const [powerProfiles, setPowerProfiles] = useState<PowerProfileInfo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSwitchingPlan, setIsSwitchingPlan] = useState(false)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
@@ -22,6 +24,12 @@ export function useBattery() {
       if (isMounted.current) {
         setInfo(data)
         setError(null)
+      }
+      if (window.mToolbox.battery.getPowerProfiles) {
+        const profiles = await window.mToolbox.battery.getPowerProfiles()
+        if (isMounted.current) {
+          setPowerProfiles(profiles)
+        }
       }
     } catch (err: any) {
       if (isMounted.current) {
@@ -130,8 +138,30 @@ export function useBattery() {
     }
   }, [])
 
+  const setPowerProfile = useCallback(
+    async (mode: PowerProfileMode) => {
+      if (!window.mToolbox?.battery?.setPowerProfile) return { success: false, message: 'API nicht verfügbar' }
+      setIsSwitchingPlan(true)
+      try {
+        const res = await window.mToolbox.battery.setPowerProfile(mode)
+        if (isMounted.current) {
+          await fetchInfo()
+        }
+        return res
+      } catch (err: any) {
+        return { success: false, message: err?.message || 'Fehler beim Wechseln des Profils.' }
+      } finally {
+        if (isMounted.current) {
+          setIsSwitchingPlan(false)
+        }
+      }
+    },
+    [fetchInfo]
+  )
+
   return {
     info,
+    powerProfiles,
     isLoading,
     isSwitchingPlan,
     isGeneratingReport,
@@ -145,6 +175,7 @@ export function useBattery() {
     dismissAlert,
     killDrainProcess,
     setPowerPlan,
+    setPowerProfile,
     generateReport
   }
 }

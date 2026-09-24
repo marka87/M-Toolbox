@@ -1,13 +1,13 @@
 # M-Toolbox: Agent & Entwickler Leitfaden (AGENT_GUIDE.md)
 
-Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler**, die an **M-Toolbox** (aktuell **v2.4.0**) weiterarbeiten. Es dokumentiert den aktuellen Entwicklungsstand, die Architektur, strikte Entwicklungsregeln sowie kritische Systemdetails (**„Was man nicht anfassen darf!“**).
+Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler**, die an **M-Toolbox** (aktuell **v2.5.0**) weiterarbeiten. Es dokumentiert den aktuellen Entwicklungsstand, die Architektur, strikte Entwicklungsregeln sowie kritische Systemdetails (**„Was man nicht anfassen darf!“**).
 
 ---
 
 ## 1. Projektübersicht & Tech-Stack
 
 - **Projekt:** M-Toolbox – Moderne Windows 11 Desktop-System-Utility-Suite
-- **Aktuelle Version:** `v2.4.0`
+- **Aktuelle Version:** `v2.5.0`
 - **Technologie-Stack:**
   - **Electron:** Version 34 (Main Process, IPC, Node.js Integration)
   - **Frontend:** React 18, TypeScript 5.7, Tailwind CSS, Framer Motion, Lucide Icons
@@ -157,6 +157,8 @@ M-Toolbox/
 │           │   ├── useDriver.ts
 │           │   ├── useNetwork.ts
 │           │   ├── useRamGuardian.ts
+│           │   ├── useBloatware.ts
+│           │   ├── usePerformance.ts
 │           │   ├── useRepair.ts
 │           │   ├── useSettings.ts
 │           │   ├── useSoftware.ts
@@ -195,12 +197,14 @@ M-Toolbox/
 - **`window.mToolbox.reinstall`:** `discover()`, `create()`, `preview()`, `restore()`, `selectFile()`, `saveDialog()`, `history()`, `onProgress()`
 - **`window.mToolbox.driver`:** `getData()`, `exportDrivers()`, `selectExportDir()`, `scanHardware()`, `openDeviceManager()`, `restartDevice()`, `getGpuInfo()`, `checkWindowsUpdate()`, `searchOnline()`, `onProgress()`
 - **`window.mToolbox.cleanup`:** `scan()`, `clean()`, `openStorageSense()`, `onProgress()`
+- **`window.mToolbox.bloatware`:** `scan()`, `uninstallSingle(appId)`, `uninstallBatch(appIds)`, `onProgress()`
+- **`window.mToolbox.performance`:** `getState()`, `toggle()`, `setActive(boolean)`
 - **`window.mToolbox.repair`:** `getHealth()`, `runAction()`, `restartAsAdmin()`, `onProgress()`
 - **`window.mToolbox.tweaks`:** `getAll()`, `setTweak()`, `applyRecommended()`, `restartExplorer()`
 - **`window.mToolbox.network`:** `getDiagnostics()`, `getWanIp()`, `pingTargets()`, `benchmarkDns()`, `scanPorts()`, `flushDns()`, `renewIp()`, `openNetworkConnections()`
 - **`window.mToolbox.advanced`:** `getTools()`, `launchTool()`, `getStartupItems()`, `toggleStartupItem()`, `deleteStartupItem()`, `getHostsFile()`, `saveHostsFile()`
 - **`window.mToolbox.ram`:** `getStats()`, `getTopProcesses()`, `getHygiene()`, `getRecommendations()`, `getHealthScore()`, `getHistory24h()`, `cleanWindows()`, `disableStartup()`
-- **`window.mToolbox.battery`:** `getInfo()`, `setPowerPlan()`, `generateReport()`, `killProcess()`
+- **`window.mToolbox.battery`:** `getInfo()`, `getPowerProfiles()`, `setPowerProfile(mode)`, `setPowerPlan()`, `generateReport()`, `killProcess()`
 - **`window.mToolbox.settings`:** `getSettings()`, `saveSettings()`, `checkUpdates()`, `getAppInfo()`, `openUserDataFolder()`, `clearCache()`, `resetSettings()`
 - **`window.mToolbox.widget`:** `toggle()`, `getState()`, `setAlwaysOnTop()`, `restoreMainWindow()`, `close()`
 - **`window.mToolbox.system`:** `minimize()`, `maximize()`, `close()`, `openExternal()`

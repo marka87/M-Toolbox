@@ -9,11 +9,13 @@ import {
   ShieldCheck,
   CheckSquare,
   Square,
-  AlertTriangle
+  AlertTriangle,
+  ShieldAlert
 } from 'lucide-react'
 import { useCleanup, formatBytes } from '../hooks/useCleanup'
 import { DiskSpaceCard } from '../components/ui/DiskSpaceCard'
 import { CleanupCategoryRow } from '../components/ui/CleanupCategoryRow'
+import { BloatwareTab } from '../components/ui/BloatwareTab'
 import type { CleanupGroupId } from '@shared/types'
 
 const GROUP_TITLES: Record<CleanupGroupId, { title: string; subtitle: string }> = {
@@ -59,6 +61,7 @@ export const CleanupPage: React.FC = () => {
   } = useCleanup()
 
   const [confirmModalOpen, setConfirmModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'disk' | 'bloatware'>('disk')
 
   const hasSelection = selectedIds.size > 0 && selectedTotalSize > 0
 
@@ -72,31 +75,67 @@ export const CleanupPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-fluent-text">Cleanup Center</h1>
           <p className="text-sm text-fluent-muted mt-0.5">
-            Sichere Speicherplatzbereinigung, System-Temp & Cache-Optimierung
+            Sichere Speicherplatzbereinigung, System-Temp, Cache- & Bloatware-Optimierung
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={() => scan()}
-            disabled={isScanning || isCleaning}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover hover:border-fluent-border-hover text-fluent-text transition-all disabled:opacity-50"
-            title="System neu nach temporären Dateien scannen"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-fluent-accent ${isScanning ? 'animate-spin' : ''}`} />
-            Neu scannen
-          </button>
+          {activeTab === 'disk' && (
+            <>
+              <button
+                onClick={() => scan()}
+                disabled={isScanning || isCleaning}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover hover:border-fluent-border-hover text-fluent-text transition-all disabled:opacity-50"
+                title="System neu nach temporären Dateien scannen"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-fluent-accent ${isScanning ? 'animate-spin' : ''}`} />
+                Neu scannen
+              </button>
 
-          <button
-            onClick={openStorageSense}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-muted hover:text-fluent-text transition-all"
-            title="Windows 11 Speicheroptimierung (Storage Sense) öffnen"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Windows Speichereinstellungen
-          </button>
+              <button
+                onClick={openStorageSense}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-muted hover:text-fluent-text transition-all"
+                title="Windows 11 Speicheroptimierung (Storage Sense) öffnen"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Windows Speichereinstellungen
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-fluent-border/60 pb-3">
+        <button
+          onClick={() => setActiveTab('disk')}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+            activeTab === 'disk'
+              ? 'bg-fluent-accent text-white shadow-fluent-sm'
+              : 'text-fluent-muted hover:text-white hover:bg-fluent-card/50'
+          }`}
+        >
+          <HardDrive className="w-4 h-4" />
+          <span>Dateimüll & Cache</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('bloatware')}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+            activeTab === 'bloatware'
+              ? 'bg-fluent-accent text-white shadow-fluent-sm'
+              : 'text-fluent-muted hover:text-white hover:bg-fluent-card/50'
+          }`}
+        >
+          <ShieldAlert className="w-4 h-4" />
+          <span>Windows Bloatware</span>
+        </button>
+      </div>
+
+      {activeTab === 'bloatware' ? (
+        <BloatwareTab />
+      ) : (
+        <>
 
       {/* Error Alert */}
       {error && (
@@ -408,6 +447,8 @@ export const CleanupPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )

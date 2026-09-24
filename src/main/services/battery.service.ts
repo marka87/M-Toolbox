@@ -12,6 +12,7 @@ import type {
   BatteryDrainAlert,
   BatteryDrainImpact
 } from '../../shared/battery.types'
+import type { PowerProfileInfo, PowerProfileMode } from '../../shared/types'
 
 const execAsync = promisify(exec)
 
@@ -495,6 +496,116 @@ export class BatteryService {
       return { success: false, error: 'Bericht konnte nicht auf der Festplatte erstellt werden.' }
     } catch (err: any) {
       return { success: false, error: err?.message || 'Fehler beim Generieren des Akkuberichts.' }
+    }
+  }
+
+  /**
+   * Returns predefined power profiles with active status
+   */
+  public async getPowerProfiles(): Promise<PowerProfileInfo[]> {
+    const { active } = await this.getPowerPlans().catch(() => ({ active: null }))
+    const activeGuid = active?.guid?.toLowerCase() || ''
+    const activeName = active?.name?.toLowerCase() || ''
+
+    return [
+      {
+        mode: 'eco',
+        title: '🌱 Eco / Energiesparen',
+        description: 'Drosselt CPU-Spitzen auf 80 % im Akkubetrieb, schaltet Displays nach 3 Min. ab und schont den Akku.',
+        planGuid: 'a1841308-3541-4fab-bc81-f71556f20b4a',
+        cpuMaxPercentBattery: 80,
+        cpuMaxPercentAc: 100,
+        screenTimeoutMinutesBattery: 3,
+        screenTimeoutMinutesAc: 10,
+        isActive: activeGuid.includes('a1841308') || activeName.includes('energiespar')
+      },
+      {
+        mode: 'balanced',
+        title: '⚖️ Ausbalanciert (Normal)',
+        description: 'Standardmäßiges Windows-Profil mit dynamischer Taktung für optimale Balance aus Leistung und Laufzeit.',
+        planGuid: '381b4222-f694-41f0-9685-ff5bb260df2e',
+        cpuMaxPercentBattery: 100,
+        cpuMaxPercentAc: 100,
+        screenTimeoutMinutesBattery: 10,
+        screenTimeoutMinutesAc: 20,
+        isActive: activeGuid.includes('381b4222') || activeName.includes('ausbalanciert')
+      },
+      {
+        mode: 'performance',
+        title: '🚀 Höchstleistung (Performance)',
+        description: 'Maximale CPU-Taktung ohne Energiespardrosselung für rechenintensive Aufgaben und Gaming.',
+        planGuid: '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c',
+        cpuMaxPercentBattery: 100,
+        cpuMaxPercentAc: 100,
+        screenTimeoutMinutesBattery: 15,
+        screenTimeoutMinutesAc: 0,
+        isActive:
+          activeGuid.includes('8c5e7fda') ||
+          activeGuid.includes('e9a42b02') ||
+          activeGuid.includes('1fc9b93e') ||
+          activeName.includes('leistung')
+      }
+    ]
+  }
+
+  /**
+   * Activates a specific power profile
+   */
+  public async setPowerProfile(mode: PowerProfileMode): Promise<{ success: boolean; message: string }> {
+    try {
+      let targetGuid = '381b4222-f694-41f0-9685-ff5bb260df2e'
+      if (mode === 'eco') {
+        targetGuid = 'a1841308-3541-4fab-bc81-f71556f20b4a'
+      } else if (mode === 'performance') {
+        targetGuid = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
+      }
+
+      // Try activating scheme, duplicate if needed
+      try {
+        await execAsync(`powercfg /setactive ${targetGuid}`, { timeout: 3000 })
+      } catch {
+        try {
+          const { stdout } = await execAsync(`powercfg -duplicatescheme ${targetGuid}`, { timeout: 4000 })
+          const match = stdout.match(/:\s+([a-f0-9-]+)/i)
+          if (match && match[1]) {
+            targetGuid = match[1].trim()
+            await execAsync(`powercfg /setactive ${targetGuid}`, { timeout: 3000 })
+          }
+        } catch {
+          // If duplicatescheme fails, keep current
+        }
+      }
+
+      // If eco mode, optimize CPU max state on DC (battery) to 80% to avoid thermal spiking
+      if (mode === 'eco') {
+        await execAsync(
+          `powercfg /setdcvalueindex ${targetGuid} 54533251-82be-4824-96c1-47b60b740d00 bc5038f7-23e0-4960-96da-33abaf5935ec 80`,
+          { timeout: 3000 }
+        ).catch(() => {})
+        await execAsync(`powercfg /change monitor-timeout-dc 3`, { timeout: 3000 }).catch(() => {})
+      } else if (mode === 'balanced') {
+        await execAsync(
+          `powercfg /setdcvalueindex ${targetGuid} 54533251-82be-4824-96c1-47b60b740d00 bc5038f7-23e0-4960-96da-33abaf5935ec 100`,
+          { timeout: 3000 }
+        ).catch(() => {})
+        await execAsync(`powercfg /change monitor-timeout-dc 10`, { timeout: 3000 }).catch(() => {})
+      } else if (mode === 'performance') {
+        await execAsync(`powercfg /change monitor-timeout-ac 0`, { timeout: 3000 }).catch(() => {})
+      }
+
+      // Force refresh power plans cache
+      this.powerPlansCache = null
+
+      const titles: Record<PowerProfileMode, string> = {
+        eco: '🌱 Eco / Energiesparmodus aktiviert (CPU-Spitzen auf 80 % gedeckelt)',
+        balanced: '⚖️ Ausbalanciertes Profil aktiviert (Standard)',
+        performance: '🚀 Höchstleistungs-Profil aktiviert (Keine Drosselung)'
+      }
+
+      return { success: true, message: titles[mode] }
+    } catch (err: any) {
+      console.error('[BatteryService] Error setting power profile:', err)
+      return { success: false, message: err?.message || 'Fehler beim Aktivieren des Profils.' }
     }
   }
 }

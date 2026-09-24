@@ -631,3 +631,77 @@ export interface WidgetState {
   isOpen: boolean
   alwaysOnTop: boolean
 }
+
+// -------------------------------------------------------------
+// Modul: Bloatware Typen
+// -------------------------------------------------------------
+
+export type BloatwareSafety = 'safe' | 'optional' | 'caution'
+export type BloatwareCategory = 'bloatware' | 'social' | 'news' | 'gaming' | 'tools' | 'system'
+
+export interface BloatwareApp {
+  id: string
+  packageFullName: string
+  displayName: string
+  publisher: string
+  version: string
+  description: string
+  safety: BloatwareSafety
+  category: BloatwareCategory
+  isRemovable: boolean
+  isInstalled: boolean
+  isProvisioned?: boolean
+}
+
+export interface BloatwareRemovalResult {
+  success: boolean
+  appId: string
+  displayName: string
+  error?: string
+}
+
+export interface BloatwareBatchProgress {
+  currentApp: string
+  currentStep: number
+  totalSteps: number
+  percent: number
+  statusText: string
+}
+
+// -------------------------------------------------------------
+// Modul: Performance Mode Typen
+// -------------------------------------------------------------
+
+export interface PerformanceModeState {
+  isActive: boolean
+  visualEffectsDisabled: boolean
+  gameDvrDisabled: boolean
+  gameModeEnabled: boolean
+  searchIndexerPaused: boolean
+  highPerformancePlanActive: boolean
+  previousPowerPlanGuid?: string
+}
+
+export interface PerformanceModeResult {
+  success: boolean
+  isActive: boolean
+  message: string
+}
+
+// -------------------------------------------------------------
+// Modul: Energie-Profile Typen
+// -------------------------------------------------------------
+
+export type PowerProfileMode = 'eco' | 'balanced' | 'performance'
+
+export interface PowerProfileInfo {
+  mode: PowerProfileMode
+  title: string
+  description: string
+  planGuid: string
+  cpuMaxPercentBattery: number
+  cpuMaxPercentAc: number
+  screenTimeoutMinutesBattery: number
+  screenTimeoutMinutesAc: number
+  isActive: boolean
+}

@@ -107,8 +107,21 @@ export const IPC_CHANNELS = {
   BATTERY: {
     GET_INFO: 'battery:get-info',
     SET_POWER_PLAN: 'battery:set-power-plan',
+    GET_POWER_PROFILES: 'battery:get-power-profiles',
+    SET_POWER_PROFILE: 'battery:set-power-profile',
     GENERATE_REPORT: 'battery:generate-report',
     KILL_PROCESS: 'battery:kill-process'
+  },
+  BLOATWARE: {
+    SCAN: 'bloatware:scan',
+    UNINSTALL: 'bloatware:uninstall',
+    BATCH_UNINSTALL: 'bloatware:batch-uninstall',
+    PROGRESS_EVENT: 'bloatware:progress-event'
+  },
+  PERFORMANCE: {
+    GET_STATE: 'performance:get-state',
+    TOGGLE: 'performance:toggle',
+    SET_ACTIVE: 'performance:set-active'
   },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',
