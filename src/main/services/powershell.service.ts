@@ -38,7 +38,8 @@ export class PowerShellService {
         ],
         {
           windowsHide: true,
-          env: process.env
+          env: process.env,
+          stdio: ['ignore', 'pipe', 'pipe']
         }
       )
 
@@ -51,8 +52,12 @@ export class PowerShellService {
         reject(new Error(`PowerShell execution timed out after ${timeoutMs}ms`))
       }, timeoutMs)
 
-      child.stdout.on('data', (chunk) => {
+      child.stdout?.on('data', (chunk) => {
         stdout += chunk.toString('utf8')
+      })
+
+      child.stderr?.on('data', () => {
+        // Drain stderr buffer to prevent process blocking
       })
 
       child.on('error', (err) => {
@@ -100,7 +105,8 @@ export class PowerShellService {
         ],
         {
           windowsHide: true,
-          env: process.env
+          env: process.env,
+          stdio: ['ignore', 'pipe', 'pipe']
         }
       )
 
@@ -111,14 +117,14 @@ export class PowerShellService {
       const timer = setTimeout(() => {
         isTimedOut = true
         child.kill()
-        reject(new Error(`PowerShell execution timed out after ${timeoutMs}ms`))
+        reject(new Error(`PowerShell command timed out after ${timeoutMs}ms`))
       }, timeoutMs)
 
-      child.stdout.on('data', (chunk) => {
+      child.stdout?.on('data', (chunk) => {
         stdout += chunk.toString('utf8')
       })
 
-      child.stderr.on('data', (chunk) => {
+      child.stderr?.on('data', (chunk) => {
         stderr += chunk.toString('utf8')
       })
 
@@ -141,83 +147,94 @@ export class PowerShellService {
   }
 
   /**
-   * Executes a PowerShell script file (supports both physical files and .asar-embedded files via stdin)
+   * Executes a physical .ps1 script file via -File or unpacked content
    */
   public async executeScriptFile(
     scriptPath: string,
     args: string[] = [],
     timeoutMs = 45000
   ): Promise<PowerShellResult> {
-    if (fs.existsSync(scriptPath)) {
-      try {
-        const scriptContent = fs.readFileSync(scriptPath, 'utf8')
-        return this.executeScriptContent(scriptContent, timeoutMs)
-      } catch {
-        // Fallback to -File if direct read fails
-      }
+    const isAsar = scriptPath.includes('.asar')
+    if (fs.existsSync(scriptPath) && !isAsar) {
+      return new Promise((resolve, reject) => {
+        const child = spawn(
+          'powershell.exe',
+          [
+            '-NoProfile',
+            '-NonInteractive',
+            '-ExecutionPolicy',
+            'Bypass',
+            '-File',
+            scriptPath,
+            ...args
+          ],
+          {
+            windowsHide: true,
+            env: process.env,
+            stdio: ['ignore', 'pipe', 'pipe']
+          }
+        )
+
+        let stdout = ''
+        let stderr = ''
+        let isTimedOut = false
+
+        const timer = setTimeout(() => {
+          isTimedOut = true
+          child.kill()
+          reject(new Error(`PowerShell script timed out after ${timeoutMs}ms: ${scriptPath}`))
+        }, timeoutMs)
+
+        child.stdout?.on('data', (chunk) => {
+          stdout += chunk.toString('utf8')
+        })
+
+        child.stderr?.on('data', (chunk) => {
+          stderr += chunk.toString('utf8')
+        })
+
+        child.on('error', (err) => {
+          clearTimeout(timer)
+          reject(err)
+        })
+
+        child.on('close', (code) => {
+          clearTimeout(timer)
+          if (!isTimedOut) {
+            resolve({
+              stdout: stdout.trim(),
+              stderr: stderr.trim(),
+              exitCode: code
+            })
+          }
+        })
+      })
     }
 
-    return new Promise((resolve, reject) => {
-      const child = spawn(
-        'powershell.exe',
-        [
-          '-NoProfile',
-          '-NonInteractive',
-          '-ExecutionPolicy',
-          'Bypass',
-          '-File',
-          scriptPath,
-          ...args
-        ],
-        {
-          windowsHide: true,
-          env: process.env
-        }
-      )
-
-      let stdout = ''
-      let stderr = ''
-      let isTimedOut = false
-
-      const timer = setTimeout(() => {
-        isTimedOut = true
-        child.kill()
-        reject(new Error(`PowerShell script timed out after ${timeoutMs}ms: ${scriptPath}`))
-      }, timeoutMs)
-
-      child.stdout.on('data', (chunk) => {
-        stdout += chunk.toString('utf8')
-      })
-
-      child.stderr.on('data', (chunk) => {
-        stderr += chunk.toString('utf8')
-      })
-
-      child.on('error', (err) => {
-        clearTimeout(timer)
-        reject(err)
-      })
-
-      child.on('close', (code) => {
-        clearTimeout(timer)
-        if (!isTimedOut) {
-          resolve({
-            stdout: stdout.trim(),
-            stderr: stderr.trim(),
-            exitCode: code
-          })
-        }
-      })
-    })
+    // Inside asar archive: Read file and execute content via EncodedCommand
+    try {
+      const scriptContent = fs.readFileSync(scriptPath, 'utf8')
+      return this.executeScriptContent(scriptContent, timeoutMs)
+    } catch (err: any) {
+      return {
+        stdout: '',
+        stderr: err?.message || 'Failed to read script file',
+        exitCode: 1
+      }
+    }
   }
 
   /**
-   * Executes a full PowerShell script content cleanly via stdin
+   * Executes PowerShell script content cleanly via Base64 EncodedCommand.
+   * Completely avoids stdin piping, eliminating write EPIPE errors.
    */
   public async executeScriptContent(
     scriptContent: string,
     timeoutMs = 45000
   ): Promise<PowerShellResult> {
+    const utf8Script = `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\r\n${scriptContent}`
+    const encoded = Buffer.from(utf8Script, 'utf16le').toString('base64')
+
     return new Promise((resolve, reject) => {
       const child = spawn(
         'powershell.exe',
@@ -226,12 +243,13 @@ export class PowerShellService {
           '-NonInteractive',
           '-ExecutionPolicy',
           'Bypass',
-          '-Command',
-          '-'
+          '-EncodedCommand',
+          encoded
         ],
         {
           windowsHide: true,
-          env: process.env
+          env: process.env,
+          stdio: ['ignore', 'pipe', 'pipe']
         }
       )
 
@@ -245,11 +263,11 @@ export class PowerShellService {
         reject(new Error(`PowerShell script timed out after ${timeoutMs}ms`))
       }, timeoutMs)
 
-      child.stdout.on('data', (chunk) => {
+      child.stdout?.on('data', (chunk) => {
         stdout += chunk.toString('utf8')
       })
 
-      child.stderr.on('data', (chunk) => {
+      child.stderr?.on('data', (chunk) => {
         stderr += chunk.toString('utf8')
       })
 
@@ -268,9 +286,6 @@ export class PowerShellService {
           })
         }
       })
-
-      child.stdin.write(`[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\r\n${scriptContent}\r\n`)
-      child.stdin.end()
     })
   }
 
@@ -298,16 +313,21 @@ export class PowerShellService {
       ],
       {
         windowsHide: true,
-        env: process.env
+        env: process.env,
+        stdio: ['ignore', 'pipe', 'pipe']
       }
     )
 
-    child.stdout.on('data', (chunk) => {
+    child.stdout?.on('data', (chunk) => {
       onData(chunk.toString('utf8'))
     })
 
-    child.stderr.on('data', (chunk) => {
+    child.stderr?.on('data', (chunk) => {
       onError(chunk.toString('utf8'))
+    })
+
+    child.on('error', (err) => {
+      onError(err.message)
     })
 
     child.on('close', (code) => {

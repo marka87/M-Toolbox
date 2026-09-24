@@ -70,22 +70,49 @@ export class BatteryService {
       const xmlContent = await fs.promises.readFile(xmlPath, 'utf-8')
       await fs.promises.unlink(xmlPath).catch(() => {})
 
-      // Regex extraction from batteryreport XML
-      const designMatch = xmlContent.match(/<DesignCapacity[^>]*>(\d+)<\/DesignCapacity>/i)
-      const fullMatch = xmlContent.match(/<FullChargeCapacity[^>]*>(\d+)<\/FullChargeCapacity>/i)
-      const cycleMatch = xmlContent.match(/<CycleCount[^>]*>(\d+)<\/CycleCount>/i)
-      const mfgMatch = xmlContent.match(/<Manufacturer[^>]*>([^<]+)<\/Manufacturer>/i)
-      const idMatch = xmlContent.match(/<Id[^>]*>([^<]+)<\/Id>/i)
-      const serialMatch = xmlContent.match(/<SerialNumber[^>]*>([^<]+)<\/SerialNumber>/i)
-      const chemMatch = xmlContent.match(/<Chemistry[^>]*>([^<]+)<\/Chemistry>/i)
+      // Extract the first <Battery> block to avoid conflicting outer XML nodes
+      const batteryBlockMatch = xmlContent.match(/<Battery>([\s\S]*?)<\/Battery>/i)
+      const targetXml = batteryBlockMatch ? batteryBlockMatch[1] : xmlContent
 
-      const design = designMatch ? parseInt(designMatch[1], 10) : 0
-      const full = fullMatch ? parseInt(fullMatch[1], 10) : 0
+      const designMatch =
+        targetXml.match(/<DesignCapacity[^>]*>(\d+)<\/DesignCapacity>/i) ||
+        xmlContent.match(/<DesignCapacity[^>]*>\s*<Capacity>(\d+)<\/Capacity>/i)
+      const fullMatch =
+        targetXml.match(/<FullChargeCapacity[^>]*>(\d+)<\/FullChargeCapacity>/i) ||
+        xmlContent.match(/<FullChargeCapacity[^>]*>\s*<Capacity>(\d+)<\/Capacity>/i)
+      const cycleMatch = targetXml.match(/<CycleCount[^>]*>(\d+)<\/CycleCount>/i)
+      const mfgMatch = targetXml.match(/<Manufacturer[^>]*>([^<]+)<\/Manufacturer>/i)
+      const idMatch = targetXml.match(/<Id[^>]*>([^<]+)<\/Id>/i)
+      const serialMatch = targetXml.match(/<SerialNumber[^>]*>([^<]+)<\/SerialNumber>/i)
+      const chemMatch = targetXml.match(/<Chemistry[^>]*>([^<]+)<\/Chemistry>/i)
+
+      let design = designMatch ? parseInt(designMatch[1], 10) : 0
+      let full = fullMatch ? parseInt(fullMatch[1], 10) : 0
       const cycles = cycleMatch ? parseInt(cycleMatch[1], 10) : 0
       const mfg = mfgMatch ? mfgMatch[1].trim() : 'Unbekannt'
       const id = idMatch ? idMatch[1].trim() : 'Standard-Akku'
       const serial = serialMatch ? serialMatch[1].trim() : undefined
       const chem = chemMatch ? chemMatch[1].trim() : 'Li-Ion'
+
+      // Optional fallback if design or full charge capacity is 0 from XML
+      if (design === 0 || full === 0) {
+        try {
+          const wmiPs = `
+            $fullWmi = (Get-CimInstance -Namespace root/wmi -ClassName BatteryFullChargedCapacity -ErrorAction SilentlyContinue | Select-Object -First 1).FullChargedCapacity
+            $bWmi = Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue | Select-Object -First 1
+            [PSCustomObject]@{
+              Full = [int64]$fullWmi
+              Design = if ($bWmi) { [int64]$bWmi.DesignCapacity } else { 0 }
+            } | ConvertTo-Json -Compress
+          `
+          const wmiRaw = await powershellService.runPowerShell(wmiPs, 2500)
+          if (wmiRaw && wmiRaw.trim()) {
+            const wmiParsed = JSON.parse(wmiRaw.trim())
+            if (design === 0 && wmiParsed.Design > 0) design = Number(wmiParsed.Design)
+            if (full === 0 && wmiParsed.Full > 0) full = Number(wmiParsed.Full)
+          }
+        } catch {}
+      }
 
       let health = 100
       let wear = 0

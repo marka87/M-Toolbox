@@ -9,6 +9,23 @@ import { WidgetService } from './services/widget.service'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+// Prevent unhandled EPIPE and stream errors from crashing Electron or creating popup alerts
+process.on('uncaughtException', (err: any) => {
+  if (err?.code === 'EPIPE' || err?.message?.includes('EPIPE')) {
+    console.warn('[Process] Safely ignored stream EPIPE:', err.message)
+    return
+  }
+  console.error('[Process] Uncaught Exception:', err)
+})
+
+process.stdout?.on('error', (err: any) => {
+  if (err?.code === 'EPIPE') return
+})
+
+process.stderr?.on('error', (err: any) => {
+  if (err?.code === 'EPIPE') return
+})
+
 // The built directory structure
 // ├─┬ dist-electron
 // │ ├─┬ main
