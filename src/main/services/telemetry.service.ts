@@ -2,6 +2,7 @@ import os from 'node:os'
 import { app, powerMonitor } from 'electron'
 import { execAsync } from '../utils/exec'
 import { powershellService } from './powershell.service'
+import { powerShellWorker } from './powershell-worker.service'
 import { batteryService } from './battery.service'
 import type { LiveMetrics, TelemetryMetric } from '../../shared/types'
 
@@ -137,6 +138,7 @@ export class TelemetryService {
       powerMonitor.on('suspend', () => {
         this.isSuspended = true
         this.clearTimer()
+        powerShellWorker.terminateProcess()
       })
 
       powerMonitor.on('resume', () => {
@@ -149,6 +151,7 @@ export class TelemetryService {
       powerMonitor.on('lock-screen', () => {
         this.isLocked = true
         this.clearTimer()
+        powerShellWorker.terminateProcess()
       })
 
       powerMonitor.on('unlock-screen', () => {
@@ -201,6 +204,7 @@ export class TelemetryService {
   public pause(): void {
     this.isPaused = true
     this.clearTimer()
+    powerShellWorker.terminateProcess()
   }
 
   public resume(): void {
@@ -358,6 +362,7 @@ export class TelemetryService {
   public dispose(): void {
     this.stopLoop()
     this.subscribers.clear()
+    powerShellWorker.dispose()
   }
 
   private async sampleImmediate(): Promise<void> {
@@ -610,8 +615,8 @@ export class TelemetryService {
    */
   private sampleGpuViaWmi(): void {
     const cmd = `(Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Where-Object { $_.Name -like '*engtype_3D*' } | Measure-Object -Property UtilizationPercentage -Sum).Sum`
-    powershellService
-      .runPowerShell(cmd, 3000)
+    powerShellWorker
+      .runCommand(cmd, 3000)
       .then((raw) => {
         const val = parseInt(raw.trim(), 10)
         if (!isNaN(val)) {
@@ -635,7 +640,6 @@ export class TelemetryService {
 
     const script = `
       $ProgressPreference = 'SilentlyContinue';
-      Add-Type -AssemblyName System.Windows.Forms;
       $p = [System.Windows.Forms.SystemInformation]::PowerStatus;
       $wmi = Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction SilentlyContinue | Select-Object -First 1;
       [PSCustomObject]@{
@@ -649,7 +653,7 @@ export class TelemetryService {
     `
 
     try {
-      const stdout = await powershellService.runPowerShell(script, 4000)
+      const stdout = await powerShellWorker.runCommand(script, 4000)
       if (stdout && stdout.trim() && stdout.trim() !== 'null') {
         const parsed = JSON.parse(stdout.trim())
         const hasBattery = Boolean(parsed.HasBat)
@@ -716,8 +720,8 @@ export class TelemetryService {
 
   private sampleSmartStatus(): void {
     const script = `Get-PhysicalDisk -ErrorAction SilentlyContinue | Select-Object -ExpandProperty HealthStatus -First 1`
-    powershellService
-      .runPowerShell(script, 5000)
+    powerShellWorker
+      .runCommand(script, 5000)
       .then((stdout) => {
         if (stdout && stdout.trim()) {
           this.cache.smartStatus = stdout.trim()
