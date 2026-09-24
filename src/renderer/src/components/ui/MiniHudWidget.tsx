@@ -24,21 +24,21 @@ function getMetricColor(val: number): string {
   return 'bg-rose-500 text-rose-500'
 }
 
-// --- MEMOIZED HUD TILES (Zero-Transition, Lightweight) ---
+// --- MEMOIZED HUD TILES (Clean Typography, Zero-Transition, Lightweight) ---
 
 const CpuTile = React.memo<{ cpuVal: number }>(({ cpuVal }) => {
   const color = getMetricColor(cpuVal)
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
-      <div className="flex items-center justify-between text-[10px]">
-        <span className="flex items-center gap-1 text-slate-400 font-semibold">
-          <Cpu className="w-3 h-3 text-sky-400 shrink-0" /> CPU
+    <div className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 flex flex-col justify-between">
+      <div className="flex items-center justify-between leading-none">
+        <span className="flex items-center gap-1.5 text-slate-300 font-medium text-[11px]">
+          <Cpu className="w-3.5 h-3.5 text-sky-400 shrink-0" /> CPU
         </span>
-        <span className={`font-mono font-bold ${color.split(' ')[1]}`}>
+        <span className={`font-mono text-xs font-bold ${color.split(' ')[1]}`}>
           {cpuVal}%
         </span>
       </div>
-      <div className="w-full bg-slate-800 rounded-full h-1 mt-1 overflow-hidden">
+      <div className="w-full bg-slate-800 rounded-full h-1 mt-1.5 overflow-hidden">
         <div
           className={`h-full ${color.split(' ')[0]}`}
           style={{ width: `${Math.min(100, Math.max(0, cpuVal))}%` }}
@@ -52,16 +52,16 @@ CpuTile.displayName = 'CpuTile'
 const RamTile = React.memo<{ ramVal: number; ramGB: number }>(({ ramVal, ramGB }) => {
   const color = getMetricColor(ramVal)
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
-      <div className="flex items-center justify-between text-[10px]">
-        <span className="flex items-center gap-1 text-slate-400 font-semibold">
-          <Activity className="w-3 h-3 text-indigo-400 shrink-0" /> RAM
+    <div className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 flex flex-col justify-between">
+      <div className="flex items-center justify-between leading-none">
+        <span className="flex items-center gap-1.5 text-slate-300 font-medium text-[11px]">
+          <Activity className="w-3.5 h-3.5 text-indigo-400 shrink-0" /> RAM
         </span>
-        <span className={`font-mono font-bold ${color.split(' ')[1]}`}>
-          {ramVal}% <span className="text-[8px] font-normal text-slate-400">({ramGB}G)</span>
+        <span className={`font-mono text-xs font-bold ${color.split(' ')[1]} flex items-baseline gap-1`}>
+          {ramVal}% <span className="text-[10px] font-normal text-slate-400">({ramGB}G)</span>
         </span>
       </div>
-      <div className="w-full bg-slate-800 rounded-full h-1 mt-1 overflow-hidden">
+      <div className="w-full bg-slate-800 rounded-full h-1 mt-1.5 overflow-hidden">
         <div
           className={`h-full ${color.split(' ')[0]}`}
           style={{ width: `${Math.min(100, Math.max(0, ramVal))}%` }}
@@ -75,16 +75,16 @@ RamTile.displayName = 'RamTile'
 const GpuTile = React.memo<{ gpuVal: number }>(({ gpuVal }) => {
   const color = getMetricColor(gpuVal)
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
-      <div className="flex items-center justify-between text-[10px]">
-        <span className="flex items-center gap-1 text-slate-400 font-semibold">
-          <Layers className="w-3 h-3 text-purple-400 shrink-0" /> GPU
+    <div className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 flex flex-col justify-between">
+      <div className="flex items-center justify-between leading-none">
+        <span className="flex items-center gap-1.5 text-slate-300 font-medium text-[11px]">
+          <Layers className="w-3.5 h-3.5 text-purple-400 shrink-0" /> GPU
         </span>
-        <span className={`font-mono font-bold ${color.split(' ')[1]}`}>
+        <span className={`font-mono text-xs font-bold ${color.split(' ')[1]}`}>
           {gpuVal}%
         </span>
       </div>
-      <div className="w-full bg-slate-800 rounded-full h-1 mt-1 overflow-hidden">
+      <div className="w-full bg-slate-800 rounded-full h-1 mt-1.5 overflow-hidden">
         <div
           className={`h-full ${color.split(' ')[0]}`}
           style={{ width: `${Math.min(100, Math.max(0, gpuVal))}%` }}
@@ -101,32 +101,37 @@ const BatteryTile = React.memo<{
   isCharging: boolean
   chargePercent: number
   wattageText: string
-}>(({ hasBattery, isAcOnline, isCharging, chargePercent, wattageText }) => {
+  spanFull?: boolean
+}>(({ hasBattery, isAcOnline, isCharging, chargePercent, wattageText, spanFull }) => {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
-      <div className="flex items-center justify-between text-[10px]">
-        <span className="flex items-center gap-1 text-slate-400 font-semibold truncate">
+    <div
+      className={`bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 flex flex-col justify-between ${
+        spanFull ? 'col-span-2' : ''
+      }`}
+    >
+      <div className="flex items-center justify-between leading-none">
+        <span className="flex items-center gap-1.5 text-slate-300 font-medium text-[11px]">
           {!hasBattery ? (
-            <Plug className="w-3 h-3 text-emerald-400 shrink-0" />
+            <Plug className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           ) : isCharging ? (
-            <BatteryCharging className="w-3 h-3 text-emerald-400 shrink-0" />
+            <BatteryCharging className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           ) : isAcOnline ? (
-            <Plug className="w-3 h-3 text-emerald-400 shrink-0" />
+            <Plug className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           ) : (
-            <Battery className="w-3 h-3 text-amber-400 shrink-0" />
+            <Battery className="w-3.5 h-3.5 text-amber-400 shrink-0" />
           )}
           {!hasBattery ? 'NETZ' : isCharging ? 'LADEN' : isAcOnline ? 'NETZ' : 'AKKU'}
         </span>
-        <span className="font-mono font-bold text-slate-100 flex items-center gap-0.5 shrink-0">
+        <span className="font-mono text-xs font-bold text-slate-100 flex items-baseline gap-1.5 shrink-0">
           {!hasBattery ? (
-            <span className="text-emerald-400 text-[10px]">AC Power</span>
+            <span className="text-emerald-400 text-xs">AC Power</span>
           ) : (
             <>
               <span className={chargePercent > 20 ? 'text-emerald-400' : 'text-rose-400'}>
                 {chargePercent}%
               </span>
               {wattageText && (
-                <span className="text-[8px] text-slate-400 font-normal">
+                <span className="text-[10px] font-normal text-slate-400">
                   {wattageText}
                 </span>
               )}
@@ -134,7 +139,7 @@ const BatteryTile = React.memo<{
           )}
         </span>
       </div>
-      <div className="w-full bg-slate-800 rounded-full h-1 mt-1 overflow-hidden">
+      <div className="w-full bg-slate-800 rounded-full h-1 mt-1.5 overflow-hidden">
         <div
           className={`h-full ${
             !hasBattery
@@ -425,15 +430,17 @@ export const MiniHudWidget: React.FC = () => {
       onDoubleClick={handleDoubleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="w-full h-full select-none cursor-move flex flex-col justify-between p-2 rounded-2xl bg-slate-950/95 border border-slate-800 text-slate-100"
+      className="w-full h-full select-none cursor-move flex flex-col justify-between p-2 rounded-xl bg-slate-950/95 border border-slate-800 text-slate-100 font-sans antialiased"
       style={dragStyle}
       title="Doppelklick: M-Toolbox öffnen | Gedrückt halten zum Verschieben"
     >
       {/* Top Header Bar */}
-      <div className="flex items-center justify-between px-0.5">
+      <div className="flex items-center justify-between px-1 pt-0.5">
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-          <span className="text-[10px] font-black tracking-wider text-slate-300">M-TOOLBOX HUD</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+          <span className="text-[11px] font-bold tracking-wider text-slate-300 uppercase font-mono">
+            M-TOOLBOX HUD
+          </span>
         </div>
 
         {/* Action Buttons (Non-draggable) */}
@@ -445,12 +452,12 @@ export const MiniHudWidget: React.FC = () => {
           <button
             onClick={handleCleanRam}
             disabled={isCleaningRam}
-            className="p-1 rounded-md text-slate-400 hover:text-cyan-300 hover:bg-slate-800 relative"
+            className="p-1 rounded-md text-slate-400 hover:text-cyan-300 hover:bg-slate-800 relative transition-colors"
             title="Arbeitsspeicher bereinigen (EmptyWorkingSet)"
           >
-            <Sparkles className={`w-3 h-3 ${isCleaningRam ? 'animate-spin text-cyan-400' : ''}`} />
+            <Sparkles className={`w-3.5 h-3.5 ${isCleaningRam ? 'animate-spin text-cyan-400' : ''}`} />
             {cleanFeedback && (
-              <span className="absolute -bottom-4 right-0 text-[9px] font-bold text-cyan-400 bg-slate-900 px-1 py-0.2 rounded border border-cyan-500/50 whitespace-nowrap">
+              <span className="absolute -bottom-5 right-0 text-[10px] font-bold font-mono text-cyan-400 bg-slate-900 px-1.5 py-0.5 rounded border border-cyan-500/50 whitespace-nowrap shadow-md">
                 {cleanFeedback}
               </span>
             )}
@@ -459,47 +466,47 @@ export const MiniHudWidget: React.FC = () => {
           {/* Opacity Cycle */}
           <button
             onClick={handleCycleOpacity}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
             title={`Transparenz umschalten (aktuell ${Math.round(opacity * 100)}%)`}
           >
-            <Eye className="w-3 h-3" />
+            <Eye className="w-3.5 h-3.5" />
           </button>
 
           {/* Click-Through Toggle */}
           <button
             onClick={handleToggleClickThrough}
-            className={`p-1 rounded-md ${
+            className={`p-1 rounded-md transition-colors ${
               isClickThrough ? 'text-sky-400 hover:bg-slate-800' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
             }`}
             title={isClickThrough ? 'Click-Through aktiv (Klicks gehen durch)' : 'Click-Through inaktiv'}
           >
-            <MousePointer className="w-3 h-3" />
+            <MousePointer className="w-3.5 h-3.5" />
           </button>
 
           {/* Always on top toggle */}
           <button
             onClick={handleTogglePin}
-            className={`p-1 rounded-md ${
+            className={`p-1 rounded-md transition-colors ${
               isAlwaysOnTop ? 'text-amber-400 hover:bg-slate-800' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
             }`}
             title={isAlwaysOnTop ? 'Always-on-Top aktiv (klicken zum Lösen)' : 'Always-on-Top inaktiv (klicken zum Anheften)'}
           >
-            {isAlwaysOnTop ? <Pin className="w-3 h-3" /> : <PinOff className="w-3 h-3" />}
+            {isAlwaysOnTop ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
           </button>
 
           {/* Close / Hide Widget */}
           <button
             onClick={handleClose}
-            className="p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-slate-800"
+            className="p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
             title="Widget schließen"
           >
-            <X className="w-3 h-3" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
       {/* Metrics Grid with React.memo tiles */}
-      <div className={`grid ${showGpuUsage ? 'grid-cols-2' : 'grid-cols-3'} gap-1.5 mt-1.5 flex-1`}>
+      <div className="grid grid-cols-2 gap-1.5 mt-1.5 flex-1">
         <CpuTile cpuVal={cpuVal} />
         <RamTile ramVal={ramVal} ramGB={ramGB} />
         {showGpuUsage && <GpuTile gpuVal={gpuVal} />}
@@ -509,6 +516,7 @@ export const MiniHudWidget: React.FC = () => {
           isCharging={isCharging}
           chargePercent={chargePercent}
           wattageText={wattageText}
+          spanFull={!showGpuUsage}
         />
       </div>
     </div>
