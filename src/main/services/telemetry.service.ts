@@ -141,6 +141,9 @@ export class TelemetryService {
   private handlePowerSourceChange(isAc: boolean): void {
     this.cache.battery.isAcOnline = isAc
     this.broadcastIfChanged()
+    this.sampleBattery()
+      .then(() => this.broadcastIfChanged())
+      .catch(() => {})
   }
 
   public pause(): void {
@@ -431,21 +434,22 @@ export class TelemetryService {
     this.isSamplingBattery = true
 
     const script = `
-      Add-Type -AssemblyName System.Windows.Forms
-      $p = [System.Windows.Forms.SystemInformation]::PowerStatus
-      $wmi = Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction SilentlyContinue | Select-Object -First 1
+      $ProgressPreference = 'SilentlyContinue';
+      Add-Type -AssemblyName System.Windows.Forms;
+      $p = [System.Windows.Forms.SystemInformation]::PowerStatus;
+      $wmi = Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction SilentlyContinue | Select-Object -First 1;
       [PSCustomObject]@{
-        HasBat = ($p.BatteryChargeStatus.ToString() -ne 'NoSystemBattery')
-        LineStatus = $p.PowerLineStatus.ToString()
-        Percent = [int]($p.BatteryLifePercent * 100)
-        Status = $p.BatteryChargeStatus.ToString()
-        ChargeRate = if ($wmi) { [int64]$wmi.ChargeRate } else { 0 }
-        DischargeRate = if ($wmi) { [int64]$wmi.DischargeRate } else { 0 }
+        HasBat = ($p.BatteryChargeStatus.ToString() -ne 'NoSystemBattery');
+        LineStatus = $p.PowerLineStatus.ToString();
+        Percent = [int]($p.BatteryLifePercent * 100);
+        Status = $p.BatteryChargeStatus.ToString();
+        ChargeRate = if ($wmi) { [int64]$wmi.ChargeRate } else { 0 };
+        DischargeRate = if ($wmi) { [int64]$wmi.DischargeRate } else { 0 };
       } | ConvertTo-Json -Compress
-    `.replace(/\r?\n\s*/g, ' ')
+    `
 
     try {
-      const stdout = await powershellService.runPowerShell(script, 3500)
+      const stdout = await powershellService.runPowerShell(script, 4000)
       if (stdout && stdout.trim() && stdout.trim() !== 'null') {
         const parsed = JSON.parse(stdout.trim())
         const hasBattery = Boolean(parsed.HasBat)
@@ -480,7 +484,8 @@ export class TelemetryService {
   private async sampleBatteryHealthOnce(): Promise<void> {
     try {
       const staticData = await batteryService.getStaticBatteryData()
-      if (staticData && staticData.healthPercent > 0) {
+      if (staticData && staticData.designCapacityMWh > 0) {
+        this.cache.battery.hasBattery = true
         this.cache.battery.healthPercent = staticData.healthPercent
       } else {
         this.cache.battery.healthPercent = undefined

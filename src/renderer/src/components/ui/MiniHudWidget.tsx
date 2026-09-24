@@ -97,10 +97,11 @@ GpuTile.displayName = 'GpuTile'
 
 const BatteryTile = React.memo<{
   hasBattery: boolean
+  isAcOnline: boolean
   isCharging: boolean
   chargePercent: number
   wattageText: string
-}>(({ hasBattery, isCharging, chargePercent, wattageText }) => {
+}>(({ hasBattery, isAcOnline, isCharging, chargePercent, wattageText }) => {
   return (
     <div className="bg-slate-900/70 border border-slate-800/80 rounded-lg p-1.5 flex flex-col justify-between">
       <div className="flex items-center justify-between text-[10px]">
@@ -109,10 +110,12 @@ const BatteryTile = React.memo<{
             <Plug className="w-3 h-3 text-emerald-400" />
           ) : isCharging ? (
             <BatteryCharging className="w-3 h-3 text-emerald-400" />
+          ) : isAcOnline ? (
+            <Plug className="w-3 h-3 text-emerald-400" />
           ) : (
             <Battery className="w-3 h-3 text-amber-400" />
           )}
-          {!hasBattery ? 'NETZ' : 'AKKU'}
+          {!hasBattery ? 'NETZ' : isCharging ? 'LADEN' : isAcOnline ? 'NETZ' : 'AKKU'}
         </span>
         <span className="font-mono font-bold text-slate-100 flex items-center gap-0.5">
           {!hasBattery ? (
@@ -295,6 +298,7 @@ export const MiniHudWidget: React.FC = () => {
   const ramGB = metrics?.ramUsedGB ?? 0
   const gpuVal = metrics?.gpuUsagePercent ?? 0
 
+  const isAcOnline = battery?.isAcOnline ?? true
   const hasBattery = battery?.hasBattery ?? false
   const chargePercent = battery?.chargePercent ?? 0
   const isCharging = battery?.isCharging ?? false
@@ -305,8 +309,11 @@ export const MiniHudWidget: React.FC = () => {
     if (isCharging) {
       return chargeWatts > 0 ? `+${chargeWatts.toFixed(0)}W` : 'Laden'
     }
-    return dischargeWatts > 0 ? `-${dischargeWatts.toFixed(0)}W` : ''
-  }, [isCharging, chargeWatts, dischargeWatts])
+    if (!isAcOnline) {
+      return dischargeWatts > 0 ? `-${dischargeWatts.toFixed(0)}W` : ''
+    }
+    return ''
+  }, [isCharging, chargeWatts, isAcOnline, dischargeWatts])
 
   return (
     <div
@@ -393,6 +400,7 @@ export const MiniHudWidget: React.FC = () => {
         <GpuTile gpuVal={gpuVal} />
         <BatteryTile
           hasBattery={hasBattery}
+          isAcOnline={isAcOnline}
           isCharging={isCharging}
           chargePercent={chargePercent}
           wattageText={wattageText}
