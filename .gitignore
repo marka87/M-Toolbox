@@ -38,3 +38,4 @@ Thumbs.db
 .electron/
 .electron-cache/
 electron-cache/
+*.tsbuildinfo

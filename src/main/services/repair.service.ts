@@ -408,14 +408,14 @@ export class RepairService {
     const isPackaged = !process.defaultApp
 
     if (isPackaged) {
-      exec(`powershell -NoProfile -Command "Start-Process '${execPath}' -Verb RunAs"`)
+      execAsync(`powershell -NoProfile -Command "Start-Process '${execPath}' -Verb RunAs"`).catch(() => {})
     } else {
       // Entwicklungsmodus: dev.cmd im Projektordner mit RunAs starten
       const devCmd = path.join(process.cwd(), 'dev.cmd')
       if (fs.existsSync(devCmd)) {
-        exec(`powershell -NoProfile -Command "Start-Process cmd.exe -ArgumentList '/c', '${devCmd}' -Verb RunAs"`)
+        execAsync(`powershell -NoProfile -Command "Start-Process cmd.exe -ArgumentList '/c', '${devCmd}' -Verb RunAs"`).catch(() => {})
       } else {
-        exec(`powershell -NoProfile -Command "Start-Process '${execPath}' -ArgumentList '${process.argv.slice(1).join("' '")}' -Verb RunAs"`)
+        execAsync(`powershell -NoProfile -Command "Start-Process '${execPath}' -ArgumentList '${process.argv.slice(1).join("' '")}' -Verb RunAs"`).catch(() => {})
       }
     }
 

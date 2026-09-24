@@ -1,8 +1,8 @@
 import os from 'node:os'
-import { spawn, type ChildProcess } from 'node:child_process'
 import { app, powerMonitor } from 'electron'
 import { execAsync } from '../utils/exec'
 import { powershellService } from './powershell.service'
+import { batteryService } from './battery.service'
 import type { LiveMetrics } from '../../shared/types'
 
 export interface TelemetryBatteryState {
@@ -34,302 +34,10 @@ export interface TelemetrySnapshot {
 
 type MetricsListener = (metrics: LiveMetrics) => void
 
-/**
- * Persistent background PowerShell worker that handles sequential WMI queries
- * via stdin/stdout with delimiter markers, avoiding repeated powershell.exe spawns.
- */
-class PersistentPowerShell {
-  private child: ChildProcess | null = null
-  private queue: Array<{
-    command: string
-    timeoutMs: number
-    resolve: (value: string) => void
-    reject: (error: Error) => void
-  }> = []
-  private isBusy = false
-  private stdoutBuffer = ''
-  private requestTimer: NodeJS.Timeout | null = null
-  private failureCount = 0
-  private readonly maxFailures = 3
-  private isDisabled = false
-  private backoffTimer: NodeJS.Timeout | null = null
-  private readonly EOF_MARKER = '___MTB_EOF___'
-
-  public start(): void {
-    if (this.child || this.isDisabled) return
-
-    try {
-      this.child = spawn(
-        'powershell.exe',
-        ['-NoProfile', '-NoLogo', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', '-'],
-        {
-          windowsHide: true,
-          env: process.env,
-          stdio: ['pipe', 'pipe', 'pipe']
-        }
-      )
-
-      this.stdoutBuffer = ''
-
-      // Set UTF-8 encoding
-      this.child.stdin?.write("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\r\n")
-
-      this.child.stdout?.on('data', (chunk: Buffer) => {
-        this.stdoutBuffer += chunk.toString('utf8')
-        this.checkEof()
-      })
-
-      this.child.stderr?.on('data', () => {
-        // Silently consume stderr to prevent buffer congestion
-      })
-
-      this.child.on('error', (err) => {
-        console.warn('[PersistentPowerShell] Worker error:', err.message)
-        this.handleCrash()
-      })
-
-      this.child.on('close', () => {
-        this.handleCrash()
-      })
-    } catch (err: any) {
-      console.warn('[PersistentPowerShell] Failed to spawn worker:', err.message)
-      this.handleCrash()
-    }
-  }
-
-  public async execute(command: string, timeoutMs = 5000): Promise<string> {
-    if (this.isDisabled) {
-      throw new Error('Persistent PowerShell is disabled after repeated failures')
-    }
-
-    if (!this.child) {
-      this.start()
-    }
-
-    return new Promise((resolve, reject) => {
-      this.queue.push({ command, timeoutMs, resolve, reject })
-      this.processQueue()
-    })
-  }
-
-  private processQueue(): void {
-    if (this.isBusy || this.queue.length === 0) return
-    const current = this.queue[0]
-    this.isBusy = true
-    this.stdoutBuffer = ''
-
-    if (!this.child || !this.child.stdin || this.child.stdin.destroyed) {
-      this.start()
-    }
-
-    this.requestTimer = setTimeout(() => {
-      console.warn('[PersistentPowerShell] Command timed out after', current.timeoutMs, 'ms')
-      current.reject(new Error(`Command timed out after ${current.timeoutMs}ms`))
-      this.cleanupCurrent(true)
-    }, current.timeoutMs)
-
-    try {
-      const script = `try { ${current.command} } catch { Write-Output "null" }; Write-Output "${this.EOF_MARKER}"\r\n`
-      this.child!.stdin!.write(script)
-    } catch (err: any) {
-      current.reject(err)
-      this.cleanupCurrent(true)
-    }
-  }
-
-  private checkEof(): void {
-    if (!this.isBusy || this.queue.length === 0) return
-    const markerIndex = this.stdoutBuffer.indexOf(this.EOF_MARKER)
-    if (markerIndex !== -1) {
-      const output = this.stdoutBuffer.substring(0, markerIndex).trim()
-      const current = this.queue.shift()!
-      if (this.requestTimer) {
-        clearTimeout(this.requestTimer)
-        this.requestTimer = null
-      }
-      this.isBusy = false
-      this.failureCount = 0
-      current.resolve(output)
-      this.processQueue()
-    }
-  }
-
-  private cleanupCurrent(killProcess: boolean): void {
-    if (this.requestTimer) {
-      clearTimeout(this.requestTimer)
-      this.requestTimer = null
-    }
-    this.queue.shift()
-    this.isBusy = false
-    this.stdoutBuffer = ''
-
-    if (killProcess) {
-      this.killChild()
-      this.handleCrash()
-    } else {
-      this.processQueue()
-    }
-  }
-
-  private handleCrash(): void {
-    this.killChild()
-    this.failureCount++
-
-    while (this.queue.length > 0) {
-      const item = this.queue.shift()!
-      item.reject(new Error('PowerShell worker crashed or terminated'))
-    }
-    this.isBusy = false
-
-    if (this.failureCount >= this.maxFailures) {
-      this.isDisabled = true
-      console.warn('[PersistentPowerShell] Disabled worker after', this.maxFailures, 'consecutive failures')
-      return
-    }
-
-    const backoffMs = Math.min(8000, 1000 * Math.pow(2, this.failureCount - 1))
-    if (this.backoffTimer) clearTimeout(this.backoffTimer)
-    this.backoffTimer = setTimeout(() => {
-      this.start()
-    }, backoffMs)
-  }
-
-  public resetFailureState(): void {
-    this.failureCount = 0
-    this.isDisabled = false
-    if (this.backoffTimer) {
-      clearTimeout(this.backoffTimer)
-      this.backoffTimer = null
-    }
-  }
-
-  public stop(): void {
-    this.resetFailureState()
-    if (this.requestTimer) {
-      clearTimeout(this.requestTimer)
-      this.requestTimer = null
-    }
-    while (this.queue.length > 0) {
-      const item = this.queue.shift()!
-      item.reject(new Error('Persistent PowerShell stopped'))
-    }
-    this.isBusy = false
-    this.killChild()
-  }
-
-  private killChild(): void {
-    if (this.child) {
-      try {
-        this.child.removeAllListeners()
-        this.child.kill('SIGKILL')
-      } catch {}
-      this.child = null
-    }
-  }
-}
-
-/**
- * Manages a continuously running nvidia-smi process with --loop-ms streaming
- */
-class NvidiaSmiMonitor {
-  private child: ChildProcess | null = null
-  private buffer = ''
-  private onValue: (gpuPercent: number) => void
-  private onError: () => void
-  private currentIntervalMs = 1000
-  private isStopped = true
-
-  constructor(onValue: (val: number) => void, onError: () => void) {
-    this.onValue = onValue
-    this.onError = onError
-  }
-
-  public start(intervalMs: number): void {
-    this.currentIntervalMs = intervalMs
-    this.isStopped = false
-    this.stopProcess()
-
-    try {
-      this.child = spawn(
-        'nvidia-smi',
-        [
-          '--query-gpu=utilization.gpu',
-          '--format=csv,noheader,nounits',
-          `--loop-ms=${intervalMs}`
-        ],
-        {
-          windowsHide: true,
-          env: process.env,
-          stdio: ['ignore', 'pipe', 'pipe']
-        }
-      )
-
-      this.buffer = ''
-
-      this.child.stdout?.on('data', (chunk: Buffer) => {
-        this.buffer += chunk.toString('utf8')
-        const lines = this.buffer.split(/\r?\n/)
-        // Preserve any trailing incomplete line in buffer
-        this.buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed) continue
-          const val = parseInt(trimmed, 10)
-          if (!isNaN(val)) {
-            this.onValue(Math.min(100, Math.max(0, val)))
-          }
-        }
-      })
-
-      this.child.stderr?.on('data', () => {
-        // Ignore stderr
-      })
-
-      this.child.on('error', () => {
-        if (!this.isStopped) {
-          this.onError()
-        }
-      })
-
-      this.child.on('close', (code) => {
-        if (!this.isStopped && code !== 0) {
-          this.onError()
-        }
-      })
-    } catch {
-      this.onError()
-    }
-  }
-
-  public setInterval(intervalMs: number): void {
-    if (this.currentIntervalMs !== intervalMs && !this.isStopped) {
-      this.start(intervalMs)
-    } else {
-      this.currentIntervalMs = intervalMs
-    }
-  }
-
-  public stop(): void {
-    this.isStopped = true
-    this.stopProcess()
-  }
-
-  private stopProcess(): void {
-    if (this.child) {
-      try {
-        this.child.removeAllListeners()
-        this.child.kill('SIGKILL')
-      } catch {}
-      this.child = null
-    }
-  }
-}
-
 export class TelemetryService {
   private static instance: TelemetryService
 
-  // In-memory cache single-source-of-truth
+  // In-memory single-source-of-truth cache
   private cache: TelemetrySnapshot = {
     cpuUsagePercent: 0,
     ramUsagePercent: 0,
@@ -363,7 +71,7 @@ export class TelemetryService {
   private lastNetSampleTime = 0
   private lastRamSampleTime = 0
   private lastTempSampleTime = 0
-  private lastWattageSampleTime = 0
+  private lastBatterySampleTime = 0
   private lastSmartSampleTime = 0
 
   // CPU delta state
@@ -372,34 +80,15 @@ export class TelemetryService {
   // Network delta state
   private lastNetStats: { rxBytes: number; txBytes: number; timestamp: number } | null = null
 
-  // GPU detection & workers
+  // GPU detection & concurrency control
   private hasNvidia = true
   private isSamplingGpu = false
-  private nvidiaMonitor: NvidiaSmiMonitor
-  private persistentPs: PersistentPowerShell
+  private isSamplingBattery = false
 
   // Last broadcasted metrics (for dirty-checking)
   private lastBroadcastJson = ''
 
   private constructor() {
-    this.persistentPs = new PersistentPowerShell()
-
-    this.nvidiaMonitor = new NvidiaSmiMonitor(
-      (gpuVal) => {
-        this.cache.gpuUsagePercent = gpuVal
-        this.cache.timestamp = Date.now()
-        this.broadcastIfChanged()
-      },
-      () => {
-        // Fallback to WMI if nvidia-smi fails
-        if (this.hasNvidia) {
-          console.warn('[TelemetryService] nvidia-smi failed or unavailable, falling back to WMI engtype_3D.')
-          this.hasNvidia = false
-          this.nvidiaMonitor.stop()
-        }
-      }
-    )
-
     this.initPowerMonitor()
   }
 
@@ -412,8 +101,10 @@ export class TelemetryService {
 
   private initPowerMonitor(): void {
     try {
-      // 4. Initial AC status check via Electron powerMonitor
-      this.cache.battery.isAcOnline = !powerMonitor.isOnBatteryPower()
+      // 1. Initial AC status check via Electron powerMonitor (zero process overhead)
+      if (typeof powerMonitor.isOnBatteryPower === 'function') {
+        this.cache.battery.isAcOnline = !powerMonitor.isOnBatteryPower()
+      }
 
       powerMonitor.on('on-ac', () => {
         this.handlePowerSourceChange(true)
@@ -449,39 +140,18 @@ export class TelemetryService {
 
   private handlePowerSourceChange(isAc: boolean): void {
     this.cache.battery.isAcOnline = isAc
-    const isEco = !isAc && this.cache.battery.hasBattery
-    const multiplier = isEco ? 2 : 1
-
-    if (this.hasNvidia && this.isRunning && !this.isPaused) {
-      this.nvidiaMonitor.setInterval(1000 * multiplier)
-    }
-
     this.broadcastIfChanged()
   }
 
   public pause(): void {
-    if (this.isPaused) return
     this.isPaused = true
-
-    this.nvidiaMonitor.stop()
-    this.persistentPs.stop()
   }
 
   public resume(): void {
     if (!this.isRunning || !this.isPaused) return
     this.isPaused = false
 
-    this.persistentPs.resetFailureState()
-    this.persistentPs.start()
-
-    const isEco = !this.cache.battery.isAcOnline && this.cache.battery.hasBattery
-    const multiplier = isEco ? 2 : 1
-
-    if (this.hasNvidia) {
-      this.nvidiaMonitor.start(1000 * multiplier)
-    }
-
-    // Refresh battery health once after resume
+    // Update battery health once after resume
     this.sampleBatteryHealthOnce()
 
     // Immediate fresh snapshot
@@ -533,21 +203,12 @@ export class TelemetryService {
     this.isRunning = true
     this.isPaused = false
 
-    this.persistentPs.start()
-
-    const isEco = !this.cache.battery.isAcOnline && this.cache.battery.hasBattery
-    const multiplier = isEco ? 2 : 1
-
-    if (this.hasNvidia) {
-      this.nvidiaMonitor.start(1000 * multiplier)
-    }
-
     // Sample battery health once at startup
     this.sampleBatteryHealthOnce()
 
     this.sampleImmediate()
 
-    // High precision master heartbeat tick (every 500ms), checks adaptive intervals
+    // Master heartbeat tick every 500ms to evaluate adaptive intervals
     this.mainLoopTimer = setInterval(() => {
       if (!this.isPaused && this.listeners.size > 0) {
         this.tick()
@@ -561,8 +222,6 @@ export class TelemetryService {
       clearInterval(this.mainLoopTimer)
       this.mainLoopTimer = null
     }
-    this.nvidiaMonitor.stop()
-    this.persistentPs.stop()
   }
 
   public dispose(): void {
@@ -574,15 +233,13 @@ export class TelemetryService {
     this.sampleCpu()
     this.sampleRam()
     await this.sampleNetwork()
-    if (!this.hasNvidia) {
-      this.sampleGpuViaWmi()
-    }
-    await this.sampleBatteryAndWattage()
+    this.sampleGpu()
+    await this.sampleBattery()
     this.broadcastIfChanged()
   }
 
   /**
-   * Main adaptive refresh scheduler
+   * Adaptive refresh scheduler
    */
   private async tick(): Promise<void> {
     const now = Date.now()
@@ -598,14 +255,14 @@ export class TelemetryService {
       hasChanges = true
     }
 
-    // 2. GPU WMI-Fallback if Nvidia is not available (1s normal, 2s eco)
-    if (!this.hasNvidia && now - this.lastGpuSampleTime >= 1000 * multiplier) {
-      this.sampleGpuViaWmi()
+    // 2. GPU (1s normal, 2s eco) - on demand, allows dGPU to sleep
+    if (now - this.lastGpuSampleTime >= 1000 * multiplier) {
+      this.sampleGpu()
       this.lastGpuSampleTime = now
       hasChanges = true
     }
 
-    // 3. Netzwerk (1s normal, 2s eco)
+    // 3. Network (1s normal, 2s eco)
     if (now - this.lastNetSampleTime >= 1000 * multiplier) {
       await this.sampleNetwork()
       this.lastNetSampleTime = now
@@ -619,20 +276,20 @@ export class TelemetryService {
       hasChanges = true
     }
 
-    // 5. Temperaturen (3s normal, 6s eco)
+    // 5. Temperatures (3s normal, 6s eco)
     if (now - this.lastTempSampleTime >= 3000 * multiplier) {
       this.sampleTemperatures()
       this.lastTempSampleTime = now
     }
 
-    // 6. Ladeleistung, Akkustand & Batterie-Status (3s normal, 6s eco)
-    if (now - this.lastWattageSampleTime >= 3000 * multiplier) {
-      await this.sampleBatteryAndWattage()
-      this.lastWattageSampleTime = now
+    // 6. Unified Battery & Wattage (3s normal, 6s eco)
+    if (now - this.lastBatterySampleTime >= 3000 * multiplier) {
+      await this.sampleBattery()
+      this.lastBatterySampleTime = now
       hasChanges = true
     }
 
-    // 7. SMART (alle 30 Minuten = 1800s)
+    // 7. SMART status (every 30 minutes)
     if (now - this.lastSmartSampleTime >= 1800000) {
       this.sampleSmartStatus()
       this.lastSmartSampleTime = now
@@ -714,16 +371,44 @@ export class TelemetryService {
   }
 
   /**
-   * 2. GPU WMI-Fallback: Constrained to engtype_3D and bounded to 0-100
+   * Samples GPU utilization on demand.
+   * Avoids persistent loop processes to allow dGPU (Nvidia Optimus) to enter D3cold sleep.
    */
-  private sampleGpuViaWmi(): void {
+  private sampleGpu(): void {
     if (this.isSamplingGpu) return
     this.isSamplingGpu = true
 
-    const cmd = `(Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Where-Object { $_.Name -like '*engtype_3D*' } | Measure-Object -Property UtilizationPercentage -Sum).Sum`
+    if (this.hasNvidia) {
+      execAsync('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits', {
+        timeout: 1500,
+        windowsHide: true
+      })
+        .then(({ stdout }) => {
+          const val = parseInt(stdout.trim(), 10)
+          if (!isNaN(val)) {
+            this.cache.gpuUsagePercent = Math.min(100, Math.max(0, val))
+            this.cache.timestamp = Date.now()
+          }
+        })
+        .catch(() => {
+          this.hasNvidia = false
+          this.sampleGpuViaWmi()
+        })
+        .finally(() => {
+          this.isSamplingGpu = false
+        })
+    } else {
+      this.sampleGpuViaWmi()
+    }
+  }
 
-    this.persistentPs
-      .execute(cmd, 3000)
+  /**
+   * GPU WMI fallback constrained to engtype_3D and bounded to 0-100%
+   */
+  private sampleGpuViaWmi(): void {
+    const cmd = `(Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Where-Object { $_.Name -like '*engtype_3D*' } | Measure-Object -Property UtilizationPercentage -Sum).Sum`
+    powershellService
+      .runPowerShell(cmd, 3000)
       .then((raw) => {
         const val = parseInt(raw.trim(), 10)
         if (!isNaN(val)) {
@@ -738,97 +423,71 @@ export class TelemetryService {
   }
 
   /**
-   * 5. Unified 3-second Battery & Wattage query via Persistent PowerShell Worker
+   * Unified battery, power status & wattage query.
+   * Combines PowerStatus and BatteryStatus into ONE lightweight call.
    */
-  private async sampleBatteryAndWattage(): Promise<void> {
-    const cmd = `
-      $status = Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction SilentlyContinue | Select-Object -First 1
-      $full = Get-CimInstance -Namespace root/wmi -ClassName BatteryFullChargedCapacity -ErrorAction SilentlyContinue | Select-Object -First 1
+  private async sampleBattery(): Promise<void> {
+    if (this.isSamplingBattery) return
+    this.isSamplingBattery = true
+
+    const script = `
+      Add-Type -AssemblyName System.Windows.Forms
+      $p = [System.Windows.Forms.SystemInformation]::PowerStatus
+      $wmi = Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction SilentlyContinue | Select-Object -First 1
       [PSCustomObject]@{
-        HasBat = ($status -ne $null)
-        Charging = [bool]$status.Charging
-        Discharging = [bool]$status.Discharging
-        PowerOnline = [bool]$status.PowerOnline
-        Remaining = [int64]$status.RemainingCapacity
-        FullCapacity = [int64]$full.FullChargedCapacity
-        ChargeRate = [int64]$status.ChargeRate
-        DischargeRate = [int64]$status.DischargeRate
+        HasBat = ($p.BatteryChargeStatus.ToString() -ne 'NoSystemBattery')
+        LineStatus = $p.PowerLineStatus.ToString()
+        Percent = [int]($p.BatteryLifePercent * 100)
+        Status = $p.BatteryChargeStatus.ToString()
+        ChargeRate = if ($wmi) { [int64]$wmi.ChargeRate } else { 0 }
+        DischargeRate = if ($wmi) { [int64]$wmi.DischargeRate } else { 0 }
       } | ConvertTo-Json -Compress
     `.replace(/\r?\n\s*/g, ' ')
 
     try {
-      const stdout = await this.persistentPs.execute(cmd, 3500)
+      const stdout = await powershellService.runPowerShell(script, 3500)
       if (stdout && stdout.trim() && stdout.trim() !== 'null') {
         const parsed = JSON.parse(stdout.trim())
         const hasBattery = Boolean(parsed.HasBat)
         this.cache.battery.hasBattery = hasBattery
 
         if (hasBattery) {
-          this.cache.battery.isCharging = Boolean(parsed.Charging)
-
+          const isAcOnline = parsed.LineStatus === 'Online'
+          const isCharging = parsed.Status.includes('Charging') || parsed.ChargeRate > 0
+          const percent = Math.min(100, Math.max(0, parsed.Percent >= 0 ? parsed.Percent : 100))
           const chargeRate = parsed.ChargeRate ? Math.round((parsed.ChargeRate / 1000) * 10) / 10 : 0
           const dischargeRate = parsed.DischargeRate ? Math.round((parsed.DischargeRate / 1000) * 10) / 10 : 0
+
+          this.cache.battery.isAcOnline = isAcOnline
+          this.cache.battery.isCharging = isCharging
+          this.cache.battery.percent = percent
           this.cache.battery.chargeRateWatts = chargeRate
           this.cache.battery.dischargeRateWatts = dischargeRate
-
-          // Calculate percent from Remaining / FullCapacity
-          if (parsed.Remaining > 0 && parsed.FullCapacity > 0) {
-            const calculatedPercent = Math.min(
-              100,
-              Math.max(0, Math.round((parsed.Remaining / parsed.FullCapacity) * 100))
-            )
-            this.cache.battery.percent = calculatedPercent
-          } else {
-            // Fallback to PowerStatus.BatteryLifePercent if WMI capacities are 0 or missing
-            await this.fallbackBatteryPercent()
-          }
+          this.cache.timestamp = Date.now()
         }
       }
     } catch {
-      // Fallback if WMI query fails
-      await this.fallbackBatteryPercent()
+      // Keep cached
+    } finally {
+      this.isSamplingBattery = false
     }
   }
 
   /**
-   * Fallback using PowerStatus.BatteryLifePercent over persistent worker
-   */
-  private async fallbackBatteryPercent(): Promise<void> {
-    try {
-      const fallbackCmd = `Add-Type -AssemblyName System.Windows.Forms; [int]([System.Windows.Forms.SystemInformation]::PowerStatus.BatteryLifePercent * 100)`
-      const out = await this.persistentPs.execute(fallbackCmd, 2500)
-      const val = parseInt(out.trim(), 10)
-      if (!isNaN(val) && val >= 0) {
-        this.cache.battery.percent = Math.min(100, Math.max(0, val))
-      }
-    } catch {}
-  }
-
-  /**
-   * 6. Battery Health (Wear-Level): Queried ONCE at start or after resume.
-   * Uses root/wmi BatteryStaticData & BatteryFullChargedCapacity.
+   * Sample battery health / wear level once from BatteryService's cached static data.
+   * Eliminates duplicate XML report generation and extra WMI queries.
    */
   private async sampleBatteryHealthOnce(): Promise<void> {
-    const cmd = `
-      $designed = (Get-CimInstance -Namespace root/wmi -ClassName BatteryStaticData -ErrorAction SilentlyContinue | Select-Object -First 1).DesignedCapacity
-      $full = (Get-CimInstance -Namespace root/wmi -ClassName BatteryFullChargedCapacity -ErrorAction SilentlyContinue | Select-Object -First 1).FullChargedCapacity
-      [PSCustomObject]@{ Designed = [int64]$designed; Full = [int64]$full } | ConvertTo-Json -Compress
-    `.replace(/\r?\n\s*/g, ' ')
-
     try {
-      const stdout = await this.persistentPs.execute(cmd, 4000)
-      if (stdout && stdout.trim() && stdout.trim() !== 'null') {
-        const parsed = JSON.parse(stdout.trim())
-        if (parsed.Designed > 0 && parsed.Full > 0) {
-          const health = Math.min(100, Math.max(0, Math.round((parsed.Full / parsed.Designed) * 100)))
-          this.cache.battery.healthPercent = health
-          return
-        }
+      const staticData = await batteryService.getStaticBatteryData()
+      if (staticData && staticData.healthPercent > 0) {
+        this.cache.battery.healthPercent = staticData.healthPercent
+      } else {
+        this.cache.battery.healthPercent = undefined
       }
-    } catch {}
-
-    // If missing or 0, set to undefined (unknown)
-    this.cache.battery.healthPercent = undefined
+    } catch {
+      this.cache.battery.healthPercent = undefined
+    }
   }
 
   private sampleTemperatures(): void {

@@ -390,7 +390,7 @@ export class DriverService {
    * Öffnet die native Windows Geräte-Manager-Konsole (devmgmt.msc)
    */
   openDeviceManager(): void {
-    exec('start devmgmt.msc')
+    execAsync('start devmgmt.msc').catch(() => {})
   }
 
   /**

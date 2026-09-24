@@ -17,7 +17,8 @@ import { batteryService } from '../services/battery.service'
 import { bloatwareService } from '../services/bloatware.service'
 import { performanceService } from '../services/performance.service'
 import { WidgetService } from '../services/widget.service'
-import type { PowerProfileMode } from '../../shared/types'
+import type { PowerProfileMode, AppSettings } from '../../shared/types'
+import type { ReinstallRestoreOptions } from '../../shared/reinstall.types'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const dashboardService = DashboardService.getInstance()

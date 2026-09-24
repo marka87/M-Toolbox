@@ -378,7 +378,7 @@ export class RAMService {
             name: p.name,
             id: p.id,
             lastUsedDays: 95,
-            installLocation: p.installedVersion
+            installLocation: p.version
           })
         })
       } catch {

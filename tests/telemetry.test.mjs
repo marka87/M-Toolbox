@@ -2,74 +2,31 @@ import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
 
 describe('Telemetry Service Logic & Parser Tests', () => {
-  test('NvidiaSmi line parsing & clamping', () => {
-    let lastGpuVal = null
-    const onValue = (val) => {
-      lastGpuVal = val
+  test('NvidiaSmi output parsing & clamping', () => {
+    const parseGpu = (stdout) => {
+      const val = parseInt(stdout.trim(), 10)
+      if (isNaN(val)) return 0
+      return Math.min(100, Math.max(0, val))
     }
 
-    // Simulate chunk stream
-    let buffer = ''
-    const chunk1 = '15\n45\n'
-    buffer += chunk1
-    const lines1 = buffer.split(/\r?\n/)
-    buffer = lines1.pop() || ''
-
-    for (const line of lines1) {
-      const val = parseInt(line.trim(), 10)
-      if (!isNaN(val)) onValue(Math.min(100, Math.max(0, val)))
-    }
-
-    assert.equal(lastGpuVal, 45)
-
-    // Test incomplete line in next chunk
-    const chunk2 = '9'
-    buffer += chunk2
-    const lines2 = buffer.split(/\r?\n/)
-    buffer = lines2.pop() || ''
-    for (const line of lines2) {
-      const val = parseInt(line.trim(), 10)
-      if (!isNaN(val)) onValue(Math.min(100, Math.max(0, val)))
-    }
-    // Should still be 45 because '9' is incomplete in buffer
-    assert.equal(lastGpuVal, 45)
-
-    // Complete line in next chunk
-    const chunk3 = '9\n'
-    buffer += chunk3
-    const lines3 = buffer.split(/\r?\n/)
-    buffer = lines3.pop() || ''
-    for (const line of lines3) {
-      const val = parseInt(line.trim(), 10)
-      if (!isNaN(val)) onValue(Math.min(100, Math.max(0, val)))
-    }
-    // Now '99' is parsed
-    assert.equal(lastGpuVal, 99)
-
-    // Value exceeding 100 is clamped
-    const chunk4 = '150\n'
-    buffer += chunk4
-    const lines4 = buffer.split(/\r?\n/)
-    buffer = lines4.pop() || ''
-    for (const line of lines4) {
-      const val = parseInt(line.trim(), 10)
-      if (!isNaN(val)) onValue(Math.min(100, Math.max(0, val)))
-    }
-    assert.equal(lastGpuVal, 100)
+    assert.equal(parseGpu('25\r\n'), 25)
+    assert.equal(parseGpu('0\n'), 0)
+    assert.equal(parseGpu('100\n'), 100)
+    assert.equal(parseGpu('150\n'), 100) // Clamped
+    assert.equal(parseGpu('-5\n'), 0) // Clamped
+    assert.equal(parseGpu('invalid'), 0)
   })
 
-  test('PersistentPowerShell EOF marker parsing', () => {
-    const EOF_MARKER = '___MTB_EOF___'
-    const rawStdout = `{"Status":"OK","Remaining":50000,"Full":60000}\r\n${EOF_MARKER}\r\n`
+  test('Unified Battery JSON parsing', () => {
+    const raw = '{"HasBat":true,"LineStatus":"Online","Percent":85,"Status":"High","ChargeRate":0,"DischargeRate":0}'
+    const parsed = JSON.parse(raw)
 
-    const markerIdx = rawStdout.indexOf(EOF_MARKER)
-    assert.notEqual(markerIdx, -1)
-
-    const output = rawStdout.substring(0, markerIdx).trim()
-    const parsed = JSON.parse(output)
-    assert.equal(parsed.Status, 'OK')
-    assert.equal(parsed.Remaining, 50000)
-    assert.equal(parsed.Full, 60000)
+    assert.equal(parsed.HasBat, true)
+    assert.equal(parsed.LineStatus, 'Online')
+    assert.equal(parsed.Percent, 85)
+    assert.equal(parsed.Status, 'High')
+    assert.equal(parsed.ChargeRate, 0)
+    assert.equal(parsed.DischargeRate, 0)
   })
 
   test('Battery percent calculation & clamp', () => {
@@ -132,5 +89,9 @@ describe('Telemetry Service Logic & Parser Tests', () => {
     // CPU changes
     const state3 = { ...state1, cpuUsagePercent: 14 }
     assert.notEqual(makeSignature(state1), makeSignature(state3))
+
+    // Battery percent changes
+    const state4 = { ...state1, battery: { ...state1.battery, percent: 79 } }
+    assert.notEqual(makeSignature(state1), makeSignature(state4))
   })
 })

@@ -536,7 +536,7 @@ export class CleanupService {
    * Öffnet die nativen Windows 11 Speichereinstellungen (Storage Sense)
    */
   openStorageSense(): void {
-    exec('start ms-settings:storagesense')
+    execAsync('start ms-settings:storagesense').catch(() => {})
   }
 }
 
