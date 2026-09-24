@@ -32,8 +32,8 @@ export function useDashboard() {
     // Initial fetch
     fetchSystemInfo(false)
 
-    // Start live metrics streaming
-    window.mToolbox.dashboard.startMetricsStream()
+    // Start live metrics streaming (Dashboard only requires cpu, ram, and net)
+    window.mToolbox.dashboard.startMetricsStream({ metrics: ['cpu', 'ram', 'net'] })
 
     const unsubscribe = window.mToolbox.dashboard.onLiveMetrics((metrics: LiveMetrics) => {
       setLiveMetrics(metrics)

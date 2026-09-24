@@ -203,11 +203,14 @@ export class DashboardService {
   /**
    * Starts live metrics streaming to a callback using central TelemetryService.
    */
-  public startMetricsStream(callback: (metrics: LiveMetrics) => void): void {
+  public startMetricsStream(
+    callback: (metrics: LiveMetrics) => void,
+    opts?: { metrics?: import('../../shared/types').TelemetryMetric[]; windowId?: number }
+  ): void {
     if (this.unsubscribeTelemetry) {
       this.unsubscribeTelemetry()
     }
-    this.unsubscribeTelemetry = telemetryService.subscribe(callback)
+    this.unsubscribeTelemetry = telemetryService.subscribe(callback, opts)
   }
 
   public stopMetricsStream(): void {

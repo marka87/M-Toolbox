@@ -3,7 +3,23 @@ import { app, powerMonitor } from 'electron'
 import { execAsync } from '../utils/exec'
 import { powershellService } from './powershell.service'
 import { batteryService } from './battery.service'
-import type { LiveMetrics } from '../../shared/types'
+import type { LiveMetrics, TelemetryMetric } from '../../shared/types'
+
+export type { TelemetryMetric }
+
+export interface SubscribeOptions {
+  metrics?: TelemetryMetric[]
+  windowId?: number
+  isBackground?: boolean
+}
+
+interface SubscriberInfo {
+  listener: MetricsListener
+  metrics: Set<TelemetryMetric>
+  windowId?: number
+  isBackground: boolean
+  isActive: boolean
+}
 
 export interface TelemetryBatteryState {
   hasBattery: boolean
@@ -57,8 +73,8 @@ export class TelemetryService {
     timestamp: Date.now()
   }
 
-  // Subscriber callbacks
-  private listeners: Set<MetricsListener> = new Set()
+  // Subscriber tracking (demand-driven & visibility-aware)
+  private subscribers: Map<MetricsListener, SubscriberInfo> = new Map()
 
   // Loop & timer handles
   private isRunning = false
@@ -164,7 +180,7 @@ export class TelemetryService {
       !this.isPaused &&
       !this.isLocked &&
       !this.isSuspended &&
-      this.listeners.size > 0
+      this.hasActiveSubscribers()
     )
   }
 
@@ -197,22 +213,109 @@ export class TelemetryService {
 
   /**
    * Registers a listener and starts the background sampling loop if not already running.
+   * If opts is omitted, all metrics are sampled by default (backwards compatible).
    */
-  public subscribe(listener: MetricsListener): () => void {
-    this.listeners.add(listener)
+  public subscribe(listener: MetricsListener, opts?: SubscribeOptions): () => void {
+    const allMetrics: TelemetryMetric[] = [
+      'cpu',
+      'ram',
+      'gpu',
+      'net',
+      'battery',
+      'watts',
+      'temps',
+      'smart'
+    ]
+    const metrics =
+      opts?.metrics && opts.metrics.length > 0 ? new Set(opts.metrics) : new Set(allMetrics)
+
+    const subInfo: SubscriberInfo = {
+      listener,
+      metrics,
+      windowId: opts?.windowId,
+      isBackground: opts?.isBackground ?? false,
+      isActive: true
+    }
+    this.subscribers.set(listener, subInfo)
+
     // Send immediate snapshot to new subscriber
     listener(this.getLiveMetrics())
 
     if (!this.isRunning) {
       this.startLoop()
+    } else {
+      this.scheduleNextTick()
     }
 
     return () => {
-      this.listeners.delete(listener)
-      if (this.listeners.size === 0) {
+      this.subscribers.delete(listener)
+      if (this.subscribers.size === 0 || !this.hasActiveSubscribers()) {
         this.stopLoop()
+      } else {
+        this.scheduleNextTick()
       }
     }
+  }
+
+  /**
+   * Toggles active state for subscribers belonging to a specific BrowserWindow.
+   * Minimized or hidden windows become inactive; restoring sends an immediate snapshot.
+   */
+  public setWindowActive(windowId: number, isActive: boolean): void {
+    let stateChanged = false
+    for (const sub of this.subscribers.values()) {
+      if (sub.windowId === windowId) {
+        if (sub.isActive !== isActive) {
+          sub.isActive = isActive
+          stateChanged = true
+          if (isActive) {
+            try {
+              sub.listener(this.getLiveMetrics())
+            } catch {}
+          }
+        }
+      }
+    }
+
+    if (stateChanged) {
+      if (this.hasActiveSubscribers()) {
+        if (!this.isRunning) {
+          this.startLoop()
+        } else {
+          this.scheduleNextTick()
+        }
+      } else {
+        this.clearTimer()
+      }
+    }
+  }
+
+  private hasActiveSubscribers(): boolean {
+    for (const sub of this.subscribers.values()) {
+      if (sub.isActive) return true
+    }
+    return false
+  }
+
+  private getActiveRequestedMetrics(): Set<TelemetryMetric> {
+    const active = new Set<TelemetryMetric>()
+    for (const sub of this.subscribers.values()) {
+      if (sub.isActive) {
+        for (const m of sub.metrics) {
+          active.add(m)
+        }
+      }
+    }
+    return active
+  }
+
+  private hasActiveForegroundSubscriber(metric: TelemetryMetric): boolean {
+    for (const sub of this.subscribers.values()) {
+      if (sub.isActive && !sub.isBackground && sub.metrics.has(metric)) {
+        return true
+      }
+    }
+    return false
   }
 
   /**
@@ -254,15 +357,21 @@ export class TelemetryService {
 
   public dispose(): void {
     this.stopLoop()
-    this.listeners.clear()
+    this.subscribers.clear()
   }
 
   private async sampleImmediate(): Promise<void> {
-    this.sampleCpu()
-    this.sampleRam()
-    await this.sampleNetwork()
-    this.sampleGpu()
-    await this.sampleBattery()
+    const activeMetrics = this.getActiveRequestedMetrics()
+    const all = activeMetrics.size === 0
+    if (all || activeMetrics.has('cpu')) this.sampleCpu()
+    if (all || activeMetrics.has('ram')) this.sampleRam()
+    if (all || activeMetrics.has('net')) await this.sampleNetwork()
+    if (all || activeMetrics.has('gpu')) this.sampleGpu()
+    if (all || activeMetrics.has('battery') || activeMetrics.has('watts')) {
+      await this.sampleBattery()
+    }
+    if (activeMetrics.has('temps')) this.sampleTemperatures()
+    if (activeMetrics.has('smart')) this.sampleSmartStatus()
     this.broadcastIfChanged()
   }
 
@@ -270,19 +379,41 @@ export class TelemetryService {
     this.clearTimer()
     if (!this.canSample()) return
 
+    const activeMetrics = this.getActiveRequestedMetrics()
+    if (activeMetrics.size === 0) return
+
     const now = Date.now()
     const isEco = !this.cache.battery.isAcOnline && this.cache.battery.hasBattery
     const multiplier = isEco ? 2 : 1
 
-    const intervals = [
-      Math.max(50, this.lastCpuSampleTime + 1000 * multiplier - now),
-      Math.max(50, this.lastGpuSampleTime + 1000 * multiplier - now),
-      Math.max(50, this.lastNetSampleTime + 1000 * multiplier - now),
-      Math.max(50, this.lastRamSampleTime + 2000 * multiplier - now),
-      Math.max(50, this.lastTempSampleTime + 3000 * multiplier - now),
-      Math.max(50, this.lastBatterySampleTime + 3000 * multiplier - now),
-      Math.max(50, this.lastSmartSampleTime + 1800000 - now)
-    ]
+    const intervals: number[] = []
+
+    if (activeMetrics.has('cpu')) {
+      intervals.push(Math.max(50, this.lastCpuSampleTime + 1000 * multiplier - now))
+    }
+    if (activeMetrics.has('gpu')) {
+      intervals.push(Math.max(50, this.lastGpuSampleTime + 1000 * multiplier - now))
+    }
+    if (activeMetrics.has('net')) {
+      intervals.push(Math.max(50, this.lastNetSampleTime + 1000 * multiplier - now))
+    }
+    if (activeMetrics.has('ram')) {
+      intervals.push(Math.max(50, this.lastRamSampleTime + 2000 * multiplier - now))
+    }
+    if (activeMetrics.has('temps')) {
+      intervals.push(Math.max(50, this.lastTempSampleTime + 3000 * multiplier - now))
+    }
+    if (activeMetrics.has('battery') || activeMetrics.has('watts')) {
+      const isForeground =
+        this.hasActiveForegroundSubscriber('battery') || this.hasActiveForegroundSubscriber('watts')
+      const batBaseInterval = !isForeground ? 60000 : activeMetrics.has('watts') ? 3000 : 30000
+      intervals.push(Math.max(50, this.lastBatterySampleTime + batBaseInterval * multiplier - now))
+    }
+    if (activeMetrics.has('smart')) {
+      intervals.push(Math.max(50, this.lastSmartSampleTime + 1800000 - now))
+    }
+
+    if (intervals.length === 0) return
 
     const nextDelay = Math.min(...intervals)
     this.mainLoopTimer = setTimeout(() => {
@@ -298,6 +429,9 @@ export class TelemetryService {
     this.isTicking = true
 
     try {
+      const activeMetrics = this.getActiveRequestedMetrics()
+      if (activeMetrics.size === 0) return
+
       const now = Date.now()
       const isEco = !this.cache.battery.isAcOnline && this.cache.battery.hasBattery
       const multiplier = isEco ? 2 : 1
@@ -305,48 +439,53 @@ export class TelemetryService {
       let hasChanges = false
 
       // 1. CPU (1s normal, 2s eco)
-      if (now - this.lastCpuSampleTime >= 1000 * multiplier) {
+      if (activeMetrics.has('cpu') && now - this.lastCpuSampleTime >= 1000 * multiplier) {
         this.lastCpuSampleTime = now
         this.sampleCpu()
         hasChanges = true
       }
 
       // 2. GPU (1s normal, 2s eco) - on demand, allows dGPU to sleep
-      if (now - this.lastGpuSampleTime >= 1000 * multiplier) {
+      if (activeMetrics.has('gpu') && now - this.lastGpuSampleTime >= 1000 * multiplier) {
         this.lastGpuSampleTime = now
         this.sampleGpu()
         hasChanges = true
       }
 
       // 3. Network (1s normal, 2s eco)
-      if (now - this.lastNetSampleTime >= 1000 * multiplier) {
+      if (activeMetrics.has('net') && now - this.lastNetSampleTime >= 1000 * multiplier) {
         this.lastNetSampleTime = now
         await this.sampleNetwork()
         hasChanges = true
       }
 
       // 4. RAM (2s normal, 4s eco)
-      if (now - this.lastRamSampleTime >= 2000 * multiplier) {
+      if (activeMetrics.has('ram') && now - this.lastRamSampleTime >= 2000 * multiplier) {
         this.lastRamSampleTime = now
         this.sampleRam()
         hasChanges = true
       }
 
-      // 5. Temperatures (3s normal, 6s eco)
-      if (now - this.lastTempSampleTime >= 3000 * multiplier) {
+      // 5. Temperatures (3s normal, 6s eco) - only if requested
+      if (activeMetrics.has('temps') && now - this.lastTempSampleTime >= 3000 * multiplier) {
         this.lastTempSampleTime = now
         this.sampleTemperatures()
       }
 
-      // 6. Unified Battery & Wattage (3s normal, 6s eco)
-      if (now - this.lastBatterySampleTime >= 3000 * multiplier) {
-        this.lastBatterySampleTime = now
-        await this.sampleBattery()
-        hasChanges = true
+      // 6. Unified Battery & Wattage
+      if (activeMetrics.has('battery') || activeMetrics.has('watts')) {
+        const isForeground =
+          this.hasActiveForegroundSubscriber('battery') || this.hasActiveForegroundSubscriber('watts')
+        const batBaseInterval = !isForeground ? 60000 : activeMetrics.has('watts') ? 3000 : 30000
+        if (now - this.lastBatterySampleTime >= batBaseInterval * multiplier) {
+          this.lastBatterySampleTime = now
+          await this.sampleBattery()
+          hasChanges = true
+        }
       }
 
-      // 7. SMART status (every 30 minutes)
-      if (now - this.lastSmartSampleTime >= 1800000) {
+      // 7. SMART status (every 30 minutes) - only if requested
+      if (activeMetrics.has('smart') && now - this.lastSmartSampleTime >= 1800000) {
         this.lastSmartSampleTime = now
         this.sampleSmartStatus()
       }
@@ -597,11 +736,13 @@ export class TelemetryService {
     }
     this.lastBroadcastJson = signature
 
-    for (const listener of this.listeners) {
-      try {
-        listener(metrics)
-      } catch (err) {
-        console.error('[TelemetryService] Error in listener callback:', err)
+    for (const sub of this.subscribers.values()) {
+      if (sub.isActive) {
+        try {
+          sub.listener(metrics)
+        } catch (err) {
+          console.error('[TelemetryService] Error in listener callback:', err)
+        }
       }
     }
   }

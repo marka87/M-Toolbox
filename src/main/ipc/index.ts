@@ -17,7 +17,8 @@ import { batteryService } from '../services/battery.service'
 import { bloatwareService } from '../services/bloatware.service'
 import { performanceService } from '../services/performance.service'
 import { WidgetService } from '../services/widget.service'
-import type { PowerProfileMode, AppSettings } from '../../shared/types'
+import { telemetryService } from '../services/telemetry.service'
+import type { PowerProfileMode, AppSettings, TelemetryMetric } from '../../shared/types'
 import type { ReinstallRestoreOptions } from '../../shared/reinstall.types'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
@@ -25,26 +26,102 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   const widgetService = WidgetService.getInstance()
   widgetService.setMainWindow(mainWindow)
 
+  // Map of windowId -> { unsubscribe: () => void, cleanup: () => void }
+  const windowMetricStreams = new Map<number, { unsubscribe: () => void; cleanup: () => void }>()
+
   // Dashboard IPC: Get full system information
   ipcMain.handle(IPC_CHANNELS.DASHBOARD.GET_SYSTEM_INFO, async (_, forceRefresh?: boolean) => {
     return await dashboardService.getSystemInfo(forceRefresh)
   })
 
-  // Dashboard IPC: Start metrics stream
-  ipcMain.handle(IPC_CHANNELS.DASHBOARD.START_METRICS_STREAM, () => {
-    dashboardService.startMetricsStream((metrics) => {
-      BrowserWindow.getAllWindows().forEach((win) => {
-        if (!win.isDestroyed()) {
-          win.webContents.send(IPC_CHANNELS.DASHBOARD.LIVE_METRICS_EVENT, metrics)
+  // Dashboard IPC: Start metrics stream (per-window & demand-driven)
+  ipcMain.handle(
+    IPC_CHANNELS.DASHBOARD.START_METRICS_STREAM,
+    (event, options?: { metrics?: TelemetryMetric[] }) => {
+      const senderWin = BrowserWindow.fromWebContents(event.sender)
+      if (!senderWin || senderWin.isDestroyed()) return false
+
+      const winId = senderWin.id
+
+      // Clean up previous subscription for this window if any
+      const existing = windowMetricStreams.get(winId)
+      if (existing) {
+        existing.cleanup()
+        existing.unsubscribe()
+        windowMetricStreams.delete(winId)
+      }
+
+      const metricsList = options?.metrics || [
+        'cpu',
+        'ram',
+        'gpu',
+        'net',
+        'battery',
+        'watts',
+        'temps',
+        'smart'
+      ]
+
+      const unsubscribe = telemetryService.subscribe(
+        (metrics) => {
+          if (!senderWin.isDestroyed()) {
+            senderWin.webContents.send(IPC_CHANNELS.DASHBOARD.LIVE_METRICS_EVENT, metrics)
+          }
+        },
+        {
+          metrics: metricsList,
+          windowId: winId
         }
-      })
-    })
-    return true
-  })
+      )
+
+      const onMinimize = () => telemetryService.setWindowActive(winId, false)
+      const onHide = () => telemetryService.setWindowActive(winId, false)
+      const onRestore = () => telemetryService.setWindowActive(winId, true)
+      const onShow = () => telemetryService.setWindowActive(winId, true)
+      const onClosed = () => {
+        const item = windowMetricStreams.get(winId)
+        if (item) {
+          item.cleanup()
+          item.unsubscribe()
+          windowMetricStreams.delete(winId)
+        }
+      }
+
+      senderWin.on('minimize', onMinimize)
+      senderWin.on('hide', onHide)
+      senderWin.on('restore', onRestore)
+      senderWin.on('show', onShow)
+      senderWin.once('closed', onClosed)
+
+      const cleanup = () => {
+        if (!senderWin.isDestroyed()) {
+          senderWin.off('minimize', onMinimize)
+          senderWin.off('hide', onHide)
+          senderWin.off('restore', onRestore)
+          senderWin.off('show', onShow)
+        }
+      }
+
+      // Initial active state based on whether window is visible and not minimized
+      const isVisible = senderWin.isVisible() && !senderWin.isMinimized()
+      telemetryService.setWindowActive(winId, isVisible)
+
+      windowMetricStreams.set(winId, { unsubscribe, cleanup })
+      return true
+    }
+  )
 
   // Dashboard IPC: Stop metrics stream
-  ipcMain.handle(IPC_CHANNELS.DASHBOARD.STOP_METRICS_STREAM, () => {
-    dashboardService.stopMetricsStream()
+  ipcMain.handle(IPC_CHANNELS.DASHBOARD.STOP_METRICS_STREAM, (event) => {
+    const senderWin = BrowserWindow.fromWebContents(event.sender)
+    if (!senderWin) return false
+    const winId = senderWin.id
+    const item = windowMetricStreams.get(winId)
+    if (item) {
+      item.cleanup()
+      item.unsubscribe()
+      windowMetricStreams.delete(winId)
+    }
     return true
   })
 

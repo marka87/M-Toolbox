@@ -112,6 +112,16 @@ export interface LiveMetrics {
   }
 }
 
+export type TelemetryMetric =
+  | 'cpu'
+  | 'ram'
+  | 'gpu'
+  | 'net'
+  | 'battery'
+  | 'watts'
+  | 'temps'
+  | 'smart'
+
 export type NavigationModule =
   | 'dashboard'
   | 'software'

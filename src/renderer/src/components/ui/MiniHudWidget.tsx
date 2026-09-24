@@ -172,8 +172,10 @@ export const MiniHudWidget: React.FC = () => {
   const [cleanFeedback, setCleanFeedback] = useState<string | null>(null)
 
   useEffect(() => {
-    // Start live metrics stream from TelemetryService
-    window.mToolbox?.dashboard?.startMetricsStream()
+    // Start live metrics stream from TelemetryService (HUD requires cpu, ram, gpu, battery, watts)
+    window.mToolbox?.dashboard?.startMetricsStream({
+      metrics: ['cpu', 'ram', 'gpu', 'battery', 'watts']
+    })
     const unsubscribe = window.mToolbox?.dashboard?.onLiveMetrics((data) => {
       setMetrics(data)
       if (data.battery) {
