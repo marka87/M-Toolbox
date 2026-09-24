@@ -51,6 +51,29 @@ export class BatteryService {
     return BatteryService.instance
   }
 
+  private debugStats = {
+    workerCalls: 0,
+    processSpawns: 0,
+    totalDurationMs: 0,
+    timeouts: 0
+  }
+
+  public getAndResetDebugStats() {
+    const stats = { ...this.debugStats }
+    const avgDurationMs = stats.workerCalls > 0 ? Math.round(stats.totalDurationMs / stats.workerCalls) : 0
+    this.debugStats = { workerCalls: 0, processSpawns: 0, totalDurationMs: 0, timeouts: 0 }
+    return {
+      workerCalls: stats.workerCalls,
+      processSpawns: stats.processSpawns,
+      avgDurationMs,
+      timeouts: stats.timeouts
+    }
+  }
+
+  public recordProcessSpawn(): void {
+    this.debugStats.processSpawns++
+  }
+
   public clearPowerPlansCache(): void {
     this.cachedPowerPlans = null
     this.lastPowerPlansTime = 0
@@ -61,10 +84,18 @@ export class BatteryService {
     timeout = 7000,
     countTowardsErrors = true
   ): Promise<string> {
+    this.debugStats.workerCalls++
+    const t0 = Date.now()
     try {
       return await powerShellWorker.runCommand(script, timeout, { countTowardsErrors })
-    } catch {
+    } catch (err: any) {
+      if (err?.message?.includes('timed out')) {
+        this.debugStats.timeouts++
+      }
+      this.debugStats.processSpawns++
       return powershellService.runPowerShell(script, timeout)
+    } finally {
+      this.debugStats.totalDurationMs += Date.now() - t0
     }
   }
 
@@ -223,13 +254,20 @@ export class BatteryService {
     const cmd = `Get-Process | Where-Object { $_.CPU } | Select-Object Id, ProcessName, CPU, @{N='StartTime';E={try{$_.StartTime.ToFileTimeUtc()}catch{0}}}, @{N='MemoryMB';E={[Math]::Round($_.WorkingSet64 / 1MB)}} | ConvertTo-Json -Compress`
 
     const querySnapshot = async (): Promise<any[]> => {
+      this.debugStats.workerCalls++
+      const t0 = Date.now()
       try {
         const raw = await powerShellWorker.runCommand(cmd, 10000, { countTowardsErrors: false })
         if (!raw || !raw.trim()) return []
         const parsed = JSON.parse(raw.trim())
         return Array.isArray(parsed) ? parsed : [parsed]
-      } catch {
+      } catch (err: any) {
+        if (err?.message?.includes('timed out')) {
+          this.debugStats.timeouts++
+        }
         return []
+      } finally {
+        this.debugStats.totalDurationMs += Date.now() - t0
       }
     }
 

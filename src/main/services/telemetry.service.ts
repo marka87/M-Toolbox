@@ -118,6 +118,26 @@ export class TelemetryService {
   // Last broadcasted metrics (for dirty-checking)
   private lastBroadcastJson = ''
 
+  private telemetryDebugStats = {
+    workerCalls: 0,
+    processSpawns: 0,
+    totalDurationMs: 0,
+    timeouts: 0
+  }
+
+  public getAndResetDebugStats() {
+    const stats = { ...this.telemetryDebugStats }
+    const avgDurationMs =
+      stats.workerCalls > 0 ? Math.round(stats.totalDurationMs / stats.workerCalls) : 0
+    this.telemetryDebugStats = { workerCalls: 0, processSpawns: 0, totalDurationMs: 0, timeouts: 0 }
+    return {
+      workerCalls: stats.workerCalls,
+      processSpawns: stats.processSpawns,
+      avgDurationMs,
+      timeouts: stats.timeouts
+    }
+  }
+
   private constructor() {
     this.initPowerMonitor()
   }
@@ -364,10 +384,15 @@ export class TelemetryService {
     if (process.env.M_TOOLBOX_TELEMETRY_DEBUG === '1' && !this.debugIntervalTimer) {
       this.debugIntervalTimer = setInterval(() => {
         const active = Array.from(this.getActiveRequestedMetrics()).join(', ')
-        const psStatus = powerShellWorker.isAlive() ? 'alive' : 'dead'
-        const spawns = powerShellWorker.getAndResetSpawnsCount()
+        const psStatus = powerShellWorker.isAlive() ? 'alive' : 'idle'
+        const tStats = this.getAndResetDebugStats()
+        const bStats = batteryService.getAndResetDebugStats()
+
         console.log(
-          `[Telemetry] Active metrics: [${active}] | PS worker: ${psStatus} | Process spawns in last 10s: ${spawns}`
+          `[Telemetry] Active: [${active}] | Spawns: ${tStats.processSpawns * 6}/min | Worker: ${tStats.workerCalls * 6}/min | Ø-Dauer: ${tStats.avgDurationMs}ms | Timeouts: ${tStats.timeouts}`
+        )
+        console.log(
+          `[BatteryManager] Spawns: ${bStats.processSpawns * 6}/min | Worker: ${bStats.workerCalls * 6}/min | Ø-Dauer: ${bStats.avgDurationMs}ms | Timeouts: ${bStats.timeouts} | PS worker: ${psStatus}`
         )
       }, 10000)
     }
