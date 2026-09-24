@@ -101,6 +101,15 @@ export interface LiveMetrics {
   networkReceiveKBps: number
   gpuUsagePercent?: number
   timestamp: number
+  battery?: {
+    hasBattery: boolean
+    isAcOnline: boolean
+    percent: number
+    isCharging: boolean
+    chargeRateWatts: number
+    dischargeRateWatts: number
+    healthPercent?: number
+  }
 }
 
 export type NavigationModule =
@@ -326,12 +335,6 @@ export interface WindowsUpdateDriver {
   driverModel?: string
   driverProvider?: string
   driverDate?: string
-}
-
-export interface OnlineDriverScanResult {
-  gpu: GpuInfo | null
-  availableUpdates: WindowsUpdateDriver[]
-  scannedAt: string
 }
 
 // -------------------------------------------------------------
@@ -630,6 +633,8 @@ export interface AppVersionInfo {
 export interface WidgetState {
   isOpen: boolean
   alwaysOnTop: boolean
+  clickThrough?: boolean
+  opacity?: number
 }
 
 // -------------------------------------------------------------

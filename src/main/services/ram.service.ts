@@ -1,11 +1,10 @@
-import { exec } from 'child_process'
-import { promisify } from 'util'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import { databaseService } from './database.service'
 import { advancedService } from './advanced.service'
 import { SoftwareService } from './software.service'
+import { powershellService } from './powershell.service'
 import type {
   RAMLiveStats,
   RAMProcessItem,
@@ -17,8 +16,6 @@ import type {
   RAMHealthScore,
   RAMCleanupResult
 } from '../../shared/ram.types'
-
-const execAsync = promisify(exec)
 
 interface ProcessSample {
   workingSetMB: number
@@ -54,15 +51,10 @@ export class RAMService {
   }
 
   /**
-   * Helper to execute PowerShell scripts encoded to avoid shell quoting issues.
+   * Helper to execute PowerShell scripts using PowerShellService.
    */
   private async runPowerShell(script: string, timeout = 8000): Promise<string> {
-    const encoded = Buffer.from(script, 'utf16le').toString('base64')
-    const { stdout } = await execAsync(
-      `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encoded}`,
-      { timeout }
-    )
-    return stdout || ''
+    return powershellService.runPowerShell(script, timeout)
   }
 
   /**

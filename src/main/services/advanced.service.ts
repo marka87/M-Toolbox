@@ -1,16 +1,14 @@
-import { exec, spawn } from 'child_process'
-import { promisify } from 'util'
+import { spawn } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import { execAsync } from '../utils/exec'
 import type {
   AdvancedToolItem,
   StartupItem,
   HostsEntry,
   HostsFileContent
 } from '../../shared/types'
-
-const execAsync = promisify(exec)
 
 export const ADVANCED_TOOLS_CATALOG: AdvancedToolItem[] = [
   // Control & God Mode

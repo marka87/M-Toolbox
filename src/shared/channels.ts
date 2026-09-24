@@ -89,7 +89,6 @@ export const IPC_CHANNELS = {
     SAVE_SETTINGS: 'settings:save-settings',
     CHECK_UPDATES: 'settings:check-updates',
     GET_APP_INFO: 'settings:get-app-info',
-    OPEN_LOGS_FOLDER: 'settings:open-logs-folder',
     OPEN_USER_DATA_FOLDER: 'settings:open-user-data-folder',
     CLEAR_CACHE: 'settings:clear-cache',
     RESET_SETTINGS: 'settings:reset-settings',
@@ -133,6 +132,8 @@ export const IPC_CHANNELS = {
     TOGGLE: 'widget:toggle',
     GET_STATE: 'widget:get-state',
     SET_ALWAYS_ON_TOP: 'widget:set-always-on-top',
+    SET_CLICK_THROUGH: 'widget:set-click-through',
+    SET_OPACITY: 'widget:set-opacity',
     RESTORE_MAIN: 'widget:restore-main',
     CLOSE: 'widget:close'
   }

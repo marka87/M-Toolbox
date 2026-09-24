@@ -1,7 +1,8 @@
-import { exec, spawn } from 'child_process'
-import { promisify } from 'util'
+import { spawn } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
+import { execAsync } from '../utils/exec'
+import { powershellService } from './powershell.service'
 import type {
   DeviceItem,
   DriverPackage,
@@ -14,8 +15,6 @@ import type {
   GpuVendor,
   WindowsUpdateDriver
 } from '../../shared/types'
-
-const execAsync = promisify(exec)
 
 const PROBLEM_DESCRIPTIONS: Record<string, string> = {
   '1': 'Dieses Gerät ist nicht richtig konfiguriert (Code 1).',
@@ -418,7 +417,7 @@ export class DriverService {
   async getGpuInfo(): Promise<GpuInfo | null> {
     try {
       const psCommand = `Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, @{Name='DriverDateStr';Expression={$_.DriverDate.ToString('yyyy-MM-dd')}} | ConvertTo-Json -Compress`
-      const { stdout } = await execAsync(`powershell -NoProfile -Command "${psCommand}"`, { timeout: 10000 })
+      const stdout = await powershellService.runPowerShell(psCommand, 10000)
       if (!stdout || !stdout.trim()) return null
 
       let data: any
@@ -498,7 +497,7 @@ export class DriverService {
   async checkWindowsUpdateDrivers(): Promise<WindowsUpdateDriver[]> {
     try {
       const psCmd = `$session = New-Object -ComObject Microsoft.Update.Session; $searcher = $session.CreateUpdateSearcher(); $res = $searcher.Search("IsInstalled=0 and Type=''Driver''"); $updates = @(); foreach ($item in $res.Updates) { $updates += @{ title = $item.Title; description = $item.Description } }; $updates | ConvertTo-Json -Compress`
-      const { stdout } = await execAsync(`powershell -NoProfile -Command "${psCmd}"`, { timeout: 45000 })
+      const stdout = await powershellService.runPowerShell(psCmd, 45000)
       if (!stdout || !stdout.trim()) return []
 
       const parsed = JSON.parse(stdout.trim())

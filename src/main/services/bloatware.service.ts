@@ -1,5 +1,5 @@
-import { exec } from 'child_process'
-import { promisify } from 'util'
+import { execAsync } from '../utils/exec'
+import { powershellService } from './powershell.service'
 import type {
   BloatwareApp,
   BloatwareRemovalResult,
@@ -7,8 +7,6 @@ import type {
   BloatwareSafety,
   BloatwareCategory
 } from '../../shared/types'
-
-const execAsync = promisify(exec)
 
 interface KnownAppDefinition {
   id: string
@@ -378,10 +376,7 @@ export class BloatwareService {
         'ConvertTo-Json -Compress'
       ].join(' | ')
 
-      const { stdout } = await execAsync(`powershell.exe -NoProfile -Command "${psCommand}"`, {
-        timeout: 20000,
-        maxBuffer: 1024 * 1024 * 8
-      })
+      const stdout = await powershellService.runPowerShell(psCommand, 20000)
 
       if (!stdout || !stdout.trim()) {
         return []
@@ -500,7 +495,7 @@ export class BloatwareService {
         Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq "${cleanId}" } | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue;
       `.replace(/\r?\n\s*/g, ' ')
 
-      await execAsync(`powershell.exe -NoProfile -Command "${psScript}"`, { timeout: 30000 })
+      await powershellService.runPowerShell(psScript, 30000)
       return { success: true, appId: cleanId, displayName: cleanId }
     } catch (err: any) {
       console.error(`[BloatwareService] Failed to uninstall ${cleanId}:`, err)

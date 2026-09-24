@@ -9,6 +9,8 @@ export class WidgetService {
   private mainWindow: BrowserWindow | null = null
   private boundsFilePath: string
   private alwaysOnTop = true
+  private clickThrough = false
+  private opacity = 0.92
 
   private constructor() {
     this.boundsFilePath = path.join(app.getPath('userData'), 'widget-bounds.json')
@@ -26,12 +28,15 @@ export class WidgetService {
     this.mainWindow = window
   }
 
-  private loadBounds(): { x?: number; y?: number; alwaysOnTop?: boolean } {
+  private loadBounds(): { x?: number; y?: number; alwaysOnTop?: boolean; opacity?: number } {
     try {
       if (fs.existsSync(this.boundsFilePath)) {
         const data = JSON.parse(fs.readFileSync(this.boundsFilePath, 'utf8'))
         if (typeof data.alwaysOnTop === 'boolean') {
           this.alwaysOnTop = data.alwaysOnTop
+        }
+        if (typeof data.opacity === 'number' && data.opacity >= 0.2 && data.opacity <= 1.0) {
+          this.opacity = data.opacity
         }
         return data
       }
@@ -48,7 +53,8 @@ export class WidgetService {
       const data = {
         x: bounds.x,
         y: bounds.y,
-        alwaysOnTop: this.alwaysOnTop
+        alwaysOnTop: this.alwaysOnTop,
+        opacity: this.opacity
       }
       fs.writeFileSync(this.boundsFilePath, JSON.stringify(data, null, 2), 'utf8')
     } catch (err) {
@@ -78,7 +84,9 @@ export class WidgetService {
     const isOpen = Boolean(this.widgetWindow && !this.widgetWindow.isDestroyed() && this.widgetWindow.isVisible())
     return {
       isOpen,
-      alwaysOnTop: this.alwaysOnTop
+      alwaysOnTop: this.alwaysOnTop,
+      clickThrough: this.clickThrough,
+      opacity: this.opacity
     }
   }
 
@@ -86,6 +94,21 @@ export class WidgetService {
     this.alwaysOnTop = val
     if (this.widgetWindow && !this.widgetWindow.isDestroyed()) {
       this.widgetWindow.setAlwaysOnTop(val, 'floating')
+    }
+    this.saveBounds()
+  }
+
+  public setClickThrough(val: boolean): void {
+    this.clickThrough = val
+    if (this.widgetWindow && !this.widgetWindow.isDestroyed()) {
+      this.widgetWindow.setIgnoreMouseEvents(val, { forward: true })
+    }
+  }
+
+  public setOpacity(val: number): void {
+    this.opacity = Math.max(0.2, Math.min(1.0, val))
+    if (this.widgetWindow && !this.widgetWindow.isDestroyed()) {
+      this.widgetWindow.setOpacity(this.opacity)
     }
     this.saveBounds()
   }
@@ -164,6 +187,10 @@ export class WidgetService {
 
     if (this.alwaysOnTop) {
       this.widgetWindow.setAlwaysOnTop(true, 'floating')
+    }
+    this.widgetWindow.setOpacity(this.opacity)
+    if (this.clickThrough) {
+      this.widgetWindow.setIgnoreMouseEvents(true, { forward: true })
     }
 
     const rendererDist = path.join(process.env.APP_ROOT || path.join(__dirname, '../..'), 'dist')

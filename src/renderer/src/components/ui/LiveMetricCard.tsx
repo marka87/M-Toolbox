@@ -1,5 +1,4 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import { StatusBadge, StatusType } from './StatusBadge'
 
 interface LiveMetricCardProps {
@@ -66,11 +65,9 @@ export const LiveMetricCard: React.FC<LiveMetricCardProps> = ({
       {percentage !== undefined && (
         <div className="mt-3">
           <div className="w-full bg-fluent-sidebar h-2 rounded-full overflow-hidden border border-fluent-border/60">
-            <motion.div
-              className={`h-full ${getProgressColor(status)} rounded-full`}
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
+            <div
+              className={`h-full ${getProgressColor(status)} rounded-full transition-all duration-500`}
+              style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
             />
           </div>
         </div>
@@ -89,4 +86,3 @@ export const LiveMetricCard: React.FC<LiveMetricCardProps> = ({
     </div>
   )
 }
-

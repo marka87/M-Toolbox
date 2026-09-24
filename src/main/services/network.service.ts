@@ -1,8 +1,8 @@
-import { exec } from 'child_process'
-import { promisify } from 'util'
 import * as net from 'net'
 import * as https from 'https'
 import * as dns from 'dns'
+import { execAsync } from '../utils/exec'
+import { powershellService } from './powershell.service'
 import type {
   NetworkAdapterInfo,
   WanIpInfo,
@@ -12,8 +12,6 @@ import type {
   PortScanReport,
   NetworkDiagnosticsData
 } from '../../shared/types'
-
-const execAsync = promisify(exec)
 
 const PORT_SERVICES: Record<number, string> = {
   21: 'FTP',
@@ -98,11 +96,7 @@ export class NetworkService {
     let defaultGateway: string | null = null
 
     try {
-      const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
-      const { stdout } = await execAsync(
-        `powershell.exe -NoProfile -NonInteractive -EncodedCommand ${encoded}`,
-        { timeout: 12000 }
-      )
+      const stdout = await powershellService.runPowerShell(psScript, 12000)
 
       if (stdout && stdout.trim()) {
         const parsed = JSON.parse(stdout.trim())
@@ -252,11 +246,7 @@ export class NetworkService {
     }`
 
     try {
-      const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
-      const { stdout } = await execAsync(
-        `powershell.exe -NoProfile -NonInteractive -EncodedCommand ${encoded}`,
-        { timeout: 10000 }
-      )
+      const stdout = await powershellService.runPowerShell(psScript, 10000)
 
       if (stdout && stdout.trim()) {
         const parsed = JSON.parse(stdout.trim())
@@ -462,9 +452,7 @@ export class NetworkService {
    */
   public async flushDns(): Promise<{ success: boolean; message: string }> {
     try {
-      await execAsync('powershell.exe -NoProfile -Command "Clear-DnsClientCache; ipconfig /flushdns"', {
-        timeout: 8000
-      })
+      await powershellService.runPowerShell('Clear-DnsClientCache; ipconfig /flushdns', 8000)
       return {
         success: true,
         message: 'DNS-Auflösungscache wurde erfolgreich geleert (Flush DNS abgeschlossen).'

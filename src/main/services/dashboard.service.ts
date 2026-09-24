@@ -1,13 +1,10 @@
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs'
-import { exec } from 'node:child_process'
-import { promisify } from 'node:util'
 import { app } from 'electron'
-import { PowerShellService } from './powershell.service'
-import { DatabaseService } from './database.service'
-
-const execAsync = promisify(exec)
+import { powershellService } from './powershell.service'
+import { execAsync } from '../utils/exec'
+import { telemetryService } from './telemetry.service'
 import type {
   SystemInfo,
   LiveMetrics,
@@ -18,23 +15,10 @@ import type {
 
 export class DashboardService {
   private static instance: DashboardService
-  private ps: PowerShellService
-  private db: DatabaseService
-  private metricsTimer: NodeJS.Timeout | null = null
-  private lastCpuTimes: { idle: number; total: number } | null = null
-  private lastNetStats: { rxBytes: number; txBytes: number; timestamp: number } | null = null
   private cachedSystemInfo: SystemInfo | null = null
-  private cachedGpuUsage = 0
-  private isSamplingGpu = false
-  private lastGpuSampleTime = 0
-  private hasNvidia = true
-  private cachedNetThroughput = { rxKBps: 0, txKBps: 0 }
-  private lastNetQueryTime = 0
+  private unsubscribeTelemetry: (() => void) | null = null
 
-  private constructor() {
-    this.ps = PowerShellService.getInstance()
-    this.db = DatabaseService.getInstance()
-  }
+  private constructor() {}
 
   public static getInstance(): DashboardService {
     if (!DashboardService.instance) {
@@ -44,55 +28,26 @@ export class DashboardService {
   }
 
   /**
-   * Retrieves comprehensive hardware and system information.
+   * Retrieves comprehensive hardware and system information using scripts/Get-SystemInfo.ps1.
    */
   public async getSystemInfo(forceRefresh = false): Promise<SystemInfo> {
     if (this.cachedSystemInfo && !forceRefresh) {
       return this.cachedSystemInfo
     }
 
-    // Path to Get-SystemInfo.ps1
-    let scriptPath = path.join(__dirname, '../scripts/Get-SystemInfo.ps1')
-    if (!fs.existsSync(scriptPath)) {
-      scriptPath = path.join(process.resourcesPath || '', 'scripts/Get-SystemInfo.ps1')
-    }
-    if (!fs.existsSync(scriptPath)) {
-      scriptPath = path.join(app.getAppPath(), 'src/main/scripts/Get-SystemInfo.ps1')
-    }
+    const possiblePaths = [
+      path.join(__dirname, '../scripts/Get-SystemInfo.ps1'),
+      path.join(__dirname, '../../src/main/scripts/Get-SystemInfo.ps1'),
+      path.join(process.resourcesPath || '', 'scripts/Get-SystemInfo.ps1'),
+      path.join(app.getAppPath(), 'src/main/scripts/Get-SystemInfo.ps1'),
+      path.join(process.cwd(), 'src/main/scripts/Get-SystemInfo.ps1')
+    ]
+    const scriptPath = possiblePaths.find((p) => fs.existsSync(p)) || possiblePaths[0]
 
     let rawJson = ''
     try {
-      if (fs.existsSync(scriptPath)) {
-        const result = await this.ps.executeScriptFile(scriptPath)
-        rawJson = result.stdout
-      } else {
-        // Fallback to inline script execution if script file not found
-        const inlineCmd = `
-          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $os = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber, OSArchitecture, LastBootUpTime, TotalVisibleMemorySize, FreePhysicalMemory
-          $act = Get-CimInstance SoftwareLicensingProduct -Filter "PartialProductKey IS NOT NULL" -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "*Windows*" } | Select-Object -First 1 Name, LicenseStatus, Description
-          $cs = Get-CimInstance Win32_ComputerSystem | Select-Object Name, Domain, PartOfDomain
-          $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 Name, Manufacturer, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed
-          $gpus = @(Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, AdapterRAM, Status)
-          $memChips = @(Get-CimInstance Win32_PhysicalMemory | Select-Object Capacity, Speed, DeviceLocator, SMBIOSMemoryType, MemoryType, ConfiguredClockSpeed)
-          $bios = Get-CimInstance Win32_BIOS | Select-Object Manufacturer, SMBIOSBIOSVersion, ReleaseDate, SerialNumber
-          $tpmPresent = $false; $tpmEnabled = $false; $tpmVersion = "N/A"
-          try {
-            $tpmObj = Get-Tpm -ErrorAction SilentlyContinue
-            if ($tpmObj) { $tpmPresent = [bool]$tpmObj.TpmPresent; $tpmEnabled = [bool]$tpmObj.TpmEnabled; $tpmVersion = if ($tpmObj.ManufacturerVersion) { [string]$tpmObj.ManufacturerVersion } else { "2.0" } }
-          } catch {}
-          $sbEnabled = $false; try { $sbEnabled = [bool](Confirm-SecureBootUEFI -ErrorAction SilentlyContinue) } catch { $sbEnabled = $false }
-          $physDisks = @(Get-PhysicalDisk -ErrorAction SilentlyContinue | Select-Object FriendlyName, MediaType, HealthStatus, Size, BusType)
-          $vols = @(Get-Volume -ErrorAction SilentlyContinue | Where-Object { $_.DriveLetter -ne $null } | Select-Object DriveLetter, FileSystemLabel, FileSystem, Size, SizeRemaining)
-          [PSCustomObject]@{
-            OS = $os; Activation = $act; Computer = $cs; CPU = $cpu; GPUs = $gpus; MemoryChips = $memChips; BIOS = $bios;
-            TPM = [PSCustomObject]@{ Present = $tpmPresent; Enabled = $tpmEnabled; Version = $tpmVersion };
-            SecureBoot = $sbEnabled; PhysicalDisks = $physDisks; Volumes = $vols
-          } | ConvertTo-Json -Depth 4 -Compress
-        `
-        const result = await this.ps.executeCommand(inlineCmd)
-        rawJson = result.stdout
-      }
+      const result = await powershellService.runPowerShellFile(scriptPath)
+      rawJson = result.stdout
 
       const parsed = JSON.parse(rawJson)
 
@@ -231,7 +186,6 @@ export class DashboardService {
       }
 
       this.cachedSystemInfo = systemInfo
-      this.db.saveSystemSnapshot(systemInfo)
       return systemInfo
     } catch (error) {
       console.error('Failed to get full system info via PowerShell, using Node fallback:', error)
@@ -240,167 +194,26 @@ export class DashboardService {
   }
 
   /**
-   * Calculates instantaneous CPU usage percentage across all CPU cores.
-   */
-  private getCpuUsage(): number {
-    const cpus = os.cpus()
-    let idle = 0
-    let total = 0
-
-    for (const cpu of cpus) {
-      for (const type in cpu.times) {
-        total += (cpu.times as any)[type]
-      }
-      idle += cpu.times.idle
-    }
-
-    if (!this.lastCpuTimes) {
-      this.lastCpuTimes = { idle, total }
-      return 0
-    }
-
-    const idleDelta = idle - this.lastCpuTimes.idle
-    const totalDelta = total - this.lastCpuTimes.total
-    this.lastCpuTimes = { idle, total }
-
-    if (totalDelta <= 0) return 0
-    const usage = 100 - Math.round((idleDelta / totalDelta) * 100)
-    return Math.max(0, Math.min(100, usage))
-  }
-
-  /**
-   * Reads network throughput deltas in KB/s using fast native Windows netstat.exe (0% CPU, no PowerShell)
-   */
-  private async getNetworkThroughput(): Promise<{ rxKBps: number; txKBps: number }> {
-    const now = Date.now()
-    if (now - this.lastNetQueryTime < 3000 && this.lastNetStats) {
-      return this.cachedNetThroughput
-    }
-    this.lastNetQueryTime = now
-
-    try {
-      const { stdout } = await execAsync('netstat -e', { timeout: 1500, windowsHide: true })
-      const match = stdout.match(/Bytes\s+(\d+)\s+(\d+)/i)
-      if (!match) return this.cachedNetThroughput
-
-      const currentRx = parseInt(match[1], 10)
-      const currentTx = parseInt(match[2], 10)
-
-      if (!this.lastNetStats) {
-        this.lastNetStats = { rxBytes: currentRx, txBytes: currentTx, timestamp: now }
-        return { rxKBps: 0, txKBps: 0 }
-      }
-
-      const timeDeltaSeconds = (now - this.lastNetStats.timestamp) / 1000
-      if (timeDeltaSeconds <= 0) return this.cachedNetThroughput
-
-      const rxDelta = Math.max(0, currentRx - this.lastNetStats.rxBytes)
-      const txDelta = Math.max(0, currentTx - this.lastNetStats.txBytes)
-      this.lastNetStats = { rxBytes: currentRx, txBytes: currentTx, timestamp: now }
-
-      const rxKBps = Math.round(rxDelta / 1024 / timeDeltaSeconds)
-      const txKBps = Math.round(txDelta / 1024 / timeDeltaSeconds)
-      this.cachedNetThroughput = { rxKBps, txKBps }
-
-      return this.cachedNetThroughput
-    } catch {
-      return this.cachedNetThroughput
-    }
-  }
-
-  /**
-   * Lightweight GPU sampling: Uses fast native nvidia-smi when available (<20ms, 0% CPU),
-   * or a throttled 6-second WMI query as fallback.
-   */
-  private sampleGpuUsageAsync(): void {
-    const now = Date.now()
-    if (this.isSamplingGpu || now - this.lastGpuSampleTime < 6000) {
-      return
-    }
-    this.isSamplingGpu = true
-    this.lastGpuSampleTime = now
-
-    if (this.hasNvidia) {
-      execAsync('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits', {
-        timeout: 2000,
-        windowsHide: true
-      }).then(({ stdout }) => {
-        const val = parseInt(stdout.trim(), 10)
-        if (!isNaN(val)) {
-          this.cachedGpuUsage = Math.min(100, Math.max(0, val))
-        }
-      }).catch(() => {
-        this.hasNvidia = false
-        this.sampleGpuViaWmi()
-      }).finally(() => {
-        this.isSamplingGpu = false
-      })
-    } else {
-      this.sampleGpuViaWmi()
-    }
-  }
-
-  private sampleGpuViaWmi(): void {
-    const cmd = `Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Measure-Object -Property UtilizationPercentage -Sum | Select-Object -ExpandProperty Sum`
-    this.ps.executeCommand(cmd, 4000).then(res => {
-      const val = parseInt(res.stdout.trim(), 10)
-      if (!isNaN(val)) {
-        this.cachedGpuUsage = Math.min(100, Math.max(0, val))
-      }
-    }).catch(() => {}).finally(() => {
-      this.isSamplingGpu = false
-    })
-  }
-
-  /**
-   * Reads one snapshot of live metrics.
+   * Reads one snapshot of live metrics from central TelemetryService cache.
    */
   public async getLiveMetrics(): Promise<LiveMetrics> {
-    const cpuUsagePercent = this.getCpuUsage()
-
-    const totalMem = os.totalmem()
-    const freeMem = os.freemem()
-    const usedMem = totalMem - freeMem
-    const ramUsagePercent = Math.round((usedMem / totalMem) * 100)
-    const ramUsedGB = Number((usedMem / (1024 * 1024 * 1024)).toFixed(1))
-    const ramTotalGB = Number((totalMem / (1024 * 1024 * 1024)).toFixed(1))
-
-    const { rxKBps, txKBps } = await this.getNetworkThroughput()
-    this.sampleGpuUsageAsync()
-
-    return {
-      cpuUsagePercent,
-      ramUsagePercent,
-      ramUsedGB,
-      ramTotalGB,
-      networkSendKBps: txKBps,
-      networkReceiveKBps: rxKBps,
-      gpuUsagePercent: this.cachedGpuUsage,
-      timestamp: Date.now()
-    }
+    return telemetryService.getLiveMetrics()
   }
 
   /**
-   * Starts periodic live metrics streaming (every 1.5s) to a callback
+   * Starts live metrics streaming to a callback using central TelemetryService.
    */
   public startMetricsStream(callback: (metrics: LiveMetrics) => void): void {
-    if (this.metricsTimer) {
-      clearInterval(this.metricsTimer)
+    if (this.unsubscribeTelemetry) {
+      this.unsubscribeTelemetry()
     }
-
-    // Seed the initial CPU & Net state
-    this.getCpuUsage()
-
-    this.metricsTimer = setInterval(async () => {
-      const metrics = await this.getLiveMetrics()
-      callback(metrics)
-    }, 1500)
+    this.unsubscribeTelemetry = telemetryService.subscribe(callback)
   }
 
   public stopMetricsStream(): void {
-    if (this.metricsTimer) {
-      clearInterval(this.metricsTimer)
-      this.metricsTimer = null
+    if (this.unsubscribeTelemetry) {
+      this.unsubscribeTelemetry()
+      this.unsubscribeTelemetry = null
     }
   }
 

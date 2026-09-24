@@ -1,8 +1,6 @@
-import { exec } from 'child_process'
-import { promisify } from 'util'
 import type { PerformanceModeState, PerformanceModeResult } from '../../shared/types'
-
-const execAsync = promisify(exec)
+import { execAsync } from '../utils/exec'
+import { powershellService } from './powershell.service'
 
 export class PerformanceService {
   private static instance: PerformanceService
@@ -44,9 +42,9 @@ export class PerformanceService {
           WSearch = $wsearch.ToString()
           ActivePowerGuid = $activeGuid.Trim()
         } | ConvertTo-Json -Compress
-      `.replace(/\r?\n\s*/g, ' ')
+      `
 
-      const { stdout } = await execAsync(`powershell.exe -NoProfile -Command "${psScript}"`, { timeout: 6000 })
+      const stdout = await powershellService.runPowerShell(psScript, 8000)
       if (stdout && stdout.trim()) {
         const data = JSON.parse(stdout.trim())
 
@@ -107,9 +105,9 @@ export class PerformanceService {
         Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" -Name "AppCaptureEnabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue;
         Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\GameBar" -Name "AutoGameModeEnabled" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue;
         Stop-Service -Name "wsearch" -Force -ErrorAction SilentlyContinue;
-      `.replace(/\r?\n\s*/g, ' ')
+      `
 
-      await execAsync(`powershell.exe -NoProfile -Command "${enableScript}"`, { timeout: 15000 })
+      await powershellService.runPowerShell(enableScript, 15000)
 
       // 3. Switch to High Performance plan
       try {
@@ -161,9 +159,9 @@ export class PerformanceService {
         Set-ItemProperty -Path "HKCU:\\System\\GameConfigStore" -Name "GameDVR_Enabled" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue;
         Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" -Name "AppCaptureEnabled" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue;
         Start-Service -Name "wsearch" -ErrorAction SilentlyContinue;
-      `.replace(/\r?\n\s*/g, ' ')
+      `
 
-      await execAsync(`powershell.exe -NoProfile -Command "${disableScript}"`, { timeout: 15000 })
+      await powershellService.runPowerShell(disableScript, 15000)
 
       // Restore power plan
       const targetPlan = this.state.previousPowerPlanGuid || '381b4222-f694-41f0-9685-ff5bb260df2e'

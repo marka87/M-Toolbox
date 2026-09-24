@@ -1,7 +1,7 @@
-import { exec } from 'child_process'
-import { promisify } from 'util'
 import * as fs from 'fs'
 import * as path from 'path'
+import { execAsync } from '../utils/exec'
+import { powershellService } from './powershell.service'
 import type {
   CleanupCategoryItem,
   DiskStorageInfo,
@@ -9,8 +9,6 @@ import type {
   CleanupProgressEvent,
   CleanupResult
 } from '../../shared/types'
-
-const execAsync = promisify(exec)
 
 interface CategoryDefinition {
   id: string
@@ -35,9 +33,9 @@ export class CleanupService {
 
   private async checkElevation(): Promise<boolean> {
     try {
-      const { stdout } = await execAsync(
-        `powershell -NoProfile -Command "([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)"`,
-        { timeout: 5000 }
+      const stdout = await powershellService.runPowerShell(
+        '([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)',
+        5000
       )
       return stdout.trim().toLowerCase() === 'true'
     } catch {
@@ -222,9 +220,7 @@ export class CleanupService {
         Write-Output "$count,$total"
       `.trim()
 
-      const { stdout } = await execAsync(`powershell -NoProfile -Command "${psCmd.replace(/\r?\n/g, ' ')}"`, {
-        timeout: 8000
-      })
+      const stdout = await powershellService.runPowerShell(psCmd, 8000)
 
       const parts = stdout.trim().split(',')
       if (parts.length === 2) {
@@ -245,7 +241,7 @@ export class CleanupService {
   async getDisksStorage(): Promise<DiskStorageInfo[]> {
     try {
       const psCmd = `Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | Select-Object DeviceID, VolumeName, Size, FreeSpace | ConvertTo-Json -Compress`
-      const { stdout } = await execAsync(`powershell -NoProfile -Command "${psCmd}"`, { timeout: 8000 })
+      const stdout = await powershellService.runPowerShell(psCmd, 8000)
       if (!stdout || !stdout.trim()) return []
 
       const parsed = JSON.parse(stdout.trim())
@@ -423,9 +419,7 @@ export class CleanupService {
         try {
           // Papierkorb entleeren
           const before = await this.scanRecycleBin()
-          await execAsync('powershell -NoProfile -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"', {
-            timeout: 15000
-          })
+          await powershellService.runPowerShell('Clear-RecycleBin -Force -ErrorAction SilentlyContinue', 15000)
           totalFreedBytes += before.sizeBytes
           totalDeletedFiles += before.fileCount
           cleanedCategories.push(def.name)
@@ -455,11 +449,11 @@ export class CleanupService {
 
             try {
               if (isAdmin) {
-                await execAsync(`powershell.exe -NoProfile -Command "${cleanScript}"`, { timeout: 45000 })
+                await powershellService.runPowerShell(cleanScript, 45000)
               } else {
                 const scriptBase64 = Buffer.from(cleanScript, 'utf16le').toString('base64')
                 const psRunner = `Start-Process powershell.exe -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '-NoProfile', '-EncodedCommand', '${scriptBase64}'`
-                await execAsync(`powershell.exe -NoProfile -Command "${psRunner}"`, { timeout: 60000 })
+                await powershellService.runPowerShell(psRunner, 60000)
               }
             } catch (err) {
               console.warn('[CleanupService] Windows Update Cache bereinigen fehlgeschlagen oder abgebrochen:', err)

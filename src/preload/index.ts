@@ -199,6 +199,8 @@ export interface MToolboxAPI {
     toggle: () => Promise<boolean>
     getState: () => Promise<WidgetState>
     setAlwaysOnTop: (alwaysOnTop: boolean) => Promise<void>
+    setClickThrough: (clickThrough: boolean) => Promise<void>
+    setOpacity: (opacity: number) => Promise<void>
     restoreMainWindow: () => Promise<void>
     close: () => Promise<void>
   }
@@ -420,6 +422,8 @@ const api: MToolboxAPI = {
     toggle: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.TOGGLE),
     getState: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.GET_STATE),
     setAlwaysOnTop: (alwaysOnTop: boolean) => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.SET_ALWAYS_ON_TOP, alwaysOnTop),
+    setClickThrough: (clickThrough: boolean) => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.SET_CLICK_THROUGH, clickThrough),
+    setOpacity: (opacity: number) => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.SET_OPACITY, opacity),
     restoreMainWindow: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.RESTORE_MAIN),
     close: () => ipcRenderer.invoke(IPC_CHANNELS.WIDGET.CLOSE)
   }

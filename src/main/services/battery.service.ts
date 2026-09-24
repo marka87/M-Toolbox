@@ -1,9 +1,9 @@
-import { exec } from 'child_process'
-import { promisify } from 'util'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import { shell } from 'electron'
+import { execAsync } from '../utils/exec'
+import { powershellService } from './powershell.service'
 import type {
   BatteryInfo,
   PowerPlanItem,
@@ -13,8 +13,6 @@ import type {
   BatteryDrainImpact
 } from '../../shared/battery.types'
 import type { PowerProfileInfo, PowerProfileMode } from '../../shared/types'
-
-const execAsync = promisify(exec)
 
 interface CachedStaticData {
   designCapacityMWh: number
@@ -49,12 +47,7 @@ export class BatteryService {
   }
 
   private async runPowerShell(script: string, timeout = 7000): Promise<string> {
-    const encoded = Buffer.from(script, 'utf16le').toString('base64')
-    const { stdout } = await execAsync(
-      `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encoded}`,
-      { timeout }
-    )
-    return stdout || ''
+    return powershellService.runPowerShell(script, timeout)
   }
 
   /**

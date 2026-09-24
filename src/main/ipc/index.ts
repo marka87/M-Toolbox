@@ -514,6 +514,14 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     widgetService.setAlwaysOnTop(alwaysOnTop)
   })
 
+  ipcMain.handle(IPC_CHANNELS.WIDGET.SET_CLICK_THROUGH, (_, clickThrough: boolean) => {
+    widgetService.setClickThrough(clickThrough)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.WIDGET.SET_OPACITY, (_, opacity: number) => {
+    widgetService.setOpacity(opacity)
+  })
+
   ipcMain.handle(IPC_CHANNELS.WIDGET.RESTORE_MAIN, () => {
     widgetService.restoreMainWindow()
   })

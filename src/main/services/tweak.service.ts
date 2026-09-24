@@ -1,12 +1,9 @@
-import { exec } from 'child_process'
-import { promisify } from 'util'
+import { powershellService } from './powershell.service'
 import type {
   TweakItem,
   TweakApplyResult,
   BatchTweakResult
 } from '../../shared/types'
-
-const execAsync = promisify(exec)
 
 interface TweakDefinition extends Omit<TweakItem, 'value'> {
   psReadExpression: string
@@ -282,60 +279,10 @@ export class TweakService {
   }
 
   /**
-   * Helper to safely execute a PowerShell script by piping into stdin
+   * Helper to safely execute a PowerShell script using PowerShellService
    */
   private async runPowerShell(script: string, timeoutMs = 20000): Promise<string> {
-    const { spawn } = await import('node:child_process')
-    return new Promise((resolve, reject) => {
-      const child = spawn('powershell.exe', [
-        '-NoProfile',
-        '-NonInteractive',
-        '-ExecutionPolicy',
-        'Bypass',
-        '-Command',
-        '-'
-      ], {
-        windowsHide: true,
-        env: process.env
-      })
-
-      let stdout = ''
-      let stderr = ''
-      let isTimedOut = false
-
-      const timer = setTimeout(() => {
-        isTimedOut = true
-        child.kill()
-        reject(new Error(`PowerShell script timed out after ${timeoutMs}ms`))
-      }, timeoutMs)
-
-      child.stdout.on('data', (chunk) => {
-        stdout += chunk.toString('utf8')
-      })
-
-      child.stderr.on('data', (chunk) => {
-        stderr += chunk.toString('utf8')
-      })
-
-      child.on('error', (err) => {
-        clearTimeout(timer)
-        reject(err)
-      })
-
-      child.on('close', (code) => {
-        clearTimeout(timer)
-        if (!isTimedOut) {
-          if (code === 0 || stdout.trim().length > 0) {
-            resolve(stdout.trim())
-          } else {
-            reject(new Error(stderr.trim() || `PowerShell exited with code ${code}`))
-          }
-        }
-      })
-
-      child.stdin.write(`[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\r\n${script}\r\n`)
-      child.stdin.end()
-    })
+    return powershellService.runPowerShell(script, timeoutMs)
   }
 
   /**
@@ -433,11 +380,7 @@ export class TweakService {
     const fullScript = scripts.join(';\n')
 
     try {
-      const encoded = Buffer.from(fullScript, 'utf16le').toString('base64')
-      await execAsync(
-        `powershell.exe -NoProfile -NonInteractive -EncodedCommand ${encoded}`,
-        { timeout: 20000 }
-      )
+      await powershellService.runPowerShell(fullScript, 20000)
       updatedCount = recommendedDefs.length
       requiresRestart = recommendedDefs.some((t) => t.requiresRestart === 'explorer')
     } catch (err) {
@@ -467,10 +410,7 @@ export class TweakService {
   public async restartExplorer(): Promise<{ success: boolean; message: string }> {
     try {
       const ps = `Stop-Process -Name explorer -Force; Start-Sleep -Milliseconds 600; Start-Process explorer.exe`
-      const encoded = Buffer.from(ps, 'utf16le').toString('base64')
-      await execAsync(`powershell.exe -NoProfile -NonInteractive -EncodedCommand ${encoded}`, {
-        timeout: 10000
-      })
+      await powershellService.runPowerShell(ps, 10000)
       return { success: true, message: 'Windows Explorer wurde erfolgreich neu gestartet.' }
     } catch (err: any) {
       console.error('Failed to restart explorer:', err)

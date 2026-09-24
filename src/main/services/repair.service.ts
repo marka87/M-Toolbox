@@ -1,8 +1,9 @@
-import { exec, spawn } from 'child_process'
-import { promisify } from 'util'
+import { spawn } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import { execAsync } from '../utils/exec'
+import { powershellService } from './powershell.service'
 import type {
   RepairActionItem,
   SystemHealthStatus,
@@ -10,8 +11,6 @@ import type {
   RepairLogEvent,
   RepairResult
 } from '../../shared/types'
-
-const execAsync = promisify(exec)
 
 export const REPAIR_ACTIONS: RepairActionItem[] = [
   {
@@ -160,7 +159,7 @@ export class RepairService {
     // 1. Dienststatus abfragen
     try {
       const psCmd = `Get-Service wuauserv, bits, Spooler, WSearch -ErrorAction SilentlyContinue | Select-Object Name, DisplayName, Status | ConvertTo-Json -Compress`
-      const { stdout } = await execAsync(`powershell -NoProfile -Command "${psCmd}"`, { timeout: 8000 })
+      const stdout = await powershellService.runPowerShell(psCmd, 8000)
       if (stdout && stdout.trim()) {
         const parsed = JSON.parse(stdout.trim())
         const list = Array.isArray(parsed) ? parsed : [parsed]
@@ -352,7 +351,7 @@ export class RepairService {
 
     try {
       const psRunner = `Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList '-NoProfile', '-EncodedCommand', '${scriptBase64}'`
-      await execAsync(`powershell.exe -NoProfile -Command "${psRunner}"`, { timeout: 1800000 })
+      await powershellService.runPowerShell(psRunner, 1800000)
 
       if (fs.existsSync(tempLog)) {
         try {
