@@ -39,6 +39,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   mainWindow.on('show', () => sendVisibility(true))
 
   try {
+    powerMonitor.on('on-ac', () => batteryService.clearPowerPlansCache())
+    powerMonitor.on('on-battery', () => batteryService.clearPowerPlansCache())
     powerMonitor.on('lock-screen', () => sendVisibility(false))
     powerMonitor.on('suspend', () => sendVisibility(false))
     powerMonitor.on('unlock-screen', () => {
@@ -554,8 +556,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     return await batteryService.setPowerPlan(guid)
   })
 
-  ipcMain.handle(IPC_CHANNELS.BATTERY.GET_POWER_PROFILES, async () => {
-    return await batteryService.getPowerProfiles()
+  ipcMain.handle(IPC_CHANNELS.BATTERY.GET_POWER_PROFILES, async (_, force?: boolean) => {
+    return await batteryService.getPowerProfiles(force ?? false)
   })
 
   ipcMain.handle(IPC_CHANNELS.BATTERY.SET_POWER_PROFILE, async (_, mode: PowerProfileMode) => {

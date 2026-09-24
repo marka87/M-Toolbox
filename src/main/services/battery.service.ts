@@ -4,6 +4,7 @@ import * as os from 'os'
 import { shell } from 'electron'
 import { execAsync } from '../utils/exec'
 import { powershellService } from './powershell.service'
+import { powerShellWorker } from './powershell-worker.service'
 import type {
   BatteryInfo,
   PowerPlanItem,
@@ -32,6 +33,7 @@ export class BatteryService {
   private static instance: BatteryService
   private staticCache: CachedStaticData | null = null
   private readonly STATIC_CACHE_TTL = 300000 // 5 minutes cache for static specs
+  private readonly POWER_PLANS_CACHE_TTL = 60000 // 60s cache for power schemes
   private hasBatteryHardware: boolean | null = null
   private cachedPowerPlans: { active: PowerPlanItem | null; available: PowerPlanItem[] } | null = null
   private lastPowerPlansTime = 0
@@ -46,8 +48,21 @@ export class BatteryService {
     return BatteryService.instance
   }
 
-  private async runPowerShell(script: string, timeout = 7000): Promise<string> {
-    return powershellService.runPowerShell(script, timeout)
+  public clearPowerPlansCache(): void {
+    this.cachedPowerPlans = null
+    this.lastPowerPlansTime = 0
+  }
+
+  private async runPowerShell(
+    script: string,
+    timeout = 7000,
+    countTowardsErrors = true
+  ): Promise<string> {
+    try {
+      return await powerShellWorker.runCommand(script, timeout, { countTowardsErrors })
+    } catch {
+      return powershellService.runPowerShell(script, timeout)
+    }
   }
 
   /**
@@ -157,7 +172,7 @@ export class BatteryService {
     available: PowerPlanItem[]
   }> {
     const now = Date.now()
-    if (!force && this.cachedPowerPlans && now - this.lastPowerPlansTime < 10000) {
+    if (!force && this.cachedPowerPlans && now - this.lastPowerPlansTime < this.POWER_PLANS_CACHE_TTL) {
       return this.cachedPowerPlans
     }
 
@@ -528,8 +543,8 @@ export class BatteryService {
   /**
    * Returns predefined power profiles with active status
    */
-  public async getPowerProfiles(): Promise<PowerProfileInfo[]> {
-    const { active } = await this.getPowerPlans(true).catch(() => ({ active: null }))
+  public async getPowerProfiles(force = false): Promise<PowerProfileInfo[]> {
+    const { active } = await this.getPowerPlans(force).catch(() => ({ active: null }))
     const activeGuid = active?.guid?.toLowerCase() || ''
     const activeName = active?.name?.toLowerCase() || ''
 

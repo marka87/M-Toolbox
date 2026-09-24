@@ -4,6 +4,7 @@ import { powershellService } from './powershell.service'
 interface WorkerTask {
   script: string
   timeoutMs: number
+  countTowardsErrors?: boolean
   resolve: (value: string) => void
   reject: (err: Error) => void
 }
@@ -52,9 +53,15 @@ export class PowerShellWorker {
    * Runs a PowerShell command via persistent worker queue.
    * If worker has failed 3 times consecutively, falls back to one-shot powershellService.
    */
-  public async runCommand(script: string, timeoutMs = 8000): Promise<string> {
+  public async runCommand(
+    script: string,
+    timeoutMs = 8000,
+    options?: { countTowardsErrors?: boolean }
+  ): Promise<string> {
     // Reset idle timer on every request
     this.resetIdleTimer()
+
+    const countTowardsErrors = options?.countTowardsErrors ?? true
 
     // Fallback mode if worker is unhealthy
     if (this.consecutiveErrors >= this.MAX_CONSECUTIVE_ERRORS) {
@@ -62,7 +69,7 @@ export class PowerShellWorker {
     }
 
     return new Promise((resolve, reject) => {
-      this.queue.push({ script, timeoutMs, resolve, reject })
+      this.queue.push({ script, timeoutMs, countTowardsErrors, resolve, reject })
       this.runNext()
     })
   }
@@ -183,7 +190,9 @@ export class PowerShellWorker {
     const task = this.activeTask
     this.activeTask = null
     this.terminateProcess()
-    this.recordError()
+    if (task?.countTowardsErrors !== false) {
+      this.recordError()
+    }
 
     if (task) {
       task.reject(new Error('PowerShell worker command timed out'))

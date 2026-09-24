@@ -18,7 +18,7 @@ export function useBattery() {
 
   const isMounted = useRef(true)
 
-  const fetchInfo = useCallback(async () => {
+  const fetchInfo = useCallback(async (forceProfiles = false) => {
     if (!window.mToolbox?.battery) return
     try {
       const data = await window.mToolbox.battery.getInfo()
@@ -27,7 +27,7 @@ export function useBattery() {
         setError(null)
       }
       if (window.mToolbox.battery.getPowerProfiles) {
-        const profiles = await window.mToolbox.battery.getPowerProfiles()
+        const profiles = await window.mToolbox.battery.getPowerProfiles(forceProfiles)
         if (isMounted.current) {
           setPowerProfiles(profiles)
         }
@@ -83,12 +83,12 @@ export function useBattery() {
 
     if (!isVisible) return
 
-    // Immediately fetch fresh snapshot when becoming visible/active
-    fetchInfo()
+    // Immediately fetch fresh snapshot when becoming visible/active (force profiles refresh)
+    fetchInfo(true)
 
-    // Poll live battery status every 8 seconds only while visible
+    // Poll live battery status every 8 seconds only while visible (use 60s cached profiles)
     const interval = setInterval(() => {
-      fetchInfo()
+      fetchInfo(false)
     }, 8000)
 
     return () => {
@@ -216,7 +216,7 @@ export function useBattery() {
     alertDismissed,
     reportResult,
     error,
-    refresh: fetchInfo,
+    refresh: () => fetchInfo(true),
     toggleLiveMonitoring,
     dismissAlert,
     killDrainProcess,
