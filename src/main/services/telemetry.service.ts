@@ -63,6 +63,9 @@ export class TelemetryService {
   // Loop & timer handles
   private isRunning = false
   private isPaused = false
+  private isLocked = false
+  private isSuspended = false
+  private isTicking = false
   private mainLoopTimer: NodeJS.Timeout | null = null
 
   // Timestamp trackers for adaptive refresh
@@ -80,10 +83,11 @@ export class TelemetryService {
   // Network delta state
   private lastNetStats: { rxBytes: number; txBytes: number; timestamp: number } | null = null
 
-  // GPU detection & concurrency control
+  // Mutexes & concurrency control
   private hasNvidia = true
   private isSamplingGpu = false
   private isSamplingBattery = false
+  private isSamplingNet = false
 
   // Last broadcasted metrics (for dirty-checking)
   private lastBroadcastJson = ''
@@ -115,19 +119,27 @@ export class TelemetryService {
       })
 
       powerMonitor.on('suspend', () => {
-        this.pause()
+        this.isSuspended = true
+        this.clearTimer()
       })
 
       powerMonitor.on('resume', () => {
-        this.resume()
+        this.isSuspended = false
+        if (!this.isLocked && !this.isPaused && this.canSample()) {
+          this.handleWakeUpOrUnlock()
+        }
       })
 
       powerMonitor.on('lock-screen', () => {
-        this.pause()
+        this.isLocked = true
+        this.clearTimer()
       })
 
       powerMonitor.on('unlock-screen', () => {
-        this.resume()
+        this.isLocked = false
+        if (!this.isSuspended && !this.isPaused && this.canSample()) {
+          this.handleWakeUpOrUnlock()
+        }
       })
 
       app.on('before-quit', () => {
@@ -146,19 +158,41 @@ export class TelemetryService {
       .catch(() => {})
   }
 
+  private canSample(): boolean {
+    return (
+      this.isRunning &&
+      !this.isPaused &&
+      !this.isLocked &&
+      !this.isSuspended &&
+      this.listeners.size > 0
+    )
+  }
+
+  private clearTimer(): void {
+    if (this.mainLoopTimer) {
+      clearTimeout(this.mainLoopTimer)
+      this.mainLoopTimer = null
+    }
+  }
+
+  private async handleWakeUpOrUnlock(): Promise<void> {
+    this.clearTimer()
+    await this.sampleBatteryHealthOnce()
+    await this.sampleImmediate()
+    this.scheduleNextTick()
+  }
+
   public pause(): void {
     this.isPaused = true
+    this.clearTimer()
   }
 
   public resume(): void {
     if (!this.isRunning || !this.isPaused) return
     this.isPaused = false
-
-    // Update battery health once after resume
-    this.sampleBatteryHealthOnce()
-
-    // Immediate fresh snapshot
-    this.sampleImmediate()
+    if (!this.isLocked && !this.isSuspended && this.canSample()) {
+      this.handleWakeUpOrUnlock()
+    }
   }
 
   /**
@@ -207,24 +241,15 @@ export class TelemetryService {
     this.isPaused = false
 
     // Sample battery health once at startup
-    this.sampleBatteryHealthOnce()
-
-    this.sampleImmediate()
-
-    // Master heartbeat tick every 500ms to evaluate adaptive intervals
-    this.mainLoopTimer = setInterval(() => {
-      if (!this.isPaused && this.listeners.size > 0) {
-        this.tick()
-      }
-    }, 500)
+    this.sampleBatteryHealthOnce().catch(() => {})
+    this.sampleImmediate().finally(() => {
+      this.scheduleNextTick()
+    })
   }
 
   private stopLoop(): void {
     this.isRunning = false
-    if (this.mainLoopTimer) {
-      clearInterval(this.mainLoopTimer)
-      this.mainLoopTimer = null
-    }
+    this.clearTimer()
   }
 
   public dispose(): void {
@@ -241,65 +266,97 @@ export class TelemetryService {
     this.broadcastIfChanged()
   }
 
-  /**
-   * Adaptive refresh scheduler
-   */
-  private async tick(): Promise<void> {
+  private scheduleNextTick(): void {
+    this.clearTimer()
+    if (!this.canSample()) return
+
     const now = Date.now()
     const isEco = !this.cache.battery.isAcOnline && this.cache.battery.hasBattery
     const multiplier = isEco ? 2 : 1
 
-    let hasChanges = false
+    const intervals = [
+      Math.max(50, this.lastCpuSampleTime + 1000 * multiplier - now),
+      Math.max(50, this.lastGpuSampleTime + 1000 * multiplier - now),
+      Math.max(50, this.lastNetSampleTime + 1000 * multiplier - now),
+      Math.max(50, this.lastRamSampleTime + 2000 * multiplier - now),
+      Math.max(50, this.lastTempSampleTime + 3000 * multiplier - now),
+      Math.max(50, this.lastBatterySampleTime + 3000 * multiplier - now),
+      Math.max(50, this.lastSmartSampleTime + 1800000 - now)
+    ]
 
-    // 1. CPU (1s normal, 2s eco)
-    if (now - this.lastCpuSampleTime >= 1000 * multiplier) {
-      this.sampleCpu()
-      this.lastCpuSampleTime = now
-      hasChanges = true
-    }
+    const nextDelay = Math.min(...intervals)
+    this.mainLoopTimer = setTimeout(() => {
+      this.tick()
+    }, Math.max(50, nextDelay))
+  }
 
-    // 2. GPU (1s normal, 2s eco) - on demand, allows dGPU to sleep
-    if (now - this.lastGpuSampleTime >= 1000 * multiplier) {
-      this.sampleGpu()
-      this.lastGpuSampleTime = now
-      hasChanges = true
-    }
+  /**
+   * Adaptive refresh scheduler
+   */
+  private async tick(): Promise<void> {
+    if (this.isTicking || !this.canSample()) return
+    this.isTicking = true
 
-    // 3. Network (1s normal, 2s eco)
-    if (now - this.lastNetSampleTime >= 1000 * multiplier) {
-      await this.sampleNetwork()
-      this.lastNetSampleTime = now
-      hasChanges = true
-    }
+    try {
+      const now = Date.now()
+      const isEco = !this.cache.battery.isAcOnline && this.cache.battery.hasBattery
+      const multiplier = isEco ? 2 : 1
 
-    // 4. RAM (2s normal, 4s eco)
-    if (now - this.lastRamSampleTime >= 2000 * multiplier) {
-      this.sampleRam()
-      this.lastRamSampleTime = now
-      hasChanges = true
-    }
+      let hasChanges = false
 
-    // 5. Temperatures (3s normal, 6s eco)
-    if (now - this.lastTempSampleTime >= 3000 * multiplier) {
-      this.sampleTemperatures()
-      this.lastTempSampleTime = now
-    }
+      // 1. CPU (1s normal, 2s eco)
+      if (now - this.lastCpuSampleTime >= 1000 * multiplier) {
+        this.lastCpuSampleTime = now
+        this.sampleCpu()
+        hasChanges = true
+      }
 
-    // 6. Unified Battery & Wattage (3s normal, 6s eco)
-    if (now - this.lastBatterySampleTime >= 3000 * multiplier) {
-      await this.sampleBattery()
-      this.lastBatterySampleTime = now
-      hasChanges = true
-    }
+      // 2. GPU (1s normal, 2s eco) - on demand, allows dGPU to sleep
+      if (now - this.lastGpuSampleTime >= 1000 * multiplier) {
+        this.lastGpuSampleTime = now
+        this.sampleGpu()
+        hasChanges = true
+      }
 
-    // 7. SMART status (every 30 minutes)
-    if (now - this.lastSmartSampleTime >= 1800000) {
-      this.sampleSmartStatus()
-      this.lastSmartSampleTime = now
-    }
+      // 3. Network (1s normal, 2s eco)
+      if (now - this.lastNetSampleTime >= 1000 * multiplier) {
+        this.lastNetSampleTime = now
+        await this.sampleNetwork()
+        hasChanges = true
+      }
 
-    if (hasChanges) {
-      this.broadcastIfChanged()
+      // 4. RAM (2s normal, 4s eco)
+      if (now - this.lastRamSampleTime >= 2000 * multiplier) {
+        this.lastRamSampleTime = now
+        this.sampleRam()
+        hasChanges = true
+      }
+
+      // 5. Temperatures (3s normal, 6s eco)
+      if (now - this.lastTempSampleTime >= 3000 * multiplier) {
+        this.lastTempSampleTime = now
+        this.sampleTemperatures()
+      }
+
+      // 6. Unified Battery & Wattage (3s normal, 6s eco)
+      if (now - this.lastBatterySampleTime >= 3000 * multiplier) {
+        this.lastBatterySampleTime = now
+        await this.sampleBattery()
+        hasChanges = true
+      }
+
+      // 7. SMART status (every 30 minutes)
+      if (now - this.lastSmartSampleTime >= 1800000) {
+        this.lastSmartSampleTime = now
+        this.sampleSmartStatus()
+      }
+
+      if (hasChanges) {
+        this.broadcastIfChanged()
+      }
+    } finally {
+      this.isTicking = false
+      this.scheduleNextTick()
     }
   }
 
@@ -344,6 +401,8 @@ export class TelemetryService {
   }
 
   private async sampleNetwork(): Promise<void> {
+    if (this.isSamplingNet) return
+    this.isSamplingNet = true
     const now = Date.now()
     try {
       const { stdout } = await execAsync('netstat -e', { timeout: 1500, windowsHide: true })
@@ -370,6 +429,8 @@ export class TelemetryService {
       this.cache.timestamp = now
     } catch {
       // keep cached
+    } finally {
+      this.isSamplingNet = false
     }
   }
 
