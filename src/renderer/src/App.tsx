@@ -14,6 +14,7 @@ import { SettingsPage } from './pages/SettingsPage'
 import { RAMGuardianPage } from './pages/RAMGuardianPage'
 import { BatteryPage } from './pages/BatteryPage'
 import { MiniHudWidget } from './components/ui/MiniHudWidget'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { useSettings } from './hooks/useSettings'
 import type { NavigationModule } from '@shared/types'
 
@@ -73,7 +74,9 @@ export const App: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar activeModule={activeModule} onSelectModule={setActiveModule} />
         <main className="flex-1 overflow-y-auto bg-fluent-bg">
-          {renderModuleContent()}
+          <ErrorBoundary>
+            {renderModuleContent()}
+          </ErrorBoundary>
         </main>
       </div>
     </div>
