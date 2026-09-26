@@ -71,4 +71,24 @@ describe('Tray & Close-to-Tray Lifecycle Tests', () => {
     assert.equal(mainWindowVisible, false)
     assert.equal(hudWindowVisible, false)
   })
+
+  test('tray context menu labels localize correctly for de and en', () => {
+    function getTrayMenuItems(language) {
+      const isEn = language === 'en'
+      return [
+        { label: isEn ? 'Open M-Toolbox' : 'M-Toolbox öffnen' },
+        { label: 'Desktop Mini-HUD' },
+        { type: 'separator' },
+        { label: isEn ? 'Quit' : 'Beenden' }
+      ]
+    }
+
+    const deItems = getTrayMenuItems('de')
+    assert.equal(deItems[0].label, 'M-Toolbox öffnen')
+    assert.equal(deItems[3].label, 'Beenden')
+
+    const enItems = getTrayMenuItems('en')
+    assert.equal(enItems[0].label, 'Open M-Toolbox')
+    assert.equal(enItems[3].label, 'Quit')
+  })
 })

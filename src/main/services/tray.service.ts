@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu, Tray, nativeImage } from 'electron'
 import { WidgetService } from './widget.service'
+import { SettingsService } from './settings.service'
 
 // 32x32 RGBA PNG icon: Rounded Fluent-blue square with crisp white 'M'
 const TRAY_ICON_DATA_URL =
@@ -54,9 +55,12 @@ export class TrayService {
   public updateContextMenu(): void {
     if (!this.tray) return
 
+    const lang = SettingsService.getInstance().getSettings().language || 'de'
+    const isEn = lang === 'en'
+
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: 'M-Toolbox öffnen',
+        label: isEn ? 'Open M-Toolbox' : 'M-Toolbox öffnen',
         click: () => this.showMainWindow()
       },
       {
@@ -67,7 +71,7 @@ export class TrayService {
       },
       { type: 'separator' },
       {
-        label: 'Beenden',
+        label: isEn ? 'Quit' : 'Beenden',
         click: () => {
           this.isQuitting = true
           app.quit()

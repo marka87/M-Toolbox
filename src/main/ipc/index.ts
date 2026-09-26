@@ -18,6 +18,7 @@ import { bloatwareService } from '../services/bloatware.service'
 import { performanceService } from '../services/performance.service'
 import { WidgetService } from '../services/widget.service'
 import { telemetryService } from '../services/telemetry.service'
+import { trayService } from '../services/tray.service'
 import type { PowerProfileMode, AppSettings, TelemetryMetric } from '../../shared/types'
 import type { ReinstallRestoreOptions } from '../../shared/reinstall.types'
 
@@ -253,18 +254,20 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   )
   ipcMain.handle(IPC_CHANNELS.REINSTALL.HISTORY, () => reinstallService.getHistory())
   ipcMain.handle(IPC_CHANNELS.REINSTALL.SELECT_FILE, async () => {
+    const isEn = settingsService.getSettings().language === 'en'
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'M-Toolbox Reinstall-Archiv auswählen',
+      title: isEn ? 'Select M-Toolbox Reinstall Archive' : 'M-Toolbox Reinstall-Archiv auswählen',
       properties: ['openFile'],
-      filters: [{ name: 'M-Toolbox Archiv (*.mtoolbox)', extensions: ['mtoolbox'] }]
+      filters: [{ name: isEn ? 'M-Toolbox Archive (*.mtoolbox)' : 'M-Toolbox Archiv (*.mtoolbox)', extensions: ['mtoolbox'] }]
     })
     return result.canceled ? null : result.filePaths[0] ?? null
   })
   ipcMain.handle(IPC_CHANNELS.REINSTALL.SAVE_DIALOG, async () => {
+    const isEn = settingsService.getSettings().language === 'en'
     const result = await dialog.showSaveDialog(mainWindow, {
-      title: 'M-Toolbox Reinstall-Archiv speichern',
+      title: isEn ? 'Save M-Toolbox Reinstall Archive' : 'M-Toolbox Reinstall-Archiv speichern',
       defaultPath: `M-Toolbox-Reinstall-${new Date().toISOString().slice(0, 10)}.mtoolbox`,
-      filters: [{ name: 'M-Toolbox Archiv (*.mtoolbox)', extensions: ['mtoolbox'] }]
+      filters: [{ name: isEn ? 'M-Toolbox Archive (*.mtoolbox)' : 'M-Toolbox Archiv (*.mtoolbox)', extensions: ['mtoolbox'] }]
     })
     return result.canceled ? null : result.filePath ?? null
   })
@@ -297,13 +300,14 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.BACKUP.SELECT_BACKUP_FILE, async () => {
+    const isEn = settingsService.getSettings().language === 'en'
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'M-Toolbox Sicherungsdatei auswählen',
+      title: isEn ? 'Select M-Toolbox Backup File' : 'M-Toolbox Sicherungsdatei auswählen',
       properties: ['openFile'],
       filters: [
-        { name: 'Alle M-Toolbox Sicherungen (*.json, *.mtoolbox)', extensions: ['json', 'mtoolbox', 'zip'] },
-        { name: 'Schnell-Backup (*.json)', extensions: ['json'] },
-        { name: 'Reinstall-Bundle (*.mtoolbox)', extensions: ['mtoolbox', 'zip'] }
+        { name: isEn ? 'All M-Toolbox Backups (*.json, *.mtoolbox)' : 'Alle M-Toolbox Sicherungen (*.json, *.mtoolbox)', extensions: ['json', 'mtoolbox', 'zip'] },
+        { name: isEn ? 'Quick Backup (*.json)' : 'Schnell-Backup (*.json)', extensions: ['json'] },
+        { name: isEn ? 'Reinstall Bundle (*.mtoolbox)' : 'Reinstall-Bundle (*.mtoolbox)', extensions: ['mtoolbox', 'zip'] }
       ]
     })
     if (result.canceled || result.filePaths.length === 0) {
@@ -313,11 +317,12 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.BACKUP.SAVE_BACKUP_DIALOG, async () => {
+    const isEn = settingsService.getSettings().language === 'en'
     const dateStr = new Date().toISOString().slice(0, 10)
     const result = await dialog.showSaveDialog(mainWindow, {
-      title: 'M-Toolbox Backup speichern unter',
+      title: isEn ? 'Save M-Toolbox Backup As' : 'M-Toolbox Backup speichern unter',
       defaultPath: `M-Toolbox-Backup-${dateStr}.json`,
-      filters: [{ name: 'M-Toolbox Backup (*.json)', extensions: ['json'] }]
+      filters: [{ name: isEn ? 'M-Toolbox Backup (*.json)' : 'M-Toolbox Backup (*.json)', extensions: ['json'] }]
     })
     if (result.canceled || !result.filePath) {
       return null
@@ -342,8 +347,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   )
 
   ipcMain.handle(IPC_CHANNELS.DRIVER.SELECT_EXPORT_DIR, async () => {
+    const isEn = settingsService.getSettings().language === 'en'
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'Zielordner für Treiber-Export auswählen',
+      title: isEn ? 'Select Target Directory for Driver Export' : 'Zielordner für Treiber-Export auswählen',
       properties: ['openDirectory', 'createDirectory']
     })
     if (result.canceled || result.filePaths.length === 0) {
@@ -497,7 +503,11 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS.SAVE_SETTINGS, async (_, partialSettings: Partial<AppSettings>) => {
-    return await settingsService.saveSettings(partialSettings)
+    const res = await settingsService.saveSettings(partialSettings)
+    if (partialSettings.language !== undefined) {
+      trayService.updateContextMenu()
+    }
+    return res
   })
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS.CHECK_UPDATES, async () => {
@@ -517,7 +527,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS.RESET_SETTINGS, async () => {
-    return await settingsService.resetSettings()
+    const res = await settingsService.resetSettings()
+    trayService.updateContextMenu()
+    return res
   })
 
   // RAM Guardian IPC
