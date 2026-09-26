@@ -86,4 +86,14 @@ describe('HUD Formatter & Layout Bounds Tests', () => {
     assert.equal(clampHeight(220.0), 220)
     assert.equal(clampHeight(400.1), 350)
   })
+
+  test('RAM tile label group (RAM + GB string) does not exceed compact character budget', () => {
+    // RAM is 3ch, space is 1ch, GB is at most 4ch (e.g. 128G) -> total label <= 8ch
+    for (const ramGB of [4, 8, 14, 16, 32, 64, 128]) {
+      const gbStr = formatHudRamGB(ramGB)
+      const combined = `RAM ${gbStr}`
+      assert.ok(combined.length <= 8, `RAM label '${combined}' exceeds 8 chars`)
+    }
+  })
 })
+

@@ -43,7 +43,7 @@ const CpuTile = React.memo<{ cpuVal: number }>(({ cpuVal }) => {
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-1 leading-none">
         <div className="flex items-baseline gap-1 min-w-0">
           <Cpu className="w-3 h-3 text-sky-400 shrink-0 self-center" />
-          <span className="text-[11px] font-semibold text-slate-300 truncate">CPU</span>
+          <span className="text-[11px] font-semibold text-slate-300 shrink-0 whitespace-nowrap">CPU</span>
         </div>
         <span
           className={`font-mono text-xs font-bold [font-variant-numeric:tabular-nums] text-right whitespace-nowrap shrink-0 min-w-[5ch] ${color.text}`}
@@ -65,8 +65,8 @@ const RamTile = React.memo<{ ramVal: number; ramGB: number }>(({ ramVal, ramGB }
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-1 leading-none">
         <div className="flex items-baseline gap-1 min-w-0">
           <Activity className="w-3 h-3 text-indigo-400 shrink-0 self-center" />
-          <span className="text-[11px] font-semibold text-slate-300 truncate">RAM</span>
-          <span className="text-[9.5px] text-slate-500 font-normal truncate">
+          <span className="text-[11px] font-semibold text-slate-300 shrink-0 whitespace-nowrap">RAM</span>
+          <span className="text-[9.5px] text-slate-500 font-normal shrink-0 whitespace-nowrap">
             {formatHudRamGB(ramGB)}
           </span>
         </div>
@@ -90,7 +90,7 @@ const GpuTile = React.memo<{ gpuVal: number }>(({ gpuVal }) => {
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-1 leading-none">
         <div className="flex items-baseline gap-1 min-w-0">
           <Layers className="w-3 h-3 text-purple-400 shrink-0 self-center" />
-          <span className="text-[11px] font-semibold text-slate-300 truncate">GPU</span>
+          <span className="text-[11px] font-semibold text-slate-300 shrink-0 whitespace-nowrap">GPU</span>
         </div>
         <span
           className={`font-mono text-xs font-bold [font-variant-numeric:tabular-nums] text-right whitespace-nowrap shrink-0 min-w-[5ch] ${color.text}`}
@@ -132,7 +132,7 @@ const BatteryTile = React.memo<{
           ) : (
             <Battery className="w-3.5 h-3.5 text-amber-400 shrink-0 self-center" />
           )}
-          <span className="text-[11px] font-semibold text-slate-300 truncate">
+          <span className="text-[11px] font-semibold text-slate-300 shrink-0 whitespace-nowrap">
             {statusText}
           </span>
         </div>
