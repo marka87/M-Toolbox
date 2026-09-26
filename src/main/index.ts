@@ -6,6 +6,8 @@ import { registerIpcHandlers } from './ipc'
 import { DatabaseService } from './services/database.service'
 import { DashboardService } from './services/dashboard.service'
 import { WidgetService } from './services/widget.service'
+import { SettingsService } from './services/settings.service'
+import { TrayService } from './services/tray.service'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -45,6 +47,12 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
   : RENDERER_DIST
 
 let mainWindow: BrowserWindow | null = null
+let isQuitting = false
+
+app.on('before-quit', () => {
+  isQuitting = true
+  TrayService.getInstance().setQuitting(true)
+})
 
 function createWindow() {
   nativeTheme.themeSource = 'dark'
@@ -88,6 +96,16 @@ function createWindow() {
     mainWindow.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
 
+  // Intercept window close when minimizeToTray setting is active
+  mainWindow.on('close', (event) => {
+    const settings = SettingsService.getInstance().getSettings()
+    if (!isQuitting && settings.minimizeToTray) {
+      event.preventDefault()
+      mainWindow?.hide()
+      return
+    }
+  })
+
   mainWindow.on('closed', () => {
     mainWindow = null
     try {
@@ -105,9 +123,18 @@ app.whenReady().then(() => {
 
   createWindow()
 
+  if (mainWindow) {
+    TrayService.getInstance().init(mainWindow)
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow()
+      if (mainWindow) {
+        TrayService.getInstance().init(mainWindow)
+      }
+    } else if (mainWindow) {
+      TrayService.getInstance().showMainWindow()
     }
   })
 })
@@ -115,6 +142,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   DashboardService.getInstance().stopMetricsStream()
   DatabaseService.getInstance().close()
+  TrayService.getInstance().destroy()
   if (process.platform !== 'darwin') {
     app.quit()
   }

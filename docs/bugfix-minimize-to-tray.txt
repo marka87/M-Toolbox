@@ -1,0 +1,101 @@
+================================================================================
+BUGFIX REPORT: "IM INFOBEREICH (TRAY) MINIMIEREN" (CLOSE-TO-TRAY)
+================================================================================
+Projekt:   M-Toolbox
+Version:   2.6.0
+Datum:     26.09.2026
+Autor:     M-Toolbox Engineering Team
+Status:    BEHOBEN & VERIFIZIERT
+
+--------------------------------------------------------------------------------
+1. ANALYSE DER PRÜFPUNKTE
+--------------------------------------------------------------------------------
+
+[Prüfpunkt 1: close-Handler & Settings-Wert]
+- Settings-Wert:
+  In src/shared/types.ts und src/main/services/settings.service.ts existiert der
+  Wert `minimizeToTray: boolean` (Standard: false). In SettingsPage.tsx wird
+  dieser über die UI geschaltet und persistiert.
+- Status im Main-Prozess vor dem Fix:
+  In src/main/index.ts existierte KEIN `mainWindow.on('close', ...)` Handler!
+  Es gab lediglich ein `mainWindow.on('closed', ...)`, welches erst nach der
+  vollständigen Zerstörung des Fensters aufgerufen wird.
+
+[Prüfpunkt 2: event.preventDefault() & mainWindow.hide()]
+- Vor dem Fix:
+  Klick auf das "X" in Titlebar.tsx rief `system:close` -> `mainWindow.close()`
+  auf. Da kein close-Handler existierte, wurde `event.preventDefault()` nie
+  ausgeführt und `mainWindow.hide()` nie aufgerufen. Das Fenster wurde sofort
+  zerstört. Unmittelbar danach feuerte Electron `app.on('window-all-closed')`
+  und beendete die gesamte App via `app.quit()`.
+- HUD-Fenster (Mini-HUD Widget):
+  Das Widget-Fenster wird über WidgetService verwaltet. Beim Zerstören von
+  mainWindow feuerte `mainWindow.on('closed')`, welches bisher hart
+  `WidgetService.getInstance().destroy()` aufrief und damit auch das HUD schloss.
+
+[Prüfpunkt 3: Ankunft des Settings-Wertes zur Laufzeit]
+- Der Wert kommt korrekt über IPC (`settings:save`) im Main-Prozess an und wird
+  in `SettingsService.getInstance().saveSettings()` synchron in `this.cachedSettings`
+  gespeichert.
+- Da jedoch kein Listener das close-Event abfing, wurde der Settings-Wert beim
+  Schließen des Fensters schlichtweg nie abgefragt.
+
+[Prüfpunkt 4: app.on('before-quit') & isQuitting Flag]
+- Vor dem Fix fehlte `app.on('before-quit', ...)` in index.ts vollständig.
+- Es gab kein `isQuitting` Flag. Ohne dieses Flag könnte die Anwendung bei
+  aktivem `minimizeToTray` niemals regulär beendet werden (weder über das
+  Tray-Menü noch beim Herunterfahren von Windows), weil jeder Schließversuch
+  in eine Endlosschleife aus `event.preventDefault()` und `hide()` liefe.
+
+--------------------------------------------------------------------------------
+2. EIGENTLICHE URSACHE (ROOT CAUSE)
+--------------------------------------------------------------------------------
+Die Tray-Funktionalität war bisher nur im Frontend (UI-Schalter in SettingsPage)
+und im Einstellungs-Modell (settings.service.ts) vorbereitet, im Electron
+Main-Prozess jedoch unvollständig:
+1. Es gab keine TrayService-Instanz (Electron `new Tray(...)` wurde nie erzeugt).
+2. Es gab keinen `mainWindow.on('close')` Handler, der das Schließen abfing.
+3. Es gab kein `before-quit` Lifecycle-Management (`isQuitting` Flag).
+
+--------------------------------------------------------------------------------
+3. UMSETZUNG & ARCHITEKTUR
+--------------------------------------------------------------------------------
+
+A) Neuer TrayService (src/main/services/tray.service.ts):
+   - Verwaltet die native System-Tray-Instanz von Electron mit einem 32x32 Fluent-
+     Icon (integrierte Base64-PNG-Ressource ohne Dateipfad-Abhängigkeiten).
+   - Tooltip: "M-Toolbox"
+   - Linksklick / Doppelklick: Stellt das Hauptfenster wieder her (`restore()`,
+     `show()`, `focus()`).
+   - Rechtsklick-Kontextmenü:
+     * "M-Toolbox öffnen" -> Stellt Hauptfenster wieder her
+     * "Desktop Mini-HUD" -> Schaltet das HUD-Widget um (`toggle()`)
+     * Separator
+     * "Beenden" -> Setzt `isQuitting = true` und ruft `app.quit()` auf.
+
+B) Window Close Interception (src/main/index.ts):
+   - Globales `isQuitting`-Flag, gesteuert über `app.on('before-quit')`.
+   - `mainWindow.on('close', (event) => { ... })`:
+     * Prüft `!isQuitting && settings.minimizeToTray`.
+     * Wenn WAHR: `event.preventDefault()` und `mainWindow.hide()`.
+     * Wenn FALSCH (oder echtes Beenden): Schließen wird durchgelassen.
+
+C) Multi-Window-Verhalten (Hauptfenster vs. HUD):
+   - Wenn das Hauptfenster in den Tray minimiert/versteckt wird, bleibt das
+     Desktop Mini-HUD Widget unberührt geöffnet und telemetrisch aktiv.
+   - Erst beim tatsächlichen Beenden der App (über das Tray-Menü "Beenden")
+     werden alle Fenster (Hauptfenster und HUD) sauber zerstört.
+
+--------------------------------------------------------------------------------
+4. TEST- & VERIFIKATIONSERGEBNISSE
+--------------------------------------------------------------------------------
+- Unit-Tests: tests/tray.test.mjs (6 neue Tests):
+  * minimizeToTray = true & isQuitting = false -> preventDefault: true, action: hide [PASS]
+  * minimizeToTray = true & isQuitting = true  -> preventDefault: false, action: close [PASS]
+  * minimizeToTray = false & isQuitting = false -> preventDefault: false, action: close [PASS]
+  * minimizeToTray = false & isQuitting = true  -> preventDefault: false, action: close [PASS]
+  * before-quit Event setzt isQuitting Flag korrekt [PASS]
+  * HUD Widget bleibt unabhängig aktiv beim Hide-to-Tray [PASS]
+- Gesamttestsuite: 27/27 Tests erfolgreich (tests/**/*.test.mjs).
+- TypeScript: 0 Fehler (npm run typecheck).
+================================================================================
