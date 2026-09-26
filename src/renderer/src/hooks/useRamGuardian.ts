@@ -116,9 +116,46 @@ export function useRamGuardian() {
     }
   }, [fetchStats, fetchProcesses, fetchHygiene, fetchRecommendations, fetchHealthScore, fetchHistory])
 
-  // Periodic polling
+  const [isWindowVisible, setIsWindowVisible] = useState(true)
+  const [isDocVisible, setIsDocVisible] = useState(() => {
+    return typeof document !== 'undefined' ? document.visibilityState === 'visible' : true
+  })
+
   useEffect(() => {
     isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
+  // Listen to document.visibilityState
+  useEffect(() => {
+    const handleVisChange = () => {
+      setIsDocVisible(document.visibilityState === 'visible')
+    }
+    document.addEventListener('visibilitychange', handleVisChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisChange)
+    }
+  }, [])
+
+  // Listen to native window/power visibility events from Electron Main
+  useEffect(() => {
+    if (!window.mToolbox?.system?.onVisibilityChange) return
+    const unbind = window.mToolbox.system.onVisibilityChange((visible) => {
+      setIsWindowVisible(visible)
+    })
+    return () => {
+      unbind()
+    }
+  }, [])
+
+  // Periodic polling (paused when window/document is hidden, minimized or screen locked)
+  useEffect(() => {
+    const isVisible = isDocVisible && isWindowVisible
+    if (!isVisible) return
+
+    // Immediately fetch fresh stats upon becoming visible
     refreshAll()
 
     // Fast poll for live stats (every 3 seconds)
@@ -133,11 +170,10 @@ export function useRamGuardian() {
     }, 8000)
 
     return () => {
-      isMounted.current = false
       clearInterval(statsTimer)
       clearInterval(procTimer)
     }
-  }, [refreshAll, fetchStats, fetchProcesses, fetchHealthScore])
+  }, [refreshAll, fetchStats, fetchProcesses, fetchHealthScore, isDocVisible, isWindowVisible])
 
   // Safe Windows Cleanup
   const cleanWindows = useCallback(async () => {

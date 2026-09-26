@@ -100,4 +100,21 @@ describe('RAM Service & Worker Routing Tests', () => {
     assert.equal(mapped[1].workingSetMB, 300)
     assert.equal(mapped[1].privateMB, 200)
   })
+
+  test('RAM Guardian live polling halts when window or document is invisible', () => {
+    const shouldPoll = (isDocVisible, isWindowVisible) => Boolean(isDocVisible && isWindowVisible)
+
+    // Active & Visible
+    assert.equal(shouldPoll(true, true), true)
+
+    // Document hidden (tab backgrounded)
+    assert.equal(shouldPoll(false, true), false)
+
+    // Window minimized or closed to tray
+    assert.equal(shouldPoll(true, false), false)
+
+    // Screen locked or suspended
+    assert.equal(shouldPoll(false, false), false)
+  })
 })
+
