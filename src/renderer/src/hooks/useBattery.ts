@@ -16,6 +16,28 @@ export function useBattery() {
   const [error, setError] = useState<string | null>(null)
 
   const [isLiveMonitoring, setIsLiveMonitoring] = useState(true)
+  const [liveIntervalSec, setLiveIntervalSec] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('M_TOOLBOX_BATTERY_LIVE_INTERVAL')
+      if (saved) {
+        const val = parseInt(saved, 10)
+        if ([3, 6, 9].includes(val)) return val
+      }
+    } catch {
+      // ignore
+    }
+    return 6
+  })
+
+  const setPollInterval = useCallback((sec: number) => {
+    setLiveIntervalSec(sec)
+    try {
+      localStorage.setItem('M_TOOLBOX_BATTERY_LIVE_INTERVAL', String(sec))
+    } catch {
+      // ignore
+    }
+  }, [])
+
   const [killingPid, setKillingPid] = useState<number | null>(null)
   const [alertDismissed, setAlertDismissed] = useState(false)
 
@@ -109,15 +131,15 @@ export function useBattery() {
     // Immediately fetch fresh snapshot when becoming visible/active (force profiles refresh)
     fetchInfo(true)
 
-    // Poll live battery status every 8 seconds only while visible (use 60s cached profiles)
+    // Poll live battery status every X seconds only while visible (use 60s cached profiles)
     const interval = setInterval(() => {
       fetchInfo(false)
-    }, 8000)
+    }, liveIntervalSec * 1000)
 
     return () => {
       clearInterval(interval)
     }
-  }, [fetchInfo, isLiveMonitoring, isDocVisible, isWindowVisible])
+  }, [fetchInfo, isLiveMonitoring, isDocVisible, isWindowVisible, liveIntervalSec])
 
   // Decoupled drain inspector polling every 30s only while visible
   useEffect(() => {
@@ -257,6 +279,8 @@ export function useBattery() {
     switchingMode,
     isGeneratingReport,
     isLiveMonitoring,
+    liveIntervalSec,
+    setPollInterval,
     killingPid,
     alertDismissed,
     reportResult,

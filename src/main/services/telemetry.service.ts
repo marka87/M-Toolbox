@@ -794,12 +794,15 @@ export class TelemetryService {
       $wmi = if ($hasBat -and ${queryWatts ? '$true' : '$false'}) {
         Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction SilentlyContinue | Select-Object -First 1
       } else { $null };
+      $b = if ($hasBat -and $p.BatteryLifeRemaining -le 0) {
+        Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue | Select-Object -First 1
+      } else { $null };
       [PSCustomObject]@{
         HasBat = $hasBat;
         LineStatus = $p.PowerLineStatus.ToString();
         Percent = [int]($p.BatteryLifePercent * 100);
         Status = $p.BatteryChargeStatus.ToString();
-        RemainingSeconds = if ($p.BatteryLifeRemaining -gt 0 -and $p.BatteryLifeRemaining -lt 172800) { [int]$p.BatteryLifeRemaining } else { -1 };
+        RemainingSeconds = if ($p.BatteryLifeRemaining -gt 0 -and $p.BatteryLifeRemaining -lt 172800) { [int]$p.BatteryLifeRemaining } elseif ($b -and $b.EstimatedRunTime -gt 0 -and $b.EstimatedRunTime -lt 2880) { [int]($b.EstimatedRunTime * 60) } else { -1 };
         ChargeRate = if ($wmi) { [int64]$wmi.ChargeRate } else { 0 };
         DischargeRate = if ($wmi) { [int64]$wmi.DischargeRate } else { 0 };
       } | ConvertTo-Json -Compress
@@ -834,7 +837,10 @@ export class TelemetryService {
 
         // Calculate realistic remaining seconds
         let remainingSeconds = typeof parsed.RemainingSeconds === 'number' ? parsed.RemainingSeconds : -1
-        const staticData = batteryService.getStaticCache()
+        let staticData = batteryService.getStaticCache()
+        if (!staticData && hasBattery) {
+          batteryService.getStaticBatteryData().catch(() => {})
+        }
         const fullCapacity = staticData?.fullChargeCapacityMWh || 0
 
         if (isCharging) {

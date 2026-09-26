@@ -49,6 +49,8 @@ export const BatteryPage: React.FC = () => {
     switchingMode,
     isGeneratingReport,
     isLiveMonitoring,
+    liveIntervalSec,
+    setPollInterval,
     killingPid,
     alertDismissed,
     reportResult,
@@ -108,27 +110,47 @@ export const BatteryPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {hasBattery && (
-            <button
-              onClick={toggleLiveMonitoring}
-              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                isLiveMonitoring
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/15'
-                  : 'bg-fluent-card border-fluent-border text-fluent-muted hover:text-fluent-text hover:bg-fluent-card-hover'
-              }`}
-              title={
-                isLiveMonitoring
-                  ? 'Echtzeit-Überwachung aktiv (aktualisiert alle 8s energiesparend)'
-                  : 'Klicken, um Echtzeit-Überwachung zu starten'
-              }
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isLiveMonitoring ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+            <div className="inline-flex items-center rounded-xl border border-fluent-border bg-fluent-card/70 p-0.5 text-xs font-semibold shadow-sm">
+              <button
+                onClick={toggleLiveMonitoring}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
+                  isLiveMonitoring
+                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                    : 'text-fluent-muted hover:text-fluent-text hover:bg-fluent-card-hover'
                 }`}
-              />
-              <Activity className="w-3.5 h-3.5 text-fluent-accent" />
-              <span>{isLiveMonitoring ? 'Live (8s)' : 'Live pausiert'}</span>
-            </button>
+                title={
+                  isLiveMonitoring
+                    ? `Echtzeit-Überwachung aktiv (alle ${liveIntervalSec}s) - Klick zum Pausieren`
+                    : 'Klicken, um Echtzeit-Überwachung zu starten'
+                }
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isLiveMonitoring ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+                  }`}
+                />
+                <Activity className="w-3.5 h-3.5 text-fluent-accent" />
+                <span>{isLiveMonitoring ? `Live (${liveIntervalSec}s)` : 'Live pausiert'}</span>
+              </button>
+              {isLiveMonitoring && (
+                <div className="flex items-center gap-0.5 pl-1.5 pr-0.5 border-l border-fluent-border/60">
+                  {[3, 6, 9].map((sec) => (
+                    <button
+                      key={sec}
+                      onClick={() => setPollInterval(sec)}
+                      className={`px-2 py-1 rounded-md text-[11px] font-mono transition-all ${
+                        liveIntervalSec === sec
+                          ? 'bg-fluent-accent text-white font-bold shadow-sm'
+                          : 'text-fluent-muted hover:text-fluent-text hover:bg-fluent-card-hover'
+                      }`}
+                      title={`Aktualisierungsintervall: alle ${sec} Sekunden`}
+                    >
+                      {sec}s
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {hasBattery && (

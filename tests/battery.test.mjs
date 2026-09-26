@@ -167,4 +167,20 @@ describe('Battery Service & Manager Optimization Tests', () => {
     assert.equal(mToolboxAppCpu, 2.4)
     assert.equal(mToolboxMemoryMb, 170)
   })
+
+  test('Configurable live polling intervals (3s, 6s, 9s) with boundary fallback', () => {
+    const validIntervals = [3, 6, 9]
+    const resolveInterval = (saved) => {
+      const val = parseInt(saved, 10)
+      if (validIntervals.includes(val)) return val
+      return 6 // Default
+    }
+
+    assert.equal(resolveInterval('3'), 3)
+    assert.equal(resolveInterval('6'), 6)
+    assert.equal(resolveInterval('9'), 9)
+    assert.equal(resolveInterval('8'), 6) // invalid/legacy falls back to 6
+    assert.equal(resolveInterval('invalid'), 6)
+    assert.equal(resolveInterval(null), 6)
+  })
 })
