@@ -1,5 +1,6 @@
 import React from 'react'
 import { Download, X, Loader2 } from 'lucide-react'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface BatchActionBarProps {
   selectedCount: number
@@ -14,6 +15,8 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
   onClear,
   onInstallSelected
 }) => {
+  const { t } = useTranslation()
+
   if (selectedCount === 0) return null
 
   return (
@@ -23,7 +26,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
           {selectedCount}
         </span>
         <span className="text-xs font-medium text-slate-200">
-          {selectedCount === 1 ? 'Paket ausgewählt' : 'Pakete ausgewählt'}
+          {selectedCount === 1 ? t.software.batchSelectedOne : t.software.batchSelectedMany}
         </span>
       </div>
 
@@ -35,7 +38,7 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
         className="inline-flex items-center gap-1.5 text-xs text-fluent-muted hover:text-slate-200 transition-colors disabled:opacity-50"
       >
         <X className="w-3.5 h-3.5" />
-        <span>Zurücksetzen</span>
+        <span>{t.software.batchReset}</span>
       </button>
 
       <button
@@ -46,12 +49,12 @@ export const BatchActionBar: React.FC<BatchActionBarProps> = ({
         {isOperating ? (
           <>
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            <span>Installiere Stapel...</span>
+            <span>{t.software.batchInstalling}</span>
           </>
         ) : (
           <>
             <Download className="w-3.5 h-3.5" />
-            <span>Ausgewählte installieren</span>
+            <span>{t.software.batchInstallSelected}</span>
           </>
         )}
       </button>

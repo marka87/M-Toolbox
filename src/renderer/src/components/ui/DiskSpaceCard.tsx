@@ -2,12 +2,14 @@ import React from 'react'
 import { HardDrive } from 'lucide-react'
 import type { DiskStorageInfo } from '@shared/types'
 import { formatBytes } from '../../hooks/useCleanup'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface DiskSpaceCardProps {
   disk: DiskStorageInfo
 }
 
 export const DiskSpaceCard: React.FC<DiskSpaceCardProps> = ({ disk }) => {
+  const { t } = useTranslation()
   const isDanger = disk.usagePercent >= 90
   const isWarning = disk.usagePercent >= 75 && disk.usagePercent < 90
 
@@ -35,7 +37,9 @@ export const DiskSpaceCard: React.FC<DiskSpaceCardProps> = ({ disk }) => {
               {disk.volumeName}
             </h4>
             <p className="text-xs text-fluent-muted">
-              {formatBytes(disk.freeBytes)} frei von {formatBytes(disk.totalBytes)}
+              {t.cleanup.diskFreeOf
+                .replace('{free}', formatBytes(disk.freeBytes))
+                .replace('{total}', formatBytes(disk.totalBytes))}
             </p>
           </div>
         </div>
@@ -43,7 +47,7 @@ export const DiskSpaceCard: React.FC<DiskSpaceCardProps> = ({ disk }) => {
         <span
           className={`px-2 py-0.5 rounded-full text-xs font-semibold border shrink-0 ${getBadgeColor()}`}
         >
-          {disk.usagePercent}% belegt
+          {t.cleanup.diskUsed.replace('{percent}', String(disk.usagePercent))}
         </span>
       </div>
 

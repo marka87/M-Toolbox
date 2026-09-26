@@ -19,19 +19,22 @@ import {
 import { useRepair } from '../hooks/useRepair'
 import { RepairActionCard } from '../components/ui/RepairActionCard'
 import { AdminNoticeBanner } from '../components/ui/AdminNoticeBanner'
+import { useTranslation } from '../i18n/LanguageContext'
 import type { RepairCategory } from '@shared/types'
 
-const CATEGORY_TABS: { id: RepairCategory; label: string; icon: React.ReactNode }[] = [
-  { id: 'all', label: 'Alle Werkzeuge', icon: <Wrench className="w-4 h-4" /> },
-  { id: 'system', label: 'System (SFC & DISM)', icon: <ShieldCheck className="w-4 h-4 text-fluent-accent" /> },
-  { id: 'update', label: 'Windows Update', icon: <RefreshCw className="w-4 h-4 text-sky-400" /> },
-  { id: 'network', label: 'Netzwerk & DNS', icon: <Wifi className="w-4 h-4 text-emerald-400" /> },
-  { id: 'spooler', label: 'Drucker & Spooler', icon: <Printer className="w-4 h-4 text-indigo-400" /> },
-  { id: 'explorer', label: 'Explorer & Suche', icon: <Layout className="w-4 h-4 text-amber-400" /> },
-  { id: 'store', label: 'Store & Apps', icon: <ShoppingBag className="w-4 h-4 text-purple-400" /> }
-]
-
 export const RepairPage: React.FC = () => {
+  const { t } = useTranslation()
+
+  const categoryTabs: { id: RepairCategory; label: string; icon: React.ReactNode }[] = [
+    { id: 'all', label: t.repair.catAll, icon: <Wrench className="w-4 h-4" /> },
+    { id: 'system', label: t.repair.catSystem, icon: <ShieldCheck className="w-4 h-4 text-fluent-accent" /> },
+    { id: 'update', label: t.repair.catUpdate, icon: <RefreshCw className="w-4 h-4 text-sky-400" /> },
+    { id: 'network', label: t.repair.catNetwork, icon: <Wifi className="w-4 h-4 text-emerald-400" /> },
+    { id: 'spooler', label: t.repair.catSpooler, icon: <Printer className="w-4 h-4 text-indigo-400" /> },
+    { id: 'explorer', label: t.repair.catExplorer, icon: <Layout className="w-4 h-4 text-amber-400" /> },
+    { id: 'store', label: t.repair.catStore, icon: <ShoppingBag className="w-4 h-4 text-purple-400" /> }
+  ]
+
   const {
     health,
     actions,
@@ -69,9 +72,9 @@ export const RepairPage: React.FC = () => {
       {/* Header & Global Toolbar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-fluent-text">Repair Center</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-fluent-text">{t.repair.title}</h1>
           <p className="text-sm text-fluent-muted mt-0.5">
-            Systemintegrität, SFC & DISM, Windows Update und Netzwerk-Reparaturen
+            {t.repair.subtitle}
           </p>
         </div>
 
@@ -80,19 +83,19 @@ export const RepairPage: React.FC = () => {
             onClick={() => fetchHealth()}
             disabled={loading || Boolean(runningActionId)}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover hover:border-fluent-border-hover text-fluent-text transition-all disabled:opacity-50"
-            title="Dienste und Systemgesundheit neu abfragen"
+            title={t.repair.checkHealthTooltip}
           >
             <RefreshCw className={`w-3.5 h-3.5 text-fluent-accent ${loading ? 'animate-spin' : ''}`} />
-            Gesundheit prüfen
+            {t.repair.checkHealthBtn}
           </button>
 
           <button
             onClick={handleOpenTroubleshooter}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-muted hover:text-fluent-text transition-all"
-            title="Windows 11 Problembehandlung aufrufen"
+            title={t.repair.troubleshooterTooltip}
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            Windows Problembehandlung
+            {t.repair.troubleshooterBtn}
           </button>
         </div>
       </div>
@@ -129,7 +132,7 @@ export const RepairPage: React.FC = () => {
             <span>{lastResult.message}</span>
           </div>
           <span className="text-[11px] opacity-75">
-            Dauer: {Math.round(lastResult.durationMs / 1000)}s
+            {t.repair.lastResultDuration.replace('{sec}', String(Math.round(lastResult.durationMs / 1000)))}
           </span>
         </div>
       )}
@@ -139,7 +142,7 @@ export const RepairPage: React.FC = () => {
         {/* Service: Windows Update */}
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">Windows Update Dienst</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.repair.cardWinUpdateTitle}</span>
             <div className="p-1.5 rounded-lg bg-fluent-card-subtle text-sky-400">
               <RefreshCw className="w-4 h-4" />
             </div>
@@ -151,16 +154,16 @@ export const RepairPage: React.FC = () => {
               }`}
             />
             <span className="text-base font-bold text-fluent-text capitalize">
-              {getServiceStatus('wuauserv') === 'running' ? 'Aktiv (Wuauserv)' : 'Angehalten'}
+              {getServiceStatus('wuauserv') === 'running' ? t.repair.serviceActiveWuauserv : t.repair.serviceStopped}
             </span>
           </div>
-          <p className="text-[11px] text-fluent-muted mt-1">Automatische Windows-Updates</p>
+          <p className="text-[11px] text-fluent-muted mt-1">{t.repair.cardWinUpdateDesc}</p>
         </div>
 
         {/* Service: Druckwarteschlange */}
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">Druckwarteschlange</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.repair.cardSpoolerTitle}</span>
             <div className="p-1.5 rounded-lg bg-fluent-card-subtle text-indigo-400">
               <Printer className="w-4 h-4" />
             </div>
@@ -172,16 +175,16 @@ export const RepairPage: React.FC = () => {
               }`}
             />
             <span className="text-base font-bold text-fluent-text capitalize">
-              {getServiceStatus('Spooler') === 'running' ? 'Aktiv (Spooler)' : 'Fehlerhaft'}
+              {getServiceStatus('Spooler') === 'running' ? t.repair.serviceActiveSpooler : t.repair.serviceFaulty}
             </span>
           </div>
-          <p className="text-[11px] text-fluent-muted mt-1">Druckerkommunikation</p>
+          <p className="text-[11px] text-fluent-muted mt-1">{t.repair.cardSpoolerDesc}</p>
         </div>
 
         {/* Service: Windows Search */}
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">Windows Suchindex</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.repair.cardSearchTitle}</span>
             <div className="p-1.5 rounded-lg bg-fluent-card-subtle text-amber-400">
               <Activity className="w-4 h-4" />
             </div>
@@ -193,16 +196,16 @@ export const RepairPage: React.FC = () => {
               }`}
             />
             <span className="text-base font-bold text-fluent-text capitalize">
-              {getServiceStatus('WSearch') === 'running' ? 'Aktiv (WSearch)' : 'Gestoppt'}
+              {getServiceStatus('WSearch') === 'running' ? t.repair.serviceActiveSearch : t.repair.serviceSearchStopped}
             </span>
           </div>
-          <p className="text-[11px] text-fluent-muted mt-1">Dateisuche & Startmenü</p>
+          <p className="text-[11px] text-fluent-muted mt-1">{t.repair.cardSearchDesc}</p>
         </div>
 
         {/* Network Connectivity */}
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">Internet-Konnektivität</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.repair.cardNetworkTitle}</span>
             <div className="p-1.5 rounded-lg bg-fluent-card-subtle text-emerald-400">
               <Wifi className="w-4 h-4" />
             </div>
@@ -214,16 +217,16 @@ export const RepairPage: React.FC = () => {
               }`}
             />
             <span className="text-base font-bold text-fluent-text">
-              {health?.networkConnected ? 'Verbunden' : 'Kein Internet'}
+              {health?.networkConnected ? t.repair.networkConnected : t.repair.networkDisconnected}
             </span>
           </div>
-          <p className="text-[11px] text-fluent-muted mt-1">DNS- & Gateway-Ping</p>
+          <p className="text-[11px] text-fluent-muted mt-1">{t.repair.cardNetworkDesc}</p>
         </div>
       </div>
 
       {/* Category Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {CATEGORY_TABS.map((tab) => {
+        {categoryTabs.map((tab) => {
           const isActive = selectedCategory === tab.id
           const count =
             tab.id === 'all'
@@ -277,16 +280,16 @@ export const RepairPage: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <Terminal className="w-4 h-4 text-fluent-accent" />
-              <span>Reparatur- & Befehlsprotokoll</span>
+              <span>{t.repair.logDrawerTitle}</span>
               {runningActionId && (
                 <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-fluent-accent/15 text-fluent-accent text-[10px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-fluent-accent animate-ping" />
-                  Wird ausgeführt...
+                  {t.repair.logExecutingStatus}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2 text-fluent-muted">
-              <span>{logs.length} Zeilen</span>
+              <span>{t.repair.logLinesCount.replace('{count}', String(logs.length))}</span>
               {isLogDrawerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </div>
           </button>

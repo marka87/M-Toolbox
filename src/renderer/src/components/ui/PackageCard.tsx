@@ -14,6 +14,7 @@ import {
   Layers
 } from 'lucide-react'
 import type { SoftwarePackage, SoftwareCategory } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 export type SoftwareViewMode = 'normal' | 'compact' | 'icons'
 
@@ -51,6 +52,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
   onUninstall,
   onUpgrade
 }) => {
+  const { t } = useTranslation()
   const Icon = CATEGORY_ICONS[pkg.category] || Wrench
 
   // Action button renderer
@@ -68,7 +70,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
           } inline-flex items-center gap-1.5 rounded font-medium bg-fluent-accent/40 text-white cursor-wait shrink-0`}
         >
           <Loader2 className={`${size === 'sm' || isIconTile ? 'w-3 h-3' : 'w-3.5 h-3.5'} animate-spin shrink-0`} />
-          <span className="truncate">{isIconTile ? 'Läuft...' : 'Verarbeite...'}</span>
+          <span className="truncate">{isIconTile ? t.software.runningShort : t.software.processingBtn}</span>
         </button>
       )
     }
@@ -85,10 +87,10 @@ export const PackageCard: React.FC<PackageCardProps> = ({
               ? 'px-2 py-1 text-[11px]'
               : 'px-3 py-1.5 text-xs'
           } inline-flex items-center gap-1.5 rounded font-medium bg-fluent-status-yellow/20 hover:bg-fluent-status-yellow/30 text-fluent-status-yellow border border-fluent-status-yellow/30 transition-colors disabled:opacity-50 shrink-0`}
-          title="Update verfügbar"
+          title={t.software.statusUpdateAvailable}
         >
           <ArrowUpCircle className={`${size === 'sm' || isIconTile ? 'w-3 h-3' : 'w-3.5 h-3.5'} shrink-0`} />
-          <span className="truncate">Update</span>
+          <span className="truncate">{t.software.updateBtn}</span>
         </button>
       )
     }
@@ -105,10 +107,10 @@ export const PackageCard: React.FC<PackageCardProps> = ({
               ? 'px-2 py-1 text-[11px]'
               : 'px-2.5 py-1.5 text-xs'
           } inline-flex items-center gap-1.5 rounded font-medium text-fluent-muted hover:text-fluent-status-red hover:bg-fluent-status-red/10 border border-transparent hover:border-fluent-status-red/30 transition-colors disabled:opacity-50 shrink-0`}
-          title="Deinstallieren"
+          title={t.software.uninstallBtn}
         >
           <Trash2 className={`${size === 'sm' || isIconTile ? 'w-3 h-3' : 'w-3.5 h-3.5'} shrink-0`} />
-          <span className="truncate">{isIconTile ? 'Löschen' : 'Deinstallieren'}</span>
+          <span className="truncate">{isIconTile ? t.software.uninstallShort : t.software.uninstallBtn}</span>
         </button>
       )
     }
@@ -124,10 +126,10 @@ export const PackageCard: React.FC<PackageCardProps> = ({
             ? 'px-2.5 py-1 text-[11px]'
             : 'px-3 py-1.5 text-xs'
         } inline-flex items-center gap-1.5 rounded font-medium bg-fluent-accent hover:bg-fluent-accent-hover text-white shadow-fluent-sm transition-colors disabled:opacity-50 shrink-0`}
-        title="Installieren"
+        title={t.software.installBtn}
       >
         <Download className={`${size === 'sm' || isIconTile ? 'w-3 h-3' : 'w-3.5 h-3.5'} shrink-0`} />
-        <span className="truncate">Installieren</span>
+        <span className="truncate">{t.software.installBtn}</span>
       </button>
     )
   }
@@ -156,10 +158,10 @@ export const PackageCard: React.FC<PackageCardProps> = ({
           )}
 
           {pkg.status === 'installed' && (
-            <span className="w-2 h-2 rounded-full bg-fluent-status-green shrink-0" title={`Installiert (v${pkg.installedVersion || ''})`} />
+            <span className="w-2 h-2 rounded-full bg-fluent-status-green shrink-0" title={`${t.software.statusInstalled} (v${pkg.installedVersion || ''})`} />
           )}
           {pkg.status === 'update_available' && (
-            <span className="w-2 h-2 rounded-full bg-fluent-status-yellow animate-pulse shrink-0" title={`Update verfügbar: v${pkg.latestVersion}`} />
+            <span className="w-2 h-2 rounded-full bg-fluent-status-yellow animate-pulse shrink-0" title={t.software.statusUpdateVersion.replace('{version}', pkg.latestVersion || '')} />
           )}
           {pkg.status === 'not_installed' && (
             <span className="w-1.5 h-1.5 rounded-full bg-fluent-muted/40 shrink-0" />
@@ -176,9 +178,9 @@ export const PackageCard: React.FC<PackageCardProps> = ({
           </h4>
           <p className="text-[10px] text-fluent-muted truncate mt-0.5">
             {pkg.status === 'installed'
-              ? `v${pkg.installedVersion || 'installiert'}`
+              ? `v${pkg.installedVersion || t.software.statusInstalled}`
               : pkg.status === 'update_available'
-              ? `Update v${pkg.latestVersion}`
+              ? t.software.statusUpdateVersion.replace('{version}', pkg.latestVersion || '')
               : pkg.publisher || pkg.category}
           </p>
         </div>
@@ -236,18 +238,18 @@ export const PackageCard: React.FC<PackageCardProps> = ({
             {pkg.status === 'installed' && (
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-green/15 text-fluent-status-green border border-fluent-status-green/20">
                 <CheckCircle2 className="w-3 h-3" />
-                <span>v{pkg.installedVersion || 'installiert'}</span>
+                <span>v{pkg.installedVersion || t.software.statusInstalled}</span>
               </span>
             )}
             {pkg.status === 'update_available' && (
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-yellow/15 text-fluent-status-yellow border border-fluent-status-yellow/20">
                 <ArrowUpCircle className="w-3 h-3" />
-                <span>Update: v{pkg.latestVersion}</span>
+                <span>{t.software.statusUpdateVersion.replace('{version}', pkg.latestVersion || '')}</span>
               </span>
             )}
             {pkg.status === 'not_installed' && (
               <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-border/50 text-fluent-muted border border-fluent-border/40">
-                Bereit
+                {t.software.statusReady}
               </span>
             )}
           </div>
@@ -298,24 +300,24 @@ export const PackageCard: React.FC<PackageCardProps> = ({
             {pkg.status === 'installed' && (
               <span
                 className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-green/15 text-fluent-status-green border border-fluent-status-green/20 max-w-[130px] truncate"
-                title={`v${pkg.installedVersion || 'installiert'}`}
+                title={`v${pkg.installedVersion || t.software.statusInstalled}`}
               >
                 <CheckCircle2 className="w-3 h-3 shrink-0" />
-                <span className="truncate">v{pkg.installedVersion || 'installiert'}</span>
+                <span className="truncate">v{pkg.installedVersion || t.software.statusInstalled}</span>
               </span>
             )}
             {pkg.status === 'update_available' && (
               <span
                 className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-yellow/15 text-fluent-status-yellow border border-fluent-status-yellow/20 max-w-[135px] truncate"
-                title={`Update: v${pkg.latestVersion}`}
+                title={t.software.statusUpdateVersion.replace('{version}', pkg.latestVersion || '')}
               >
                 <ArrowUpCircle className="w-3 h-3 shrink-0" />
-                <span className="truncate">Update: v{pkg.latestVersion}</span>
+                <span className="truncate">{t.software.statusUpdateVersion.replace('{version}', pkg.latestVersion || '')}</span>
               </span>
             )}
             {pkg.status === 'not_installed' && (
               <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-border/50 text-fluent-muted border border-fluent-border/40">
-                Bereit
+                {t.software.statusReady}
               </span>
             )}
           </div>

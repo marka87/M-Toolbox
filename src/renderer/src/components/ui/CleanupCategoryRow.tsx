@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import type { CleanupCategoryItem } from '@shared/types'
 import { formatBytes } from '../../hooks/useCleanup'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface CleanupCategoryRowProps {
   category: CleanupCategoryItem
@@ -46,6 +47,7 @@ export const CleanupCategoryRow: React.FC<CleanupCategoryRowProps> = ({
   onToggle,
   disabled
 }) => {
+  const { t, language } = useTranslation()
   const hasData = category.sizeBytes > 0
 
   return (
@@ -88,7 +90,7 @@ export const CleanupCategoryRow: React.FC<CleanupCategoryRowProps> = ({
             </h4>
             <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <CheckCircle2 className="w-3 h-3" />
-              Sicher
+              {t.cleanup.safeBadge}
             </span>
           </div>
           <p className="text-xs text-fluent-muted truncate mt-0.5" title={category.description}>
@@ -101,7 +103,7 @@ export const CleanupCategoryRow: React.FC<CleanupCategoryRowProps> = ({
       <div className="flex items-center gap-4 shrink-0 text-right">
         <div className="hidden sm:block">
           <span className="text-xs text-fluent-muted block">
-            {category.fileCount.toLocaleString('de-DE')} {category.fileCount === 1 ? 'Datei' : 'Dateien'}
+            {category.fileCount.toLocaleString(language === 'de' ? 'de-DE' : 'en-US')} {category.fileCount === 1 ? t.cleanup.fileOne : t.cleanup.fileMany}
           </span>
         </div>
 

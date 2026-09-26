@@ -13,9 +13,11 @@ import {
   CheckCircle2
 } from 'lucide-react'
 import { useBloatware } from '../../hooks/useBloatware'
+import { useTranslation } from '../../i18n/LanguageContext'
 import type { BloatwareApp } from '@shared/types'
 
 export const BloatwareTab: React.FC = () => {
+  const { t } = useTranslation()
   const {
     filteredApps,
     loading,
@@ -69,13 +71,13 @@ export const BloatwareTab: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-5 rounded-2xl bg-fluent-card border border-fluent-border">
         <div>
           <div className="flex items-center gap-2.5">
-            <h2 className="text-base font-bold text-slate-100">Windows Bloatware & Werbe-Apps</h2>
+            <h2 className="text-base font-bold text-slate-100">{t.cleanup.bloatwareTitle}</h2>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-fluent-accent/15 text-fluent-accent border border-fluent-accent/30">
-              Appx Scanner
+              {t.cleanup.appxBadge}
             </span>
           </div>
           <p className="text-xs text-fluent-muted mt-1 leading-relaxed max-w-2xl">
-            Identifiziert vorinstallierte Windows 11 Werbe- und Zusatzpakete (wie z. B. MSN-Feeds, Werbespiele und Telemetrie-Dienste) mit Sicherheitsampel und entfernt sie rückstandslos.
+            {t.cleanup.bloatwareSubtitle}
           </p>
         </div>
 
@@ -84,10 +86,10 @@ export const BloatwareTab: React.FC = () => {
             onClick={scan}
             disabled={loading || isUninstalling}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card-subtle border border-fluent-border hover:bg-fluent-card hover:border-fluent-accent text-slate-200 transition-all disabled:opacity-50"
-            title="Appx-Pakete neu scannen"
+            title={t.cleanup.rescanAppxTooltip}
           >
             <RefreshCw className={`w-3.5 h-3.5 text-fluent-accent ${loading ? 'animate-spin' : ''}`} />
-            <span>Neu scannen</span>
+            <span>{t.cleanup.rescanAppxBtn}</span>
           </button>
 
           {safeCount > 0 && (
@@ -95,10 +97,10 @@ export const BloatwareTab: React.FC = () => {
               onClick={selectAllSafe}
               disabled={loading || isUninstalling}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 transition-all shadow-sm disabled:opacity-50"
-              title="Alle sicheren Bloatware-Apps automatisch markieren"
+              title={t.cleanup.selectAllSafeTooltip}
             >
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Alle {safeCount} sicheren Apps wählen</span>
+              <span>{t.cleanup.selectAllSafeBtn.replace('{count}', String(safeCount))}</span>
             </button>
           )}
         </div>
@@ -134,11 +136,11 @@ export const BloatwareTab: React.FC = () => {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-emerald-400">🟢 Sicher entfernbar</span>
+            <span className="text-xs font-medium text-emerald-400">{t.cleanup.filterSafe}</span>
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="mt-2 text-2xl font-bold text-slate-100">{safeCount}</div>
-          <p className="text-[11px] text-fluent-muted mt-0.5">Werbung & MSN-Feeds</p>
+          <p className="text-[11px] text-fluent-muted mt-0.5">{t.cleanup.filterSafeDesc}</p>
         </button>
 
         <button
@@ -150,11 +152,11 @@ export const BloatwareTab: React.FC = () => {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-amber-400">🟡 Optional</span>
+            <span className="text-xs font-medium text-amber-400">{t.cleanup.filterOptional}</span>
             <AlertTriangle className="w-4 h-4 text-amber-400" />
           </div>
           <div className="mt-2 text-2xl font-bold text-slate-100">{optionalCount}</div>
-          <p className="text-[11px] text-fluent-muted mt-0.5">Zusatz-Tools (Skype, To Do etc.)</p>
+          <p className="text-[11px] text-fluent-muted mt-0.5">{t.cleanup.filterOptionalDesc}</p>
         </button>
 
         <button
@@ -166,20 +168,20 @@ export const BloatwareTab: React.FC = () => {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-red-400">🔴 Systemrelevant</span>
+            <span className="text-xs font-medium text-red-400">{t.cleanup.filterCaution}</span>
             <ShieldAlert className="w-4 h-4 text-red-400" />
           </div>
           <div className="mt-2 text-2xl font-bold text-slate-100">{cautionCount}</div>
-          <p className="text-[11px] text-fluent-muted mt-0.5">Geschützt (Store, Rechner etc.)</p>
+          <p className="text-[11px] text-fluent-muted mt-0.5">{t.cleanup.filterCautionDesc}</p>
         </button>
 
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">Ausgewählt</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.cleanup.filterSelected}</span>
             <Package className="w-4 h-4 text-fluent-accent" />
           </div>
           <div className="mt-2 text-2xl font-bold text-slate-100">{selectedAppIds.size}</div>
-          <p className="text-[11px] text-fluent-muted mt-0.5">Bereit zur Deinstallation</p>
+          <p className="text-[11px] text-fluent-muted mt-0.5">{t.cleanup.filterSelectedDesc}</p>
         </div>
       </div>
 
@@ -189,7 +191,7 @@ export const BloatwareTab: React.FC = () => {
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-fluent-muted" />
           <input
             type="text"
-            placeholder="Bloatware-App oder Paket suchen..."
+            placeholder={t.cleanup.searchBloatwarePlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 rounded-xl bg-fluent-card border border-fluent-border text-xs text-slate-100 placeholder:text-fluent-muted focus:outline-none focus:border-fluent-accent transition-colors"
@@ -204,7 +206,7 @@ export const BloatwareTab: React.FC = () => {
                 onClick={clearSelection}
                 className="px-3 py-2 rounded-xl text-xs font-medium text-fluent-muted hover:text-slate-100 bg-fluent-card border border-fluent-border transition-colors"
               >
-                Auswahl aufheben
+                {t.cleanup.clearSelectionBtn}
               </button>
               <button
                 onClick={handleBatchClick}
@@ -212,7 +214,7 @@ export const BloatwareTab: React.FC = () => {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-fluent-status-red hover:bg-fluent-status-red/90 text-white shadow-fluent-sm transition-all disabled:opacity-50"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>{selectedAppIds.size} Apps entfernen</span>
+                <span>{t.cleanup.removeAppsBtn.replace('{count}', String(selectedAppIds.size))}</span>
               </button>
             </>
           )}
@@ -223,14 +225,14 @@ export const BloatwareTab: React.FC = () => {
       {loading ? (
         <div className="py-24 flex flex-col items-center justify-center space-y-3 text-fluent-muted">
           <RefreshCw className="w-8 h-8 animate-spin text-fluent-accent" />
-          <p className="text-xs">Scanne installierte Windows Appx-Pakete...</p>
+          <p className="text-xs">{t.cleanup.loadingAppx}</p>
         </div>
       ) : filteredApps.length === 0 ? (
         <div className="py-16 text-center rounded-2xl bg-fluent-card/40 border border-fluent-border/60 space-y-2">
           <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto opacity-70" />
-          <p className="text-sm font-semibold text-slate-100">Keine passenden Apps gefunden</p>
+          <p className="text-sm font-semibold text-slate-100">{t.cleanup.noAppsFoundTitle}</p>
           <p className="text-xs text-fluent-muted">
-            Entweder wurden alle Apps dieser Kategorie bereits entfernt oder der Suchfilter schließt sie aus.
+            {t.cleanup.noAppsFoundDesc}
           </p>
         </div>
       ) : (
@@ -270,17 +272,17 @@ export const BloatwareTab: React.FC = () => {
                         {/* Safety Badge */}
                         {app.safety === 'safe' && (
                           <span className="px-2 py-0.2 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                            Sicher entfernbar
+                            {t.cleanup.safetySafeBadge}
                           </span>
                         )}
                         {app.safety === 'optional' && (
                           <span className="px-2 py-0.2 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                            Optional
+                            {t.cleanup.safetyOptionalBadge}
                           </span>
                         )}
                         {app.safety === 'caution' && (
                           <span className="px-2 py-0.2 rounded-full text-[10px] font-semibold bg-red-500/15 text-red-400 border border-red-500/30">
-                            Geschützt
+                            {t.cleanup.safetyCautionBadge}
                           </span>
                         )}
 
@@ -306,14 +308,14 @@ export const BloatwareTab: React.FC = () => {
                         onClick={() => handleOpenSingleConfirm(app)}
                         disabled={isUninstalling}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-fluent-muted hover:text-fluent-status-red hover:bg-fluent-status-red/10 border border-transparent hover:border-fluent-status-red/30 transition-colors disabled:opacity-50"
-                        title="Diesen Appx-Eintrag entfernen"
+                        title={t.cleanup.uninstallSingleBtn}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Entfernen</span>
+                        <span className="hidden sm:inline">{t.cleanup.uninstallSingleBtn}</span>
                       </button>
                     ) : (
                       <span className="text-[11px] text-fluent-muted italic px-2 py-1">
-                        System-App
+                        {t.cleanup.safetyCautionBadge}
                       </span>
                     )}
                   </div>
@@ -335,31 +337,30 @@ export const BloatwareTab: React.FC = () => {
               <div>
                 <h3 className="text-sm font-bold text-slate-100">
                   {appToUninstall
-                    ? `"${appToUninstall.displayName}" deinstallieren?`
-                    : `${selectedAppIds.size} Apps wirklich deinstallieren?`}
+                    ? t.cleanup.confirmSingleAppDesc.replace('{name}', appToUninstall.displayName)
+                    : t.cleanup.confirmBatchAppDesc.replace('{count}', String(selectedAppIds.size))}
                 </h3>
-                <p className="text-xs text-fluent-muted mt-0.5">
-                  Appx-Paket wird für alle Benutzer vom System entfernt.
-                </p>
               </div>
             </div>
 
-            <p className="text-xs text-fluent-subtext leading-relaxed">
-              Die ausgewählten Anwendungen werden über Windows PowerShell entfernt. Falls du eine App später wieder benötigst, kann sie jederzeit kostenlos aus dem Microsoft Store neu installiert werden.
-            </p>
+            {appToUninstall?.safety === 'caution' && (
+              <p className="text-xs text-amber-400 leading-relaxed font-semibold">
+                {t.cleanup.confirmCautionWarning}
+              </p>
+            )}
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setConfirmModalOpen(false)}
                 className="px-4 py-2 rounded-xl text-xs font-semibold text-fluent-muted hover:text-slate-100 bg-fluent-card-subtle border border-fluent-border transition-colors"
               >
-                Abbrechen
+                {t.cleanup.cancelBtn}
               </button>
               <button
                 onClick={appToUninstall ? handleExecuteSingleUninstall : handleExecuteBatchUninstall}
                 className="px-4 py-2 rounded-xl text-xs font-semibold bg-fluent-status-red hover:bg-fluent-status-red/90 text-white shadow-fluent-sm transition-all"
               >
-                Jetzt entfernen
+                {t.cleanup.startUninstallBtn}
               </button>
             </div>
           </div>

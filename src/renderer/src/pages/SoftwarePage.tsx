@@ -18,22 +18,24 @@ import {
 import { useSoftware } from '../hooks/useSoftware'
 import { PackageCard, type SoftwareViewMode } from '../components/ui/PackageCard'
 import { BatchActionBar } from '../components/ui/BatchActionBar'
+import { useTranslation } from '../i18n/LanguageContext'
 import type { SoftwareCategory, SoftwarePackage } from '@shared/types'
 
 type ActiveTab = 'catalog' | 'installed' | 'updates'
 
-const CATEGORIES: { id: SoftwareCategory; label: string }[] = [
-  { id: 'all', label: 'Alle' },
-  { id: 'browser', label: 'Browser' },
-  { id: 'dev', label: 'Entwicklung' },
-  { id: 'utilities', label: 'Utilities' },
-  { id: 'media', label: 'Media' },
-  { id: 'communication', label: 'Kommunikation' },
-  { id: 'gaming', label: 'Gaming' },
-  { id: 'runtimes', label: 'Runtimes' }
-]
-
 export const SoftwarePage: React.FC = () => {
+  const { t } = useTranslation()
+
+  const CATEGORIES: { id: SoftwareCategory; label: string }[] = useMemo(() => [
+    { id: 'all', label: t.software.catAll },
+    { id: 'browser', label: t.software.catBrowser },
+    { id: 'dev', label: t.software.catDev },
+    { id: 'utilities', label: t.software.catUtilities },
+    { id: 'media', label: t.software.catMedia },
+    { id: 'communication', label: t.software.catCommunication },
+    { id: 'gaming', label: t.software.catGaming },
+    { id: 'runtimes', label: t.software.catRuntimes }
+  ], [t])
   const {
     catalog,
     installed,
@@ -172,13 +174,13 @@ export const SoftwarePage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-white">Software Center</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-white">{t.software.title}</h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-fluent-accent/20 text-fluent-accent border border-fluent-accent/30">
-              winget powered
+              {t.software.wingetPowered}
             </span>
           </div>
           <p className="text-xs text-fluent-muted mt-1">
-            Verwalte Windows-Software, installiere kuratierte Tools lautlos und halte Programme aktuell.
+            {t.software.subtitle}
           </p>
         </div>
 
@@ -192,7 +194,7 @@ export const SoftwarePage: React.FC = () => {
             }`}
           >
             <Terminal className="w-3.5 h-3.5" />
-            <span>Protokoll {operationLogs.length > 0 && `(${operationLogs.length})`}</span>
+            <span>{t.software.logBtn} {operationLogs.length > 0 && `(${operationLogs.length})`}</span>
             {showLogs ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
           </button>
 
@@ -202,7 +204,7 @@ export const SoftwarePage: React.FC = () => {
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-fluent bg-fluent-card hover:bg-fluent-card-hover border border-fluent-border text-xs font-medium text-slate-200 transition-colors shadow-fluent-sm disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-fluent-accent' : ''}`} />
-            <span>Aktualisieren</span>
+            <span>{t.software.refreshBtn}</span>
           </button>
         </div>
       </div>
@@ -221,7 +223,7 @@ export const SoftwarePage: React.FC = () => {
           }`}
         >
           <Package className="w-4 h-4" />
-          <span>Katalog & Empfehlungen</span>
+          <span>{t.software.tabCatalog}</span>
           <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-black/20">
             {catalog.length}
           </span>
@@ -239,7 +241,7 @@ export const SoftwarePage: React.FC = () => {
           }`}
         >
           <CheckCircle2 className="w-4 h-4" />
-          <span>Installierte Programme</span>
+          <span>{t.software.tabInstalled}</span>
           <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-black/20">
             {installed.length}
           </span>
@@ -257,7 +259,7 @@ export const SoftwarePage: React.FC = () => {
           }`}
         >
           <ArrowUpCircle className="w-4 h-4" />
-          <span>Verfügbare Updates</span>
+          <span>{t.software.tabUpdates}</span>
           {updates.length > 0 && (
             <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-fluent-status-yellow text-slate-950 font-bold">
               {updates.length}
@@ -275,10 +277,10 @@ export const SoftwarePage: React.FC = () => {
               type="text"
               placeholder={
                 activeTab === 'catalog'
-                  ? 'Katalog durchsuchen (Enter für Online-Winget-Suche)...'
+                  ? t.software.searchCatalogPlaceholder
                   : activeTab === 'installed'
-                  ? 'Installierte Software durchsuchen...'
-                  : 'Updates durchsuchen...'
+                  ? t.software.searchInstalledPlaceholder
+                  : t.software.searchUpdatesPlaceholder
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -296,27 +298,27 @@ export const SoftwarePage: React.FC = () => {
               onClick={handleSearchOnline}
               disabled={isSearchingOnline || isOperating}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-fluent-card border border-fluent-border hover:border-fluent-accent text-xs font-semibold text-slate-200 hover:text-white transition-all shrink-0 shadow-fluent-sm disabled:opacity-50"
-              title="Offizielles Microsoft Winget Online-Repository durchsuchen"
+              title={t.software.searchOnlineTooltip}
             >
               {isSearchingOnline ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin text-fluent-accent" />
               ) : (
                 <Globe className="w-3.5 h-3.5 text-fluent-accent" />
               )}
-              <span>Online in Winget suchen</span>
+              <span>{isSearchingOnline ? t.software.searchOnlineSearching : t.software.searchOnlineBtn}</span>
             </button>
           )}
 
           {activeTab === 'installed' && (
             <label className="inline-flex items-center gap-2 text-xs text-fluent-muted whitespace-nowrap">
-              <span>Sortieren:</span>
+              <span>{t.software.sortLabel}</span>
               <select
                 value={installedSort}
                 onChange={(event) => setInstalledSort(event.target.value as 'name' | 'version')}
                 className="px-2.5 py-2 rounded-lg bg-fluent-card border border-fluent-border text-xs text-slate-200 focus:outline-none focus:border-fluent-accent"
               >
-                <option value="name">Name A–Z</option>
-                <option value="version">Version</option>
+                <option value="name">{t.software.sortName}</option>
+                <option value="version">{t.software.sortVersion}</option>
               </select>
             </label>
           )}
@@ -333,7 +335,7 @@ export const SoftwarePage: React.FC = () => {
                     ? 'bg-fluent-accent text-white shadow-sm'
                     : 'text-fluent-muted hover:text-white'
                 }`}
-                title="Normal (Karten-Ansicht)"
+                title={t.software.viewNormalTooltip}
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
@@ -344,7 +346,7 @@ export const SoftwarePage: React.FC = () => {
                     ? 'bg-fluent-accent text-white shadow-sm'
                     : 'text-fluent-muted hover:text-white'
                 }`}
-                title="Kompakt (Listen-Ansicht)"
+                title={t.software.viewCompactTooltip}
               >
                 <List className="w-4 h-4" />
               </button>
@@ -355,7 +357,7 @@ export const SoftwarePage: React.FC = () => {
                     ? 'bg-fluent-accent text-white shadow-sm'
                     : 'text-fluent-muted hover:text-white'
                 }`}
-                title="Icons (Kachel-Ansicht)"
+                title={t.software.viewIconsTooltip}
               >
                 <Grid className="w-4 h-4" />
               </button>
@@ -370,15 +372,15 @@ export const SoftwarePage: React.FC = () => {
           {isLoading && catalog.length === 0 ? (
             <div className="py-20 flex flex-col items-center justify-center space-y-3 text-fluent-muted">
               <RefreshCw className="w-8 h-8 animate-spin text-fluent-accent" />
-              <p className="text-xs">Lade Softwarekatalog und prüfe Systemstatus...</p>
+              <p className="text-xs">{t.software.loadingCatalog}</p>
             </div>
           ) : filteredCatalog.length === 0 && isSearchingOnline ? (
             <div className="py-20 flex flex-col items-center justify-center space-y-3 text-fluent-muted">
               <RefreshCw className="w-8 h-8 animate-spin text-fluent-accent" />
               <p className="text-sm font-semibold text-slate-100">
-                Suche &quot;{searchQuery}&quot; online im Microsoft Winget-Katalog...
+                {t.software.searchingOnlineTitle.replace('{query}', searchQuery)}
               </p>
-              <p className="text-xs text-fluent-muted">Durchsuche das offizielle Windows-Paket-Repository...</p>
+              <p className="text-xs text-fluent-muted">{t.software.searchingOnlineDesc}</p>
             </div>
           ) : filteredCatalog.length === 0 && hasSearchedOnline && onlineResults.length > 0 ? (
             <div className="space-y-6">
@@ -389,10 +391,10 @@ export const SoftwarePage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-slate-100">
-                      Winget Online-Treffer für &quot;{searchQuery}&quot; ({onlineResults.length} Pakete gefunden)
+                      {t.software.onlineResultsTitle.replace('{query}', searchQuery).replace('{count}', String(onlineResults.length))}
                     </h3>
                     <p className="text-xs text-fluent-muted">
-                      Diese Apps stammen direkt aus Microsoft Winget und können per Klick installiert werden.
+                      {t.software.onlineResultsDesc}
                     </p>
                   </div>
                 </div>
@@ -404,9 +406,9 @@ export const SoftwarePage: React.FC = () => {
               <div className="w-12 h-12 rounded-2xl bg-fluent-card border border-fluent-border flex items-center justify-center mx-auto text-fluent-muted">
                 <Search className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-200">Keine Software gefunden</h3>
+              <h3 className="text-sm font-semibold text-slate-200">{t.software.noSoftwareFoundTitle}</h3>
               <p className="text-xs text-fluent-muted leading-relaxed">
-                Weder im kuratierten Katalog noch online im Winget-Katalog wurde ein passendes Paket für &quot;{searchQuery}&quot; gefunden.
+                {t.software.noSoftwareFoundDesc.replace('{query}', searchQuery)}
               </p>
             </div>
           ) : filteredCatalog.length === 0 ? (
@@ -416,10 +418,10 @@ export const SoftwarePage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-slate-200">
-                  Nicht im kuratierten Katalog gefunden
+                  {t.software.notInCatalogTitle}
                 </h3>
                 <p className="text-xs text-fluent-muted mt-1 leading-relaxed">
-                  &quot;{searchQuery}&quot; ist nicht in den kuratierten Standard-Empfehlungen vorhanden. Möchtest du im gesamten Microsoft Winget-Onlinekatalog suchen?
+                  {t.software.notInCatalogDesc.replace('{query}', searchQuery)}
                 </p>
               </div>
               <button
@@ -428,7 +430,7 @@ export const SoftwarePage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-fluent-accent hover:bg-fluent-accent-hover text-white text-xs font-semibold shadow-fluent-sm transition-all"
               >
                 <Globe className="w-4 h-4" />
-                <span>Online im Winget-Katalog nach &quot;{searchQuery}&quot; suchen</span>
+                <span>{t.software.searchOnlinePromptBtn.replace('{query}', searchQuery)}</span>
               </button>
             </div>
           ) : (
@@ -436,46 +438,48 @@ export const SoftwarePage: React.FC = () => {
               <aside className="w-full lg:w-56 shrink-0 rounded-fluent border border-fluent-border bg-fluent-card/60 p-4 space-y-4 lg:sticky lg:top-4">
                 <div>
                   <p className="text-[10px] uppercase tracking-wider font-semibold text-fluent-accent mb-2">
-                    Aktionen
+                    {t.software.actionsTitle}
                   </p>
                   <div className="space-y-2">
                     <button
                       onClick={() => setSelectedCategory('all')}
                       className="w-full px-3 py-2 rounded-lg bg-fluent-accent/15 border border-fluent-accent/30 text-left text-xs font-medium text-fluent-accent hover:bg-fluent-accent/25 transition-colors"
                     >
-                      Katalog anzeigen
+                      {t.software.showCatalogBtn}
                     </button>
                     <button
                       onClick={refresh}
                       disabled={isLoading || isOperating}
                       className="w-full px-3 py-2 rounded-lg bg-fluent-card border border-fluent-border text-left text-xs text-slate-200 hover:border-fluent-accent/50 transition-colors disabled:opacity-50"
                     >
-                      Katalog aktualisieren
+                      {t.software.refreshCatalogBtn}
                     </button>
                   </div>
                 </div>
 
                 <div className="border-t border-fluent-border/70 pt-4">
                   <p className="text-[10px] uppercase tracking-wider font-semibold text-fluent-accent mb-2">
-                    Auswahl
+                    {t.software.selectionTitle}
                   </p>
                   <p className="text-xs text-fluent-muted mb-3">
                     {selectedPackages.size === 0
-                      ? 'Keine Programme ausgewählt'
-                      : `${selectedPackages.size} ${selectedPackages.size === 1 ? 'Programm' : 'Programme'} ausgewählt`}
+                      ? t.software.noProgramsSelected
+                      : t.software.programsSelectedCount
+                          .replace('{count}', String(selectedPackages.size))
+                          .replace('{noun}', selectedPackages.size === 1 ? t.software.programNounSingle : t.software.programNounPlural)}
                   </p>
                   <button
                     onClick={clearSelection}
                     disabled={selectedPackages.size === 0 || isOperating}
                     className="w-full px-3 py-2 rounded-lg bg-fluent-card border border-fluent-border text-xs text-fluent-muted hover:text-slate-200 transition-colors disabled:opacity-40"
                   >
-                    Auswahl leeren
+                    {t.software.clearSelectionBtn}
                   </button>
                 </div>
 
                 <div className="border-t border-fluent-border/70 pt-4">
                   <p className="text-[10px] uppercase tracking-wider font-semibold text-fluent-accent mb-2">
-                    Kategorien
+                    {t.software.categoriesTitle}
                   </p>
                   <div className="space-y-1">
                     {CATEGORIES.filter((category) => category.id !== 'all').map((category) => {
@@ -509,7 +513,7 @@ export const SoftwarePage: React.FC = () => {
                             >
                               {category.label}
                             </h2>
-                            <span className="text-[10px] text-fluent-muted">{packages.length} Programme</span>
+                            <span className="text-[10px] text-fluent-muted">{t.software.programsCount.replace('{count}', String(packages.length))}</span>
                             <div className="h-px flex-1 bg-fluent-border/60" />
                           </div>
                           {renderCatalogPackages(packages)}
@@ -524,9 +528,9 @@ export const SoftwarePage: React.FC = () => {
                     <div className="flex items-center gap-3 mb-3">
                       <Globe className="w-4 h-4 text-fluent-accent" />
                       <h2 id="online-results" className="text-sm font-semibold text-slate-100">
-                        Winget Online-Ergebnisse
+                        {t.software.onlineResultsSection}
                       </h2>
-                      <span className="text-[10px] text-fluent-muted">{onlineResults.length} weitere Pakete</span>
+                      <span className="text-[10px] text-fluent-muted">{t.software.morePackages.replace('{count}', String(onlineResults.length))}</span>
                       <div className="h-px flex-1 bg-fluent-border/60" />
                     </div>
                     {renderCatalogPackages(onlineResults)}
@@ -544,21 +548,21 @@ export const SoftwarePage: React.FC = () => {
           {isLoading && installed.length === 0 ? (
             <div className="py-20 flex flex-col items-center justify-center space-y-3 text-fluent-muted">
               <RefreshCw className="w-8 h-8 animate-spin text-fluent-accent" />
-              <p className="text-xs">Lese installierte Programme via winget list aus...</p>
+              <p className="text-xs">{t.software.loadingInstalled}</p>
             </div>
           ) : filteredInstalled.length === 0 ? (
             <div className="py-16 text-center text-fluent-muted text-xs">
-              Keine installierten Programme gefunden.
+              {t.software.noInstalledFound}
             </div>
           ) : (
             <div className="rounded-fluent border border-fluent-border overflow-hidden bg-fluent-card/60">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-fluent-border bg-fluent-card/80 text-fluent-subtext font-semibold">
-                    <th className="py-3 px-4">Programmname</th>
-                    <th className="py-3 px-4">Version</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Aktion</th>
+                    <th className="py-3 px-4">{t.software.colProgramName}</th>
+                    <th className="py-3 px-4">{t.software.colVersion}</th>
+                    <th className="py-3 px-4">{t.software.colStatus}</th>
+                    <th className="py-3 px-4 text-right">{t.software.colAction}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-fluent-border/40">
@@ -576,12 +580,12 @@ export const SoftwarePage: React.FC = () => {
                         {pkg.availableVersion ? (
                           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-yellow/15 text-fluent-status-yellow border border-fluent-status-yellow/20">
                             <ArrowUpCircle className="w-3 h-3" />
-                            Update verfügbar
+                            {t.software.statusUpdateAvailable}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-fluent-status-green/15 text-fluent-status-green border border-fluent-status-green/20">
                             <CheckCircle2 className="w-3 h-3" />
-                            Installiert
+                            {t.software.statusInstalled}
                           </span>
                         )}
                       </td>
@@ -592,7 +596,7 @@ export const SoftwarePage: React.FC = () => {
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs text-fluent-muted hover:text-fluent-status-red hover:bg-fluent-status-red/10 border border-transparent hover:border-fluent-status-red/30 transition-colors disabled:opacity-50"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Deinstallieren</span>
+                          <span className="hidden sm:inline">{t.software.uninstallBtn}</span>
                         </button>
                       </td>
                     </tr>
@@ -616,11 +620,11 @@ export const SoftwarePage: React.FC = () => {
               <div>
                 <h3 className="text-sm font-semibold text-slate-100">
                   {updates.length === 0
-                    ? 'Alle Programme sind auf dem neuesten Stand!'
-                    : `${updates.length} Programm-Aktualisierungen verfügbar`}
+                    ? t.software.allUpToDateTitle
+                    : t.software.updatesAvailableTitle.replace('{count}', String(updates.length))}
                 </h3>
                 <p className="text-xs text-fluent-muted">
-                  Aktualisiere einzelne Programme oder führe ein Gesamtes System-Upgrade durch.
+                  {t.software.updatesSubtitle}
                 </p>
               </div>
             </div>
@@ -632,7 +636,7 @@ export const SoftwarePage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-fluent-status-yellow hover:bg-fluent-status-yellow/90 text-slate-950 text-xs font-bold shadow-fluent-sm transition-colors disabled:opacity-50"
               >
                 <ArrowUpCircle className="w-4 h-4" />
-                <span>Alle {updates.length} aktualisieren</span>
+                <span>{t.software.updateAllBtn.replace('{count}', String(updates.length))}</span>
               </button>
             )}
           </div>
@@ -640,22 +644,22 @@ export const SoftwarePage: React.FC = () => {
           {isLoading && updates.length === 0 ? (
             <div className="py-20 flex flex-col items-center justify-center space-y-3 text-fluent-muted">
               <RefreshCw className="w-8 h-8 animate-spin text-fluent-accent" />
-              <p className="text-xs">Prüfe Software-Updates via winget upgrade...</p>
+              <p className="text-xs">{t.software.loadingUpdates}</p>
             </div>
           ) : filteredUpdates.length === 0 ? (
             <div className="py-12 text-center text-fluent-muted text-xs">
-              Keine ausstehenden Updates vorhanden.
+              {t.software.noUpdatesFound}
             </div>
           ) : (
             <div className="rounded-fluent border border-fluent-border overflow-hidden bg-fluent-card/60">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-fluent-border bg-fluent-card/80 text-fluent-subtext font-semibold">
-                    <th className="py-3 px-4">Programmname</th>
-                    <th className="py-3 px-4">Paket-ID</th>
-                    <th className="py-3 px-4">Installiert</th>
-                    <th className="py-3 px-4">Neue Version</th>
-                    <th className="py-3 px-4 text-right">Aktion</th>
+                    <th className="py-3 px-4">{t.software.colProgramName}</th>
+                    <th className="py-3 px-4">{t.software.colPackageId}</th>
+                    <th className="py-3 px-4">{t.software.colInstalled}</th>
+                    <th className="py-3 px-4">{t.software.colNewVersion}</th>
+                    <th className="py-3 px-4 text-right">{t.software.colAction}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-fluent-border/40">
@@ -678,7 +682,7 @@ export const SoftwarePage: React.FC = () => {
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-fluent-status-yellow/20 hover:bg-fluent-status-yellow/30 text-fluent-status-yellow border border-fluent-status-yellow/40 transition-colors disabled:opacity-50"
                         >
                           <ArrowUpCircle className="w-3.5 h-3.5" />
-                          <span>Update</span>
+                          <span>{t.software.updateBtn}</span>
                         </button>
                       </td>
                     </tr>
@@ -705,7 +709,7 @@ export const SoftwarePage: React.FC = () => {
             <div className="flex items-center gap-2">
               <Terminal className="w-4 h-4 text-fluent-accent" />
               <span className="text-xs font-semibold text-slate-200">
-                Winget Live-Ausgabe {isOperating && <span className="text-fluent-accent animate-pulse font-normal">(Ausführung läuft...)</span>}
+                {t.software.consoleTitle} {isOperating && <span className="text-fluent-accent animate-pulse font-normal">{t.software.consoleExecuting}</span>}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -713,12 +717,12 @@ export const SoftwarePage: React.FC = () => {
                 onClick={clearLogs}
                 className="text-[11px] text-fluent-muted hover:text-slate-200 transition-colors"
               >
-                Leeren
+                {t.software.consoleClear}
               </button>
               <button
                 onClick={() => setShowLogs(false)}
                 className="text-fluent-muted hover:text-slate-200 p-1"
-                title="Minimieren"
+                title={t.software.consoleMinimize}
               >
                 <XCircle className="w-4 h-4" />
               </button>
@@ -730,7 +734,7 @@ export const SoftwarePage: React.FC = () => {
             className="h-28 overflow-y-auto font-mono text-[11px] text-slate-300 bg-black/40 p-3 rounded-lg space-y-1 select-text"
           >
             {operationLogs.length === 0 ? (
-              <span className="text-fluent-muted italic">Keine aktuellen Ausgaben vorhanden.</span>
+              <span className="text-fluent-muted italic">{t.software.consoleEmpty}</span>
             ) : (
               operationLogs.map((line, idx) => (
                 <div key={idx} className="leading-relaxed whitespace-pre-wrap">

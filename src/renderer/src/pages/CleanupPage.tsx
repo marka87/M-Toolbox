@@ -16,28 +16,31 @@ import { useCleanup, formatBytes } from '../hooks/useCleanup'
 import { DiskSpaceCard } from '../components/ui/DiskSpaceCard'
 import { CleanupCategoryRow } from '../components/ui/CleanupCategoryRow'
 import { BloatwareTab } from '../components/ui/BloatwareTab'
+import { useTranslation } from '../i18n/LanguageContext'
 import type { CleanupGroupId } from '@shared/types'
 
-const GROUP_TITLES: Record<CleanupGroupId, { title: string; subtitle: string }> = {
-  system: {
-    title: 'Windows & System-Dateien',
-    subtitle: 'Temporäre Dateien, Installationsreste und Papierkorb'
-  },
-  browsers: {
-    title: 'Web-Browser Caches',
-    subtitle: 'Temporärer Cache (Passwörter & Lesezeichen bleiben geschützt)'
-  },
-  dumps: {
-    title: 'Fehlerberichte & Protokolle',
-    subtitle: 'Speicherabbilder abgestürzter Programme und System-Logs'
-  },
-  cache: {
-    title: 'Explorer-Zwischenspeicher',
-    subtitle: 'Miniaturansichten und Vorschau-Datenbanken'
-  }
-}
-
 export const CleanupPage: React.FC = () => {
+  const { t, language } = useTranslation()
+
+  const groupTitles: Record<CleanupGroupId, { title: string; subtitle: string }> = {
+    system: {
+      title: t.cleanup.grpSystemTitle,
+      subtitle: t.cleanup.grpSystemSubtitle
+    },
+    browsers: {
+      title: t.cleanup.grpBrowsersTitle,
+      subtitle: t.cleanup.grpBrowsersSubtitle
+    },
+    dumps: {
+      title: t.cleanup.grpDumpsTitle,
+      subtitle: t.cleanup.grpDumpsSubtitle
+    },
+    cache: {
+      title: t.cleanup.grpCacheTitle,
+      subtitle: t.cleanup.grpCacheSubtitle
+    }
+  }
+
   const {
     categories,
     disks,
@@ -73,9 +76,9 @@ export const CleanupPage: React.FC = () => {
       {/* Header & Global Toolbar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-fluent-text">Cleanup Center</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-fluent-text">{t.cleanup.title}</h1>
           <p className="text-sm text-fluent-muted mt-0.5">
-            Sichere Speicherplatzbereinigung, System-Temp, Cache- & Bloatware-Optimierung
+            {t.cleanup.subtitle}
           </p>
         </div>
 
@@ -86,19 +89,19 @@ export const CleanupPage: React.FC = () => {
                 onClick={() => scan()}
                 disabled={isScanning || isCleaning}
                 className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover hover:border-fluent-border-hover text-fluent-text transition-all disabled:opacity-50"
-                title="System neu nach temporären Dateien scannen"
+                title={t.cleanup.rescanTooltip}
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-fluent-accent ${isScanning ? 'animate-spin' : ''}`} />
-                Neu scannen
+                {t.cleanup.rescanBtn}
               </button>
 
               <button
                 onClick={openStorageSense}
                 className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-muted hover:text-fluent-text transition-all"
-                title="Windows 11 Speicheroptimierung (Storage Sense) öffnen"
+                title={t.cleanup.storageSettingsTooltip}
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                Windows Speichereinstellungen
+                {t.cleanup.storageSettingsBtn}
               </button>
             </>
           )}
@@ -116,7 +119,7 @@ export const CleanupPage: React.FC = () => {
           }`}
         >
           <HardDrive className="w-4 h-4" />
-          <span>Dateimüll & Cache</span>
+          <span>{t.cleanup.tabDisk}</span>
         </button>
 
         <button
@@ -128,7 +131,7 @@ export const CleanupPage: React.FC = () => {
           }`}
         >
           <ShieldAlert className="w-4 h-4" />
-          <span>Windows Bloatware</span>
+          <span>{t.cleanup.tabBloatware}</span>
         </button>
       </div>
 
@@ -149,7 +152,7 @@ export const CleanupPage: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">Freigebbar Gesamt</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.cleanup.statTotalFreable}</span>
             <div className="p-1.5 rounded-lg bg-fluent-card-subtle text-fluent-accent">
               <Sparkles className="w-4 h-4" />
             </div>
@@ -158,13 +161,13 @@ export const CleanupPage: React.FC = () => {
             {formatBytes(totalScanSize)}
           </div>
           <p className="text-[11px] text-fluent-muted mt-0.5">
-            {totalScanFiles.toLocaleString('de-DE')} temporäre Dateien
+            {t.cleanup.statTempFilesCount.replace('{count}', totalScanFiles.toLocaleString(language === 'de' ? 'de-DE' : 'en-US'))}
           </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">Ausgewählt</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.cleanup.statSelected}</span>
             <div className="p-1.5 rounded-lg bg-fluent-card-subtle text-emerald-400">
               <CheckCircle2 className="w-4 h-4" />
             </div>
@@ -173,37 +176,41 @@ export const CleanupPage: React.FC = () => {
             {formatBytes(selectedTotalSize)}
           </div>
           <p className="text-[11px] text-fluent-muted mt-0.5">
-            {selectedIds.size} von {categories.length} Bereichen
+            {t.cleanup.statSelectedAreas
+              .replace('{selected}', String(selectedIds.size))
+              .replace('{total}', String(categories.length))}
           </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">Sicherheitsstufe</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.cleanup.statSafetyLevel}</span>
             <div className="p-1.5 rounded-lg bg-fluent-card-subtle text-emerald-400">
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 text-2xl font-bold text-fluent-text">
-            100% Sicher
+            {t.cleanup.statSafetySafe}
           </div>
           <p className="text-[11px] text-fluent-muted mt-0.5">
-            Gesperrte Dateien werden übersprungen
+            {t.cleanup.statLockedSkipped}
           </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">Lokale Laufwerke</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.cleanup.statDisksTitle}</span>
             <div className="p-1.5 rounded-lg bg-fluent-card-subtle text-indigo-400">
               <HardDrive className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 text-2xl font-bold text-fluent-text">
-            {disks.length} Partition{disks.length === 1 ? '' : 'en'}
+            {t.cleanup.statDisksCount
+              .replace('{count}', String(disks.length))
+              .replace('{suffix}', language === 'de' ? (disks.length === 1 ? '' : 'en') : (disks.length === 1 ? '' : 's'))}
           </div>
           <p className="text-[11px] text-fluent-muted mt-0.5">
-            Feste Datenträger analysiert
+            {t.cleanup.statDisksAnalyzed}
           </p>
         </div>
       </div>
@@ -212,7 +219,7 @@ export const CleanupPage: React.FC = () => {
       {disks.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-fluent-muted">
-            Laufwerksbelegung
+            {t.cleanup.disksUsageTitle}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {disks.map((d) => (
@@ -226,7 +233,7 @@ export const CleanupPage: React.FC = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-fluent-muted">
-            Bereinigungskategorien
+            {t.cleanup.categoriesTitle}
           </h3>
 
           <div className="flex items-center gap-3">
@@ -236,7 +243,7 @@ export const CleanupPage: React.FC = () => {
               className="inline-flex items-center gap-1.5 text-xs text-fluent-accent hover:underline font-medium"
             >
               <CheckSquare className="w-3.5 h-3.5" />
-              Alle auswählen
+              {t.cleanup.selectAllBtn}
             </button>
             <span className="text-fluent-border">|</span>
             <button
@@ -245,7 +252,7 @@ export const CleanupPage: React.FC = () => {
               className="inline-flex items-center gap-1.5 text-xs text-fluent-muted hover:text-fluent-text font-medium"
             >
               <Square className="w-3.5 h-3.5" />
-              Keine
+              {t.cleanup.deselectAllBtn}
             </button>
           </div>
         </div>
@@ -254,14 +261,14 @@ export const CleanupPage: React.FC = () => {
         {isScanning ? (
           <div className="py-20 flex flex-col items-center justify-center space-y-3">
             <div className="w-8 h-8 rounded-full border-2 border-fluent-accent border-t-transparent animate-spin" />
-            <p className="text-xs text-fluent-muted">Analysiere Temporärdateien, Caches und Papierkorb...</p>
+            <p className="text-xs text-fluent-muted">{t.cleanup.scanningMsg}</p>
           </div>
         ) : (
           <div className="space-y-6">
             {groups.map((grp) => {
               const grpCats = categories.filter((c) => c.group === grp)
               if (grpCats.length === 0) return null
-              const meta = GROUP_TITLES[grp]
+              const meta = groupTitles[grp]
 
               return (
                 <div key={grp} className="space-y-2.5">
@@ -297,11 +304,13 @@ export const CleanupPage: React.FC = () => {
           <div>
             <div className="text-sm font-semibold text-fluent-text">
               {hasSelection
-                ? `${formatBytes(selectedTotalSize)} zur Bereinigung ausgewählt`
-                : 'Keine Bereiche ausgewählt'}
+                ? t.cleanup.barSelectedTotal.replace('{size}', formatBytes(selectedTotalSize))
+                : t.cleanup.barNoneSelected}
             </div>
             <p className="text-xs text-fluent-muted">
-              {selectedIds.size} Bereich{selectedIds.size === 1 ? '' : 'e'} markiert
+              {t.cleanup.barAreasMarked
+                .replace('{count}', String(selectedIds.size))
+                .replace('{suffix}', language === 'de' ? (selectedIds.size === 1 ? '' : 'e') : (selectedIds.size === 1 ? '' : 's'))}
             </p>
           </div>
         </div>
@@ -313,7 +322,7 @@ export const CleanupPage: React.FC = () => {
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-fluent-accent text-white hover:bg-fluent-accent-hover shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Sparkles className="w-4 h-4" />
-            Jetzt bereinigen
+            {t.cleanup.cleanNowBtn}
           </button>
         </div>
       </div>
@@ -326,10 +335,10 @@ export const CleanupPage: React.FC = () => {
               <div className="w-8 h-8 rounded-full border-2 border-fluent-accent border-t-transparent animate-spin shrink-0" />
               <div>
                 <h3 className="text-sm font-semibold text-fluent-text">
-                  Bereinigung wird durchgeführt...
+                  {t.cleanup.cleaningTitle}
                 </h3>
                 <p className="text-xs text-fluent-muted">
-                  Bereits {formatBytes(progress.freedBytes)} freigegeben
+                  {t.cleanup.freedSoFar.replace('{bytes}', formatBytes(progress.freedBytes))}
                 </p>
               </div>
             </div>
@@ -359,19 +368,21 @@ export const CleanupPage: React.FC = () => {
                 <Trash2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-semibold">Bereinigung bestätigen</h3>
+                <h3 className="text-base font-semibold">{t.cleanup.confirmTitle}</h3>
                 <p className="text-xs text-fluent-muted">
-                  {selectedIds.size} ausgewählte Bereiche bereinigen
+                  {t.cleanup.confirmSubtitle.replace('{count}', String(selectedIds.size))}
                 </p>
               </div>
             </div>
 
             <div className="p-3.5 rounded-xl bg-fluent-card-subtle/70 border border-fluent-border/60 text-xs text-fluent-muted space-y-2">
               <p>
-                Es werden bis zu <strong className="text-fluent-text">{formatBytes(selectedTotalSize)}</strong> temporäre Daten gelöscht.
+                {t.cleanup.confirmNote.split('{size}')[0]}
+                <strong className="text-fluent-text">{formatBytes(selectedTotalSize)}</strong>
+                {t.cleanup.confirmNote.split('{size}')[1] || ''}
               </p>
               <p className="text-[11px] text-emerald-400">
-                ✓ Dateien, die aktuell in Benutzung sind, werden sicher übersprungen.
+                {t.cleanup.confirmSafetyCheck}
               </p>
             </div>
 
@@ -380,7 +391,7 @@ export const CleanupPage: React.FC = () => {
                 onClick={() => setConfirmModalOpen(false)}
                 className="px-4 py-2 rounded-xl text-xs font-medium bg-fluent-card-subtle hover:bg-fluent-card-hover text-fluent-text transition-colors"
               >
-                Abbrechen
+                {t.cleanup.cancelBtn}
               </button>
               <button
                 onClick={() => {
@@ -389,7 +400,7 @@ export const CleanupPage: React.FC = () => {
                 }}
                 className="px-4 py-2 rounded-xl text-xs font-semibold bg-fluent-accent text-white hover:bg-fluent-accent-hover transition-colors"
               >
-                Bereinigung starten
+                {t.cleanup.startCleanupBtn}
               </button>
             </div>
           </div>
@@ -406,32 +417,32 @@ export const CleanupPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-base font-bold text-fluent-text">
-                  Bereinigung erfolgreich!
+                  {t.cleanup.resultTitle}
                 </h3>
                 <p className="text-xs text-fluent-muted">
-                  Dauer: {Math.round(lastResult.durationMs / 1000)} Sekunden
+                  {t.cleanup.durationSec.replace('{sec}', String(Math.round(lastResult.durationMs / 1000)))}
                 </p>
               </div>
             </div>
 
             <div className="p-4 rounded-xl bg-fluent-card-subtle/80 border border-fluent-border/70 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-fluent-muted">Freigegebener Speicher:</span>
+                <span className="text-xs text-fluent-muted">{t.cleanup.freedMemory}</span>
                 <span className="text-lg font-bold text-emerald-400">
                   {formatBytes(lastResult.freedBytes)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-fluent-muted">Gelöschte Dateien:</span>
+                <span className="text-fluent-muted">{t.cleanup.deletedFilesCount}</span>
                 <span className="font-semibold text-fluent-text">
-                  {lastResult.deletedFilesCount.toLocaleString('de-DE')}
+                  {lastResult.deletedFilesCount.toLocaleString(language === 'de' ? 'de-DE' : 'en-US')}
                 </span>
               </div>
               {lastResult.skippedFilesCount > 0 && (
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-fluent-muted">Gesperrte Dateien (übersprungen):</span>
+                  <span className="text-fluent-muted">{t.cleanup.skippedLockedCount}</span>
                   <span className="font-semibold text-fluent-muted">
-                    {lastResult.skippedFilesCount.toLocaleString('de-DE')}
+                    {lastResult.skippedFilesCount.toLocaleString(language === 'de' ? 'de-DE' : 'en-US')}
                   </span>
                 </div>
               )}
@@ -442,7 +453,7 @@ export const CleanupPage: React.FC = () => {
                 onClick={() => setShowResultModal(false)}
                 className="px-5 py-2 rounded-xl text-xs font-semibold bg-fluent-accent text-white hover:bg-fluent-accent-hover transition-colors"
               >
-                Schließen
+                {t.cleanup.closeBtn}
               </button>
             </div>
           </div>
