@@ -17,18 +17,21 @@ import { useTweaks } from '../hooks/useTweaks'
 import { usePerformance } from '../hooks/usePerformance'
 import { TweakToggleCard } from '../components/ui/TweakToggleCard'
 import { ExplorerRestartBanner } from '../components/ui/ExplorerRestartBanner'
+import { useTranslation } from '../i18n/LanguageContext'
 import type { TweakCategory } from '@shared/types'
 
-const CATEGORY_TABS: { id: TweakCategory; label: string; icon: React.ReactNode }[] = [
-  { id: 'all', label: 'Alle', icon: <Sliders className="w-3.5 h-3.5" /> },
-  { id: 'explorer', label: 'Datei-Explorer', icon: <Folder className="w-3.5 h-3.5 text-blue-400" /> },
-  { id: 'taskbar', label: 'Taskleiste & Start', icon: <Layout className="w-3.5 h-3.5 text-indigo-400" /> },
-  { id: 'privacy', label: 'Datenschutz', icon: <Shield className="w-3.5 h-3.5 text-emerald-400" /> },
-  { id: 'gaming', label: 'Gaming & Leistung', icon: <Gamepad2 className="w-3.5 h-3.5 text-purple-400" /> },
-  { id: 'system', label: 'System & Komfort', icon: <Sliders className="w-3.5 h-3.5 text-amber-400" /> }
-]
-
 export const TweaksPage: React.FC = () => {
+  const { t } = useTranslation()
+
+  const categoryTabs: { id: TweakCategory; label: string; icon: React.ReactNode }[] = [
+    { id: 'all', label: t.tweaks.catAll, icon: <Sliders className="w-3.5 h-3.5" /> },
+    { id: 'explorer', label: t.tweaks.catExplorer, icon: <Folder className="w-3.5 h-3.5 text-blue-400" /> },
+    { id: 'taskbar', label: t.tweaks.catTaskbar, icon: <Layout className="w-3.5 h-3.5 text-indigo-400" /> },
+    { id: 'privacy', label: t.tweaks.catPrivacy, icon: <Shield className="w-3.5 h-3.5 text-emerald-400" /> },
+    { id: 'gaming', label: t.tweaks.catGaming, icon: <Gamepad2 className="w-3.5 h-3.5 text-purple-400" /> },
+    { id: 'system', label: t.tweaks.catSystem, icon: <Sliders className="w-3.5 h-3.5 text-amber-400" /> }
+  ]
+
   const {
     tweaks,
     allTweaks,
@@ -72,9 +75,9 @@ export const TweaksPage: React.FC = () => {
               <Sliders className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-fluent-text">Windows 11 Tweaks</h1>
+              <h1 className="text-2xl font-bold text-fluent-text">{t.tweaks.title}</h1>
               <p className="text-xs text-fluent-muted">
-                System-, Explorer-, Taskleisten- und Leistungsoptimierungen ohne externe Software
+                {t.tweaks.subtitle}
               </p>
             </div>
           </div>
@@ -93,30 +96,30 @@ export const TweaksPage: React.FC = () => {
           >
             <Sparkles className={`w-3.5 h-3.5 ${applyingRecommended ? 'animate-spin' : ''}`} />
             {applyingRecommended
-              ? 'Wird angewendet...'
+              ? t.tweaks.applyingBtn
               : stats.allRecommendedApplied
-              ? 'Alle Empfohlenen aktiv'
-              : 'Empfohlene anwenden'}
+              ? t.tweaks.allRecommendedActive
+              : t.tweaks.applyRecommendedBtn}
           </button>
 
           <button
             onClick={restartExplorer}
             disabled={restartingExplorer}
-            title="Startet den Windows Explorer-Prozess neu"
+            title={t.tweaks.restartExplorerTooltip}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-fluent-card border border-fluent-border/60 hover:bg-fluent-border/30 text-fluent-text text-xs font-medium transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${restartingExplorer ? 'animate-spin' : ''}`} />
-            Explorer neu starten
+            {t.tweaks.restartExplorerBtn}
           </button>
 
           <button
             onClick={reload}
             disabled={loading}
-            title="Aktuellen Status aller Tweaks aus der Windows-Registry neu erfassen"
+            title={t.tweaks.readStateTooltip}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-fluent-card border border-fluent-border/60 hover:bg-fluent-border/30 text-fluent-text text-xs font-medium transition-colors disabled:opacity-50 active:scale-95"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Zustand erfassen</span>
+            <span>{t.tweaks.readStateBtn}</span>
           </button>
         </div>
       </div>
@@ -170,22 +173,20 @@ export const TweaksPage: React.FC = () => {
                 <Zap className="w-5 h-5" />
               </div>
               <h2 className="text-base font-bold text-fluent-text flex items-center gap-2">
-                1-Klick Performance & Gaming-Modus
+                {t.tweaks.perfModeTitle}
                 {perfState?.isActive ? (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Aktiv
+                    {t.tweaks.perfActive}
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-fluent-card-subtle text-fluent-muted border border-fluent-border/60">
-                    Inaktiv
+                    {t.tweaks.perfInactive}
                   </span>
                 )}
               </h2>
             </div>
             <p className="text-xs text-fluent-muted leading-relaxed">
-              Minimiert Systemlatenzen und maximiert FPS: Deaktiviert Transparenzeffekte,
-              Fensterminimierungs-Animationen, Xbox Game DVR Hintergrundaufzeichnungen, pausiert den
-              Windows-Suchindexer und schaltet auf Höchstleistung.
+              {t.tweaks.perfModeDesc}
             </p>
 
             {/* Feature Pills */}
@@ -202,7 +203,7 @@ export const TweaksPage: React.FC = () => {
                     perfState?.visualEffectsDisabled ? 'bg-emerald-400' : 'bg-fluent-muted'
                   }`}
                 />
-                Optische Effekte & Transparenz {perfState?.visualEffectsDisabled ? 'aus' : 'Standard'}
+                {t.tweaks.perfEffectsLabel.replace('{status}', perfState?.visualEffectsDisabled ? t.tweaks.statusOff : t.tweaks.statusDefault)}
               </span>
 
               <span
@@ -217,7 +218,7 @@ export const TweaksPage: React.FC = () => {
                     perfState?.gameDvrDisabled ? 'bg-emerald-400' : 'bg-fluent-muted'
                   }`}
                 />
-                Xbox Game DVR {perfState?.gameDvrDisabled ? 'deaktiviert' : 'Standard'}
+                {t.tweaks.perfDvrLabel.replace('{status}', perfState?.gameDvrDisabled ? t.tweaks.statusDisabled : t.tweaks.statusDefault)}
               </span>
 
               <span
@@ -232,7 +233,7 @@ export const TweaksPage: React.FC = () => {
                     perfState?.searchIndexerPaused ? 'bg-emerald-400' : 'bg-fluent-muted'
                   }`}
                 />
-                Suchindexer {perfState?.searchIndexerPaused ? 'pausiert' : 'aktiv'}
+                {t.tweaks.perfSearchLabel.replace('{status}', perfState?.searchIndexerPaused ? t.tweaks.statusPaused : t.tweaks.statusActive)}
               </span>
 
               <span
@@ -247,7 +248,7 @@ export const TweaksPage: React.FC = () => {
                     perfState?.highPerformancePlanActive ? 'bg-emerald-400' : 'bg-fluent-muted'
                   }`}
                 />
-                Energie: {perfState?.highPerformancePlanActive ? 'Höchstleistung' : 'Standard'}
+                {t.tweaks.perfPowerLabel.replace('{status}', perfState?.highPerformancePlanActive ? t.tweaks.statusHighPerf : t.tweaks.statusDefault)}
               </span>
             </div>
           </div>
@@ -266,17 +267,17 @@ export const TweaksPage: React.FC = () => {
               {isTogglingPerf ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Wird umgeschaltet...</span>
+                  <span>{t.tweaks.perfSwitchingBtn}</span>
                 </>
               ) : perfState?.isActive ? (
                 <>
                   <Flame className="w-4 h-4" />
-                  <span>Modus beenden & Wiederherstellen</span>
+                  <span>{t.tweaks.perfEndModeBtn}</span>
                 </>
               ) : (
                 <>
                   <Zap className="w-4 h-4" />
-                  <span>Performance-Modus aktivieren</span>
+                  <span>{t.tweaks.perfActivateBtn}</span>
                 </>
               )}
             </button>
@@ -299,7 +300,7 @@ export const TweaksPage: React.FC = () => {
             <div className="text-xl font-bold text-fluent-text">
               {stats.activeCount} <span className="text-xs font-normal text-fluent-muted">/ {stats.total}</span>
             </div>
-            <div className="text-xs text-fluent-muted">Aktive Tweaks</div>
+            <div className="text-xs text-fluent-muted">{t.tweaks.statActiveTweaks}</div>
           </div>
         </div>
 
@@ -312,7 +313,7 @@ export const TweaksPage: React.FC = () => {
               {stats.activeRecommendedCount}{' '}
               <span className="text-xs font-normal text-fluent-muted">/ {stats.recommendedCount}</span>
             </div>
-            <div className="text-xs text-fluent-muted">Empfohlene Einstellungen</div>
+            <div className="text-xs text-fluent-muted">{t.tweaks.statRecommended}</div>
           </div>
         </div>
 
@@ -321,8 +322,8 @@ export const TweaksPage: React.FC = () => {
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xl font-bold text-fluent-text">100% Sicher</div>
-            <div className="text-xs text-fluent-muted">Geprüfte Registry-Einträge</div>
+            <div className="text-xl font-bold text-fluent-text">{t.tweaks.statSafe}</div>
+            <div className="text-xs text-fluent-muted">{t.tweaks.statVerifiedRegistry}</div>
           </div>
         </div>
       </div>
@@ -331,7 +332,7 @@ export const TweaksPage: React.FC = () => {
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-2">
         {/* Category Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-          {CATEGORY_TABS.map((tab) => {
+          {categoryTabs.map((tab) => {
             const isActive = activeCategory === tab.id
             const count = getCategoryCount(tab.id)
             return (
@@ -365,7 +366,7 @@ export const TweaksPage: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tweaks filtern..."
+            placeholder={t.tweaks.searchPlaceholder}
             className="w-full pl-9 pr-8 py-1.5 rounded-lg bg-fluent-card/50 border border-fluent-border/60 text-xs text-fluent-text placeholder:text-fluent-muted/70 focus:outline-none focus:border-fluent-accent transition-colors"
           />
           {searchQuery && (
@@ -383,14 +384,14 @@ export const TweaksPage: React.FC = () => {
       {loading ? (
         <div className="p-12 text-center space-y-3 bg-fluent-card/20 rounded-2xl border border-fluent-border/30">
           <RefreshCw className="w-6 h-6 text-fluent-accent animate-spin mx-auto" />
-          <p className="text-xs text-fluent-muted">Lese aktuelle Systemkonfiguration aus der Windows-Registry...</p>
+          <p className="text-xs text-fluent-muted">{t.tweaks.loadingRegistry}</p>
         </div>
       ) : tweaks.length === 0 ? (
         <div className="p-12 text-center space-y-3 bg-fluent-card/20 rounded-2xl border border-fluent-border/30">
           <Sliders className="w-8 h-8 text-fluent-muted/50 mx-auto" />
-          <h3 className="text-sm font-semibold text-fluent-text">Keine Tweaks gefunden</h3>
+          <h3 className="text-sm font-semibold text-fluent-text">{t.tweaks.noTweaksFoundTitle}</h3>
           <p className="text-xs text-fluent-muted max-w-sm mx-auto">
-            Es wurden keine Tweaks gefunden, die dem aktuellen Filterkriterium &quot;{searchQuery}&quot; entsprechen.
+            {t.tweaks.noTweaksFoundDesc.replace('{query}', searchQuery)}
           </p>
         </div>
       ) : (

@@ -9,6 +9,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import type { TweakItem, TweakCategory } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface TweakToggleCardProps {
   tweak: TweakItem
@@ -30,7 +31,32 @@ export const TweakToggleCard: React.FC<TweakToggleCardProps> = ({
   isToggling,
   onToggle
 }) => {
+  const { t } = useTranslation()
   const isChecked = tweak.value
+
+  const i18nMap: Record<string, { title: string; desc: string }> = {
+    classic_context_menu: { title: t.tweaks.tw_classic_context_menu_title, desc: t.tweaks.tw_classic_context_menu_desc },
+    show_file_extensions: { title: t.tweaks.tw_show_file_extensions_title, desc: t.tweaks.tw_show_file_extensions_desc },
+    show_hidden_files: { title: t.tweaks.tw_show_hidden_files_title, desc: t.tweaks.tw_show_hidden_files_desc },
+    compact_mode: { title: t.tweaks.tw_compact_mode_title, desc: t.tweaks.tw_compact_mode_desc },
+    launch_this_pc: { title: t.tweaks.tw_launch_this_pc_title, desc: t.tweaks.tw_launch_this_pc_desc },
+    disable_aero_shake: { title: t.tweaks.tw_disable_aero_shake_title, desc: t.tweaks.tw_disable_aero_shake_desc },
+    taskbar_align_left: { title: t.tweaks.tw_taskbar_align_left_title, desc: t.tweaks.tw_taskbar_align_left_desc },
+    hide_taskbar_widgets: { title: t.tweaks.tw_hide_taskbar_widgets_title, desc: t.tweaks.tw_hide_taskbar_widgets_desc },
+    hide_task_view: { title: t.tweaks.tw_hide_task_view_title, desc: t.tweaks.tw_hide_task_view_desc },
+    disable_bing_search: { title: t.tweaks.tw_disable_bing_search_title, desc: t.tweaks.tw_disable_bing_search_desc },
+    disable_advertising_id: { title: t.tweaks.tw_disable_advertising_id_title, desc: t.tweaks.tw_disable_advertising_id_desc },
+    disable_start_suggestions: { title: t.tweaks.tw_disable_start_suggestions_title, desc: t.tweaks.tw_disable_start_suggestions_desc },
+    disable_activity_history: { title: t.tweaks.tw_disable_activity_history_title, desc: t.tweaks.tw_disable_activity_history_desc },
+    disable_telemetry: { title: t.tweaks.tw_disable_telemetry_title, desc: t.tweaks.tw_disable_telemetry_desc },
+    enable_game_mode: { title: t.tweaks.tw_enable_game_mode_title, desc: t.tweaks.tw_enable_game_mode_desc },
+    disable_game_dvr: { title: t.tweaks.tw_disable_game_dvr_title, desc: t.tweaks.tw_disable_game_dvr_desc },
+    optimize_visual_effects: { title: t.tweaks.tw_optimize_visual_effects_title, desc: t.tweaks.tw_optimize_visual_effects_desc },
+    prevent_auto_reboot_update: { title: t.tweaks.tw_prevent_auto_reboot_update_title, desc: t.tweaks.tw_prevent_auto_reboot_update_desc }
+  }
+
+  const title = i18nMap[tweak.id]?.title ?? tweak.title
+  const description = i18nMap[tweak.id]?.desc ?? tweak.description
 
   const handleToggle = () => {
     if (isToggling) return
@@ -60,33 +86,33 @@ export const TweakToggleCard: React.FC<TweakToggleCardProps> = ({
         <div className="space-y-1.5 flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h4 className="text-sm font-semibold text-fluent-text group-hover:text-fluent-accent transition-colors">
-              {tweak.title}
+              {title}
             </h4>
 
             {tweak.recommendedValue && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <Sparkles className="w-2.5 h-2.5" />
-                Empfohlen
+                {t.tweaks.badgeRecommended}
               </span>
             )}
 
             {tweak.requiresRestart === 'explorer' && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <RefreshCw className="w-2.5 h-2.5" />
-                Explorer-Neustart
+                {t.tweaks.badgeRestartExplorer}
               </span>
             )}
 
             {tweak.requiresAdmin && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
                 <Shield className="w-2.5 h-2.5" />
-                Admin
+                {t.tweaks.badgeAdmin}
               </span>
             )}
           </div>
 
           <p className="text-xs text-fluent-muted leading-relaxed">
-            {tweak.description}
+            {description}
           </p>
         </div>
       </div>

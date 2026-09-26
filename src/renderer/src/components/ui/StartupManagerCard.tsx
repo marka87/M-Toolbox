@@ -8,6 +8,7 @@ import {
   FolderOpen
 } from 'lucide-react'
 import type { StartupItem } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface StartupManagerCardProps {
   items: StartupItem[]
@@ -22,11 +23,12 @@ export const StartupManagerCard: React.FC<StartupManagerCardProps> = ({
   onRefresh,
   onDelete
 }) => {
+  const { t } = useTranslation()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'User' | 'System' | 'Folder'>('all')
 
   const handleDelete = (item: StartupItem) => {
-    if (window.confirm(`Möchtest du "${item.name}" wirklich aus dem Autostart entfernen?`)) {
+    if (window.confirm(t.advanced.startupConfirmDelete.replace('{name}', item.name))) {
       setDeletingId(item.id)
       onDelete(item.id)
       setTimeout(() => setDeletingId(null), 1500)
@@ -44,10 +46,10 @@ export const StartupManagerCard: React.FC<StartupManagerCardProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-fluent-text">
-              Autostart-Manager
+              {t.advanced.startupTitle}
             </h3>
             <p className="text-xs text-fluent-muted">
-              Überprüfe und verwalte alle Programme, die beim Windows-Start automatisch geladen werden
+              {t.advanced.startupSubtitle}
             </p>
           </div>
         </div>
@@ -65,7 +67,13 @@ export const StartupManagerCard: React.FC<StartupManagerCardProps> = ({
                     : 'text-fluent-muted hover:text-fluent-text'
                 }`}
               >
-                {f === 'all' ? 'Alle' : f === 'User' ? 'Benutzer' : f === 'System' ? 'System' : 'Ordner'}
+                {f === 'all'
+                  ? t.advanced.startupFilterAll
+                  : f === 'User'
+                  ? t.advanced.startupFilterUser
+                  : f === 'System'
+                  ? t.advanced.startupFilterSystem
+                  : t.advanced.startupFilterFolder}
               </button>
             ))}
           </div>
@@ -83,11 +91,11 @@ export const StartupManagerCard: React.FC<StartupManagerCardProps> = ({
       {loading ? (
         <div className="py-12 text-center space-y-2 bg-fluent-bg/30 rounded-xl border border-fluent-border/30">
           <RefreshCw className="w-5 h-5 text-fluent-accent animate-spin mx-auto" />
-          <p className="text-xs text-fluent-muted">Lese Autostart-Programme aus der Registry...</p>
+          <p className="text-xs text-fluent-muted">{t.advanced.startupReading}</p>
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="py-10 text-center text-xs text-fluent-muted bg-fluent-bg/30 rounded-xl border border-fluent-border/30">
-          Keine Autostart-Einträge in dieser Kategorie gefunden.
+          {t.advanced.startupEmpty}
         </div>
       ) : (
         <div className="space-y-2">
@@ -134,7 +142,7 @@ export const StartupManagerCard: React.FC<StartupManagerCardProps> = ({
                 <button
                   onClick={() => handleDelete(item)}
                   disabled={deletingId === item.id}
-                  title="Aus Autostart entfernen"
+                  title={t.advanced.startupDeleteTooltip}
                   className="p-1.5 rounded-lg text-fluent-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
                 >
                   <Trash2 className="w-4 h-4" />

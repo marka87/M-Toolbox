@@ -26,31 +26,33 @@ import { useDriver, type DriverVendorFilter } from '../hooks/useDriver'
 import { DeviceCard, type DriverViewMode } from '../components/ui/DeviceCard'
 import { DriverDetailsModal } from '../components/ui/DriverDetailsModal'
 import type { DriverCategory } from '@shared/types'
-
-const VENDORS: { id: DriverVendorFilter; label: string }[] = [
-  { id: 'all', label: 'Alle' },
-  { id: 'oem', label: 'Drittanbieter (OEM)' },
-  { id: 'microsoft', label: 'Microsoft (System)' },
-  { id: 'amd', label: 'AMD / ATI' },
-  { id: 'nvidia', label: 'NVIDIA' },
-  { id: 'intel', label: 'Intel' },
-  { id: 'hp', label: 'HP' },
-  { id: 'realtek', label: 'Realtek' }
-]
-
-const CATEGORIES: { id: DriverCategory; label: string; icon: React.ReactNode }[] = [
-  { id: 'all', label: 'Alle Geräte', icon: <Layers className="w-4 h-4" /> },
-  { id: 'problems', label: 'Probleme', icon: <AlertTriangle className="w-4 h-4 text-red-400" /> },
-  { id: 'display', label: 'Grafik & Monitore', icon: <Monitor className="w-4 h-4 text-sky-400" /> },
-  { id: 'net', label: 'Netzwerk & WLAN', icon: <Wifi className="w-4 h-4 text-emerald-400" /> },
-  { id: 'media', label: 'Audio & Medien', icon: <Volume2 className="w-4 h-4 text-indigo-400" /> },
-  { id: 'input', label: 'Eingabegeräte', icon: <Keyboard className="w-4 h-4 text-amber-400" /> },
-  { id: 'storage', label: 'Speicher & Laufwerke', icon: <HardDrive className="w-4 h-4 text-purple-400" /> },
-  { id: 'usb', label: 'USB & Anschlüsse', icon: <Usb className="w-4 h-4 text-cyan-400" /> },
-  { id: 'system', label: 'System & Firmware', icon: <Cpu className="w-4 h-4 text-blue-400" /> }
-]
+import { useTranslation } from '../i18n/LanguageContext'
 
 export const DriverPage: React.FC = () => {
+  const { t } = useTranslation()
+
+  const vendors: { id: DriverVendorFilter; label: string }[] = [
+    { id: 'all', label: t.drivers.vendorAll },
+    { id: 'oem', label: t.drivers.vendorOem },
+    { id: 'microsoft', label: t.drivers.vendorMicrosoft },
+    { id: 'amd', label: t.drivers.vendorAmd },
+    { id: 'nvidia', label: t.drivers.vendorNvidia },
+    { id: 'intel', label: t.drivers.vendorIntel },
+    { id: 'hp', label: t.drivers.vendorHp },
+    { id: 'realtek', label: t.drivers.vendorRealtek }
+  ]
+
+  const categories: { id: DriverCategory; label: string; icon: React.ReactNode }[] = [
+    { id: 'all', label: t.drivers.catAll, icon: <Layers className="w-4 h-4" /> },
+    { id: 'problems', label: t.drivers.catProblems, icon: <AlertTriangle className="w-4 h-4 text-red-400" /> },
+    { id: 'display', label: t.drivers.catDisplay, icon: <Monitor className="w-4 h-4 text-sky-400" /> },
+    { id: 'net', label: t.drivers.catNet, icon: <Wifi className="w-4 h-4 text-emerald-400" /> },
+    { id: 'media', label: t.drivers.catMedia, icon: <Volume2 className="w-4 h-4 text-indigo-400" /> },
+    { id: 'input', label: t.drivers.catInput, icon: <Keyboard className="w-4 h-4 text-amber-400" /> },
+    { id: 'storage', label: t.drivers.catStorage, icon: <HardDrive className="w-4 h-4 text-purple-400" /> },
+    { id: 'usb', label: t.drivers.catUsb, icon: <Usb className="w-4 h-4 text-cyan-400" /> },
+    { id: 'system', label: t.drivers.catSystem, icon: <Cpu className="w-4 h-4 text-blue-400" /> }
+  ]
   const {
     devices,
     packages,
@@ -98,9 +100,9 @@ export const DriverPage: React.FC = () => {
       {/* Top Header & Quick Actions */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-fluent-text">Driver Center</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-fluent-text">{t.drivers.title}</h1>
           <p className="text-sm text-fluent-muted mt-0.5">
-            Geräte-Inventarisierung, Fehler-Diagnose und Drittanbieter-Treiber-Sicherung
+            {t.drivers.subtitle}
           </p>
         </div>
 
@@ -110,36 +112,36 @@ export const DriverPage: React.FC = () => {
             onClick={handleScanHardware}
             disabled={loading}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover hover:border-fluent-border-hover text-fluent-text transition-all disabled:opacity-50"
-            title="Nach geänderter Hardware suchen"
+            title={t.drivers.scanHardwareTooltip}
           >
             <RefreshCw className={`w-3.5 h-3.5 text-fluent-accent ${loading ? 'animate-spin' : ''}`} />
-            Hardware scannen
+            {t.drivers.scanHardwareBtn}
           </button>
 
           <button
             onClick={handleExportAll}
             disabled={isExporting}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-accent text-white hover:bg-fluent-accent-hover shadow-sm transition-all disabled:opacity-50"
-            title="Alle Drittanbieter-Treiber (OEM) in ein Verzeichnis sichern"
+            title={t.drivers.backupAllTooltip}
           >
             <Download className="w-3.5 h-3.5" />
-            Alle Treiber sichern ({packages.length})
+            {t.drivers.backupAllBtn.replace('{count}', String(packages.length))}
           </button>
 
           <button
             onClick={handleOpenDeviceManager}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-muted hover:text-fluent-text transition-all"
-            title="Windows Geräte-Manager öffnen"
+            title={t.drivers.deviceManagerTooltip}
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            Geräte-Manager
+            {t.drivers.deviceManagerBtn}
           </button>
 
           <button
             onClick={() => fetchData()}
             disabled={loading}
             className="p-2 rounded-xl bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-muted hover:text-fluent-text transition-all"
-            title="Aktualisieren"
+            title={t.drivers.refreshTooltip}
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -182,18 +184,18 @@ export const DriverPage: React.FC = () => {
                   </h3>
                   {gpuInfo.isOutdated ? (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                      Möglicherweise veraltet ({gpuInfo.ageYears} Jahre alt)
+                      {t.drivers.gpuOutdated.replace('{years}', String(gpuInfo.ageYears))}
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                      Aktueller Treiber
+                      {t.drivers.gpuUpToDate}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-fluent-muted mt-0.5 truncate">
-                  Treiber-Version: <span className="font-mono text-fluent-text">{gpuInfo.driverVersion}</span>
+                  {t.drivers.driverVersionLabel} <span className="font-mono text-fluent-text">{gpuInfo.driverVersion}</span>
                   {gpuInfo.driverDate && (
-                    <> • Stand: <span className="text-fluent-text">{gpuInfo.driverDate}</span></>
+                    <> • {t.drivers.asOfDate} <span className="text-fluent-text">{gpuInfo.driverDate}</span></>
                   )}
                 </p>
               </div>
@@ -203,7 +205,7 @@ export const DriverPage: React.FC = () => {
               <button
                 onClick={() => handleOpenVendorPortal(gpuInfo.vendorDownloadUrl)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-text transition-colors"
-                title="Offizielle Treiberseite des Herstellers aufrufen"
+                title={t.drivers.vendorPortalTooltip}
               >
                 <ExternalLink className="w-3.5 h-3.5 text-fluent-accent" />
                 {gpuInfo.vendorToolName}
@@ -213,16 +215,16 @@ export const DriverPage: React.FC = () => {
                 onClick={handleCheckWindowsUpdate}
                 disabled={isCheckingWindowsUpdate}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-fluent-accent/20 border border-fluent-accent/40 text-fluent-accent hover:bg-fluent-accent hover:text-white transition-all disabled:opacity-50"
-                title="Online-Suche über Windows Update nach zertifizierten Treibern starten"
+                title={t.drivers.wuScanTooltip}
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isCheckingWindowsUpdate ? 'animate-spin' : ''}`} />
-                Windows Update Treiber-Scan
+                {t.drivers.wuScanBtn}
               </button>
 
               <button
                 onClick={handleOpenWindowsUpdateSettings}
                 className="p-1.5 rounded-xl bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-muted hover:text-fluent-text transition-colors"
-                title="Windows Update Einstellungen öffnen"
+                title={t.drivers.wuSettingsTooltip}
               >
                 <ExternalLink className="w-3.5 h-3.5" />
               </button>
@@ -233,7 +235,7 @@ export const DriverPage: React.FC = () => {
           {windowsUpdateDrivers.length > 0 && (
             <div className="mt-3 pt-3 border-t border-fluent-border/60 space-y-1.5">
               <span className="text-xs font-semibold text-emerald-400 block">
-                Gefundene Windows Update Treiber-Aktualisierungen:
+                {t.drivers.wuUpdatesFoundTitle}
               </span>
               {windowsUpdateDrivers.map((upd, idx) => (
                 <div
@@ -245,7 +247,7 @@ export const DriverPage: React.FC = () => {
                     onClick={handleOpenWindowsUpdateSettings}
                     className="text-[11px] text-fluent-accent hover:underline ml-2 shrink-0"
                   >
-                    In Einstellungen installieren
+                    {t.drivers.installInSettingsBtn}
                   </button>
                 </div>
               ))}
@@ -258,7 +260,7 @@ export const DriverPage: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">Geräte Gesamt</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.drivers.statTotalDevices}</span>
             <div className="p-1.5 rounded-lg bg-fluent-card-subtle text-fluent-accent">
               <Cpu className="w-4 h-4" />
             </div>
@@ -266,12 +268,12 @@ export const DriverPage: React.FC = () => {
           <div className="mt-2 text-2xl font-bold text-fluent-text">
             {stats?.totalDevices ?? devices.length}
           </div>
-          <p className="text-[11px] text-fluent-muted mt-0.5">Aktiv am System angeschlossen</p>
+          <p className="text-[11px] text-fluent-muted mt-0.5">{t.drivers.statTotalDevicesDesc}</p>
         </div>
 
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">OEM / Drittanbieter</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.drivers.statThirdParty}</span>
             <div className="p-1.5 rounded-lg bg-fluent-card-subtle text-indigo-400">
               <Layers className="w-4 h-4" />
             </div>
@@ -279,7 +281,7 @@ export const DriverPage: React.FC = () => {
           <div className="mt-2 text-2xl font-bold text-fluent-text">
             {stats?.thirdPartyDrivers ?? packages.length}
           </div>
-          <p className="text-[11px] text-fluent-muted mt-0.5">Sicherbare Treiberpakete</p>
+          <p className="text-[11px] text-fluent-muted mt-0.5">{t.drivers.statThirdPartyDesc}</p>
         </div>
 
         <div
@@ -290,7 +292,7 @@ export const DriverPage: React.FC = () => {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">Geräteprobleme</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.drivers.statProblems}</span>
             <div
               className={`p-1.5 rounded-lg ${
                 (stats?.problemDevices ?? 0) > 0
@@ -309,13 +311,13 @@ export const DriverPage: React.FC = () => {
             {stats?.problemDevices ?? 0}
           </div>
           <p className="text-[11px] text-fluent-muted mt-0.5">
-            {(stats?.problemDevices ?? 0) > 0 ? 'Aufmerksamkeit erforderlich' : 'Alle Geräte fehlerfrei'}
+            {(stats?.problemDevices ?? 0) > 0 ? t.drivers.statAttentionRequired : t.drivers.statAllHealthy}
           </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-fluent-muted">WHQL Signiert</span>
+            <span className="text-xs font-medium text-fluent-muted">{t.drivers.statWhql}</span>
             <div className="p-1.5 rounded-lg bg-fluent-card-subtle text-emerald-400">
               <ShieldCheck className="w-4 h-4" />
             </div>
@@ -323,7 +325,7 @@ export const DriverPage: React.FC = () => {
           <div className="mt-2 text-2xl font-bold text-emerald-400">
             {stats?.whqlDrivers ?? 0}
           </div>
-          <p className="text-[11px] text-fluent-muted mt-0.5">Von Microsoft zertifiziert</p>
+          <p className="text-[11px] text-fluent-muted mt-0.5">{t.drivers.statWhqlDesc}</p>
         </div>
       </div>
 
@@ -331,7 +333,7 @@ export const DriverPage: React.FC = () => {
       <div className="space-y-3">
         {/* Category horizontal scroll / wrap */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const count = categoryCounts[cat.id] ?? 0
             const isActive = selectedCategory === cat.id
             return (
@@ -364,8 +366,8 @@ export const DriverPage: React.FC = () => {
 
         {/* Vendor Filter Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <span className="text-xs font-semibold text-fluent-muted mr-1.5 shrink-0">Hersteller:</span>
-          {VENDORS.map((v) => {
+          <span className="text-xs font-semibold text-fluent-muted mr-1.5 shrink-0">{t.drivers.vendorLabel}</span>
+          {vendors.map((v) => {
             const count = vendorCounts[v.id] ?? 0
             const isActive = vendorFilter === v.id
             if (v.id !== 'all' && count === 0) return null
@@ -399,7 +401,7 @@ export const DriverPage: React.FC = () => {
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-fluent-muted" />
             <input
               type="text"
-              placeholder="Gerät, Hersteller oder Treiber suchen..."
+              placeholder={t.drivers.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-fluent-card border border-fluent-border text-xs text-fluent-text placeholder-fluent-muted focus:outline-none focus:border-fluent-accent transition-colors"
@@ -415,7 +417,7 @@ export const DriverPage: React.FC = () => {
                 onChange={(e) => setOnlyProblems(e.target.checked)}
                 className="rounded border-fluent-border text-fluent-accent focus:ring-0 w-3.5 h-3.5"
               />
-              <span>Nur Probleme ({categoryCounts.problems})</span>
+              <span>{t.drivers.onlyProblemsLabel.replace('{count}', String(categoryCounts.problems))}</span>
             </label>
 
             {/* View Mode Switcher */}
@@ -427,7 +429,7 @@ export const DriverPage: React.FC = () => {
                     ? 'bg-fluent-accent text-white shadow-sm'
                     : 'text-fluent-muted hover:text-white'
                 }`}
-                title="Normal (Karten-Ansicht)"
+                title={t.drivers.viewNormalTooltip}
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
@@ -438,7 +440,7 @@ export const DriverPage: React.FC = () => {
                     ? 'bg-fluent-accent text-white shadow-sm'
                     : 'text-fluent-muted hover:text-white'
                 }`}
-                title="Kompakt (Listen-Ansicht)"
+                title={t.drivers.viewCompactTooltip}
               >
                 <List className="w-4 h-4" />
               </button>
@@ -451,14 +453,14 @@ export const DriverPage: React.FC = () => {
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center space-y-3">
           <div className="w-8 h-8 rounded-full border-2 border-fluent-accent border-t-transparent animate-spin" />
-          <p className="text-xs text-fluent-muted">Lese Geräte und Treiber über Windows PnP aus...</p>
+          <p className="text-xs text-fluent-muted">{t.drivers.readingDevices}</p>
         </div>
       ) : filteredDevices.length === 0 ? (
         <div className="py-16 text-center rounded-2xl bg-fluent-card/40 border border-fluent-border/60">
           <Cpu className="w-10 h-10 text-fluent-muted mx-auto mb-2 opacity-50" />
-          <p className="text-sm font-medium text-fluent-text">Keine passenden Geräte gefunden</p>
+          <p className="text-sm font-medium text-fluent-text">{t.drivers.noDevicesFoundTitle}</p>
           <p className="text-xs text-fluent-muted mt-1">
-            Passe deine Suche oder Filtereinstellungen an.
+            {t.drivers.noDevicesFoundDesc}
           </p>
         </div>
       ) : (
@@ -487,16 +489,16 @@ export const DriverPage: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <Terminal className="w-4 h-4 text-fluent-accent" />
-              <span>Export- & System-Protokoll</span>
+              <span>{t.drivers.logDrawerTitle}</span>
               {isExporting && (
                 <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-fluent-accent/15 text-fluent-accent text-[10px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-fluent-accent animate-ping" />
-                  Wird ausgeführt...
+                  {t.drivers.logInProgress}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2 text-fluent-muted">
-              <span>{exportLogs.length} Einträge</span>
+              <span>{t.drivers.logEntriesCount.replace('{count}', String(exportLogs.length))}</span>
               {isLogDrawerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </div>
           </button>

@@ -6,6 +6,7 @@ import {
   Trash2
 } from 'lucide-react'
 import type { HostsFileContent } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface HostsEditorCardProps {
   data: HostsFileContent | null
@@ -26,6 +27,7 @@ export const HostsEditorCard: React.FC<HostsEditorCardProps> = ({
   onAdd,
   onDelete
 }) => {
+  const { t } = useTranslation()
   const [newIp, setNewIp] = useState('127.0.0.1')
   const [newHost, setNewHost] = useState('')
   const [newComment, setNewComment] = useState('')
@@ -49,10 +51,10 @@ export const HostsEditorCard: React.FC<HostsEditorCardProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-fluent-text">
-              Windows Hosts-Datei Editor
+              {t.advanced.hostsTitle}
             </h3>
             <p className="text-xs text-fluent-muted">
-              Lokale Domänen- und IP-Umleitungen verwalten (automatische Sicherung unter hosts.bak)
+              {t.advanced.hostsSubtitle}
             </p>
           </div>
         </div>
@@ -77,21 +79,21 @@ export const HostsEditorCard: React.FC<HostsEditorCardProps> = ({
         className="p-3.5 rounded-xl bg-fluent-bg/60 border border-fluent-border/40 space-y-2.5"
       >
         <span className="text-[11px] font-semibold text-fluent-text block">
-          Neuen Host-Eintrag hinzufügen
+          {t.advanced.hostsAddTitle}
         </span>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <input
             type="text"
             value={newIp}
             onChange={(e) => setNewIp(e.target.value)}
-            placeholder="IP (z. B. 127.0.0.1)"
+            placeholder={t.advanced.hostsIpPlaceholder}
             className="px-3 py-1.5 rounded-lg bg-fluent-card/70 border border-fluent-border/60 text-xs text-fluent-text font-mono placeholder:text-fluent-muted/60 focus:outline-none focus:border-fluent-accent"
           />
           <input
             type="text"
             value={newHost}
             onChange={(e) => setNewHost(e.target.value)}
-            placeholder="Domain (z. B. test.local)"
+            placeholder={t.advanced.hostsDomainPlaceholder}
             className="px-3 py-1.5 rounded-lg bg-fluent-card/70 border border-fluent-border/60 text-xs text-fluent-text font-mono placeholder:text-fluent-muted/60 focus:outline-none focus:border-fluent-accent"
           />
           <div className="flex items-center gap-2">
@@ -99,7 +101,7 @@ export const HostsEditorCard: React.FC<HostsEditorCardProps> = ({
               type="text"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Kommentar (optional)"
+              placeholder={t.advanced.hostsCommentPlaceholder}
               className="flex-1 px-3 py-1.5 rounded-lg bg-fluent-card/70 border border-fluent-border/60 text-xs text-fluent-text placeholder:text-fluent-muted/60 focus:outline-none focus:border-fluent-accent"
             />
             <button
@@ -108,7 +110,7 @@ export const HostsEditorCard: React.FC<HostsEditorCardProps> = ({
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-fluent-accent hover:bg-fluent-accent/90 text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50 shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
-              Hinzufügen
+              {t.advanced.hostsAddBtn}
             </button>
           </div>
         </div>
@@ -118,11 +120,11 @@ export const HostsEditorCard: React.FC<HostsEditorCardProps> = ({
       {loading ? (
         <div className="py-12 text-center space-y-2 bg-fluent-bg/30 rounded-xl border border-fluent-border/30">
           <RefreshCw className="w-5 h-5 text-fluent-accent animate-spin mx-auto" />
-          <p className="text-xs text-fluent-muted">Lese Hosts-Datei...</p>
+          <p className="text-xs text-fluent-muted">{t.advanced.hostsReading}</p>
         </div>
       ) : entries.length === 0 ? (
         <div className="py-10 text-center text-xs text-fluent-muted bg-fluent-bg/30 rounded-xl border border-fluent-border/30">
-          Keine benutzerdefinierten IP-Zuordnungen in der Hosts-Datei vorhanden.
+          {t.advanced.hostsEmpty}
         </div>
       ) : (
         <div className="space-y-2">
@@ -140,7 +142,7 @@ export const HostsEditorCard: React.FC<HostsEditorCardProps> = ({
                   type="checkbox"
                   checked={entry.isEnabled}
                   onChange={() => onToggle(entry.id)}
-                  title={entry.isEnabled ? 'Aktiviert (Klicken zum Deaktivieren)' : 'Deaktiviert'}
+                  title={entry.isEnabled ? t.advanced.hostsEnabledTitle : t.advanced.hostsDisabledTitle}
                   className="rounded border-fluent-border/80 text-fluent-accent focus:ring-fluent-accent w-4 h-4 cursor-pointer"
                 />
 
@@ -167,13 +169,13 @@ export const HostsEditorCard: React.FC<HostsEditorCardProps> = ({
                       : 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20'
                   }`}
                 >
-                  {entry.isEnabled ? 'Aktiv' : 'Auskommentiert'}
+                  {entry.isEnabled ? t.advanced.hostsActiveBadge : t.advanced.hostsCommentedBadge}
                 </span>
 
                 <button
                   onClick={() => onDelete(entry.id)}
                   disabled={saving}
-                  title="Eintrag löschen"
+                  title={t.advanced.hostsDeleteTooltip}
                   className="p-1.5 rounded-lg text-fluent-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

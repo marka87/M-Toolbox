@@ -7,12 +7,14 @@ import {
   Copy
 } from 'lucide-react'
 import type { NetworkAdapterInfo } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface NetworkAdapterCardProps {
   adapter: NetworkAdapterInfo
 }
 
 export const NetworkAdapterCard: React.FC<NetworkAdapterCardProps> = ({ adapter }) => {
+  const { t } = useTranslation()
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
   const copyToClipboard = (key: string, text: string) => {
@@ -69,7 +71,7 @@ export const NetworkAdapterCard: React.FC<NetworkAdapterCardProps> = ({ adapter 
               </h4>
               {adapter.isPrimary && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                  Standard-Route
+                  {t.network.primaryRouteBadge}
                 </span>
               )}
               <span
@@ -84,7 +86,7 @@ export const NetworkAdapterCard: React.FC<NetworkAdapterCardProps> = ({ adapter 
                     adapter.status === 'Up' ? 'bg-emerald-400' : 'bg-neutral-400'
                   }`}
                 />
-                {adapter.status === 'Up' ? 'Verbunden' : 'Getrennt'}
+                {adapter.status === 'Up' ? t.network.connectedBadge : t.network.disconnectedBadge}
               </span>
             </div>
 
@@ -110,12 +112,12 @@ export const NetworkAdapterCard: React.FC<NetworkAdapterCardProps> = ({ adapter 
           <span className="text-fluent-muted">IPv4:</span>
           <div className="flex items-center gap-1.5">
             <span className="font-mono font-medium text-fluent-text">
-              {adapter.ipv4Address || 'Keine IP zugewiesen'}
+              {adapter.ipv4Address || t.network.noIpAssigned}
             </span>
             {adapter.ipv4Address && (
               <button
                 onClick={() => copyToClipboard('ipv4', adapter.ipv4Address)}
-                title="IPv4 kopieren"
+                title={t.network.copyIpv4Tooltip}
                 className="p-1 text-fluent-muted hover:text-fluent-accent transition-colors"
               >
                 {copiedKey === 'ipv4' ? (
@@ -138,7 +140,7 @@ export const NetworkAdapterCard: React.FC<NetworkAdapterCardProps> = ({ adapter 
             {adapter.gateway && (
               <button
                 onClick={() => copyToClipboard('gw', adapter.gateway)}
-                title="Gateway kopieren"
+                title={t.network.copyGatewayTooltip}
                 className="p-1 text-fluent-muted hover:text-fluent-accent transition-colors"
               >
                 {copiedKey === 'gw' ? (
@@ -169,7 +171,7 @@ export const NetworkAdapterCard: React.FC<NetworkAdapterCardProps> = ({ adapter 
             {adapter.macAddress && adapter.macAddress !== '-' && (
               <button
                 onClick={() => copyToClipboard('mac', adapter.macAddress)}
-                title="MAC-Adresse kopieren"
+                title={t.network.copyMacTooltip}
                 className="p-1 text-fluent-muted hover:text-fluent-accent transition-colors"
               >
                 {copiedKey === 'mac' ? (

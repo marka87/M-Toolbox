@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Activity, RefreshCw, Plus, WifiOff } from 'lucide-react'
 import type { PingResultItem } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface PingMatrixCardProps {
   results: PingResultItem[]
@@ -13,6 +14,7 @@ export const PingMatrixCard: React.FC<PingMatrixCardProps> = ({
   isPinging,
   onRefresh
 }) => {
+  const { t } = useTranslation()
   const [customHost, setCustomHost] = useState('')
 
   const handleCustomPing = (e: React.FormEvent) => {
@@ -27,31 +29,31 @@ export const PingMatrixCard: React.FC<PingMatrixCardProps> = ({
         return {
           bar: 'bg-emerald-500',
           badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-          label: 'Ausgezeichnet'
+          label: t.network.pingStatusExcellent
         }
       case 'good':
         return {
           bar: 'bg-cyan-500',
           badge: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-          label: 'Gut'
+          label: t.network.pingStatusGood
         }
       case 'moderate':
         return {
           bar: 'bg-amber-500',
           badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-          label: 'Mäßig'
+          label: t.network.pingStatusModerate
         }
       case 'high':
         return {
           bar: 'bg-rose-500',
           badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-          label: 'Hohe Latenz'
+          label: t.network.pingStatusHigh
         }
       default:
         return {
           bar: 'bg-neutral-600',
           badge: 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20',
-          label: 'Nicht erreichbar'
+          label: t.network.pingStatusUnreachable
         }
     }
   }
@@ -65,10 +67,10 @@ export const PingMatrixCard: React.FC<PingMatrixCardProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-fluent-text">
-              Latenz- & Ping-Monitor
+              {t.network.pingTitle}
             </h3>
             <p className="text-xs text-fluent-muted">
-              Echtzeit-Verzögerungsmessung zu primären Internet- und Gateway-Gegenstellen
+              {t.network.pingSubtitle}
             </p>
           </div>
         </div>
@@ -79,7 +81,7 @@ export const PingMatrixCard: React.FC<PingMatrixCardProps> = ({
           className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-fluent-accent/10 border border-fluent-accent/20 hover:bg-fluent-accent/20 text-fluent-accent text-xs font-semibold transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isPinging ? 'animate-spin' : ''}`} />
-          {isPinging ? 'Prüfe...' : 'Jetzt messen'}
+          {isPinging ? t.network.pingMeasuringBtn : t.network.pingMeasureNowBtn}
         </button>
       </div>
 
@@ -112,7 +114,7 @@ export const PingMatrixCard: React.FC<PingMatrixCardProps> = ({
                       </span>
                     ) : (
                       <span className="text-xs font-medium text-neutral-400 flex items-center gap-1">
-                        <WifiOff className="w-3 h-3" /> Offline
+                        <WifiOff className="w-3 h-3" /> {t.network.pingOffline}
                       </span>
                     )}
                   </div>
@@ -137,7 +139,7 @@ export const PingMatrixCard: React.FC<PingMatrixCardProps> = ({
                 <div className="flex items-center justify-between text-[10px] text-fluent-muted pt-0.5">
                   <span>Min: {item.minMs}ms</span>
                   <span>Max: {item.maxMs}ms</span>
-                  <span>Verlust: {item.packetLossPercent}%</span>
+                  <span>{t.network.pingPacketLoss.replace('{percent}', String(item.packetLossPercent))}</span>
                 </div>
               )}
             </div>
@@ -154,7 +156,7 @@ export const PingMatrixCard: React.FC<PingMatrixCardProps> = ({
           type="text"
           value={customHost}
           onChange={(e) => setCustomHost(e.target.value)}
-          placeholder="Eigene Adresse testen (z. B. 1.0.0.1 oder speedtest.net)..."
+          placeholder={t.network.pingCustomPlaceholder}
           className="flex-1 px-3 py-1.5 rounded-lg bg-fluent-bg/70 border border-fluent-border/60 text-xs text-fluent-text placeholder:text-fluent-muted/60 focus:outline-none focus:border-fluent-accent transition-colors font-mono"
         />
         <button
@@ -163,7 +165,7 @@ export const PingMatrixCard: React.FC<PingMatrixCardProps> = ({
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-fluent-card border border-fluent-border/60 hover:bg-fluent-border/40 text-fluent-text text-xs font-semibold transition-colors disabled:opacity-40"
         >
           <Plus className="w-3.5 h-3.5" />
-          Ziel anpingen
+          {t.network.pingCustomBtn}
         </button>
       </form>
     </div>

@@ -44,9 +44,9 @@ export const SettingsPage: React.FC = () => {
   const handleClearCache = async () => {
     const res = await clearCache()
     if (res.success) {
-      setCacheMessage(res.message || 'Temporärer Cache wurde erfolgreich bereinigt.')
+      setCacheMessage(res.message || t.settings.cacheSuccess)
     } else {
-      setCacheMessage(res.message || 'Fehler beim Bereinigen.')
+      setCacheMessage(res.message || t.settings.cacheError)
     }
     setTimeout(() => setCacheMessage(null), 4000)
   }
@@ -76,7 +76,7 @@ export const SettingsPage: React.FC = () => {
       <div className="flex items-center justify-center h-full">
         <div className="flex items-center gap-3 text-fluent-muted">
           <RefreshCw className="w-5 h-5 animate-spin text-fluent-accent" />
-          <span>Einstellungen werden geladen...</span>
+          <span>{t.settings.loading}</span>
         </div>
       </div>
     )
@@ -266,9 +266,9 @@ export const SettingsPage: React.FC = () => {
           {/* Hybrid GPU Counters (Experimentell) */}
           <div className="flex items-center justify-between pt-4">
             <div>
-              <div className="text-sm font-medium text-slate-200">Hybrid-GPU Leistungsindikatoren (Experimentell)</div>
+              <div className="text-sm font-medium text-slate-200">{t.settings.hybridGpuLabel}</div>
               <div className="text-xs text-fluent-muted">
-                Aggregiert 3D-Auslastung über iGPU und dGPU auf Hybrid-Laptops (WMI engtype_3D)
+                {t.settings.hybridGpuDesc}
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -305,8 +305,8 @@ export const SettingsPage: React.FC = () => {
 
       {/* 3. GitHub Live Updates */}
       <Card
-        title="GitHub Updates & Version"
-        subtitle="Prüfen Sie direkt auf neue M-Toolbox Versionen über die offizielle GitHub API"
+        title={t.settings.githubUpdatesTitle}
+        subtitle={t.settings.githubUpdatesSubtitle}
         icon={<Github className="w-5 h-5" />}
       >
         <div className="space-y-4">
@@ -317,10 +317,10 @@ export const SettingsPage: React.FC = () => {
               </div>
               <div>
                 <div className="text-sm font-semibold text-slate-100">
-                  Installierte Version: <span className="text-fluent-accent">v{appInfo?.version || '1.9.0'}</span>
+                  {t.settings.installedVersion} <span className="text-fluent-accent">v{appInfo?.version || '1.9.0'}</span>
                 </div>
                 <div className="text-xs text-fluent-muted">
-                  Offizielles GitHub-Repository: <code className="text-slate-300">marka87/M-Toolbox</code>
+                  {t.settings.officialRepo} <code className="text-slate-300">marka87/M-Toolbox</code>
                 </div>
               </div>
             </div>
@@ -333,7 +333,7 @@ export const SettingsPage: React.FC = () => {
                 className="flex items-center gap-2 px-3 py-1.5 rounded-fluent bg-fluent-accent hover:bg-fluent-accent-hover text-white text-xs font-semibold shadow-fluent-sm transition-all disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${checkingUpdates ? 'animate-spin' : ''}`} />
-                <span>{checkingUpdates ? 'Prüfe...' : 'Jetzt prüfen'}</span>
+                <span>{checkingUpdates ? t.settings.checking : t.settings.checkNow}</span>
               </button>
             </div>
           </div>
@@ -357,17 +357,17 @@ export const SettingsPage: React.FC = () => {
                   <div>
                     <div className="text-sm font-semibold">
                       {updateResult.hasUpdate
-                        ? `Neue Version ${updateResult.latestVersion} verfügbar!`
-                        : 'M-Toolbox ist auf dem neuesten Stand!'}
+                        ? t.settings.newVersionAvailable.replace('{version}', updateResult.latestVersion || '')
+                        : t.settings.upToDate}
                     </div>
                     <div className="text-xs text-slate-300 mt-1">
                       {updateResult.hasUpdate
-                        ? `Eine neuere Version (${updateResult.latestVersion}) wurde auf GitHub veröffentlicht.`
-                        : `Sie verwenden die aktuellste Version (v${updateResult.currentVersion}). Keine Updates ausstehend.`}
+                        ? t.settings.newerOnGithub.replace('{version}', updateResult.latestVersion || '')
+                        : t.settings.usingLatest.replace('{version}', updateResult.currentVersion || '')}
                     </div>
                     {updateResult.publishedAt && (
                       <div className="text-[11px] text-fluent-muted mt-1">
-                        Zuletzt geprüft: {new Date(updateResult.publishedAt).toLocaleString()}
+                        {t.settings.lastChecked.replace('{time}', new Date(updateResult.publishedAt).toLocaleString())}
                       </div>
                     )}
                   </div>
@@ -379,7 +379,7 @@ export const SettingsPage: React.FC = () => {
                     onClick={() => handleOpenReleaseUrl(updateResult.releaseUrl)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-fluent bg-amber-500 text-slate-900 font-semibold text-xs hover:bg-amber-400 transition-all shrink-0 shadow-sm"
                   >
-                    <span>Release anzeigen</span>
+                    <span>{t.settings.viewRelease}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -397,7 +397,7 @@ export const SettingsPage: React.FC = () => {
       >
         <div className="space-y-4">
           <div className="p-3.5 rounded-fluent-lg bg-fluent-sidebar/40 border border-fluent-border/60">
-            <div className="text-xs font-semibold text-slate-300 mb-1">Lokales AppData-Verzeichnis:</div>
+            <div className="text-xs font-semibold text-slate-300 mb-1">{t.settings.localAppDataDir}</div>
             <code className="text-xs text-fluent-accent block truncate bg-fluent-card px-2.5 py-1.5 rounded border border-fluent-border/40 font-mono">
               {appInfo?.userDataPath || '%APPDATA%\\m-toolbox'}
             </code>
@@ -451,19 +451,19 @@ export const SettingsPage: React.FC = () => {
         <div className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3 rounded-fluent bg-fluent-sidebar/40 border border-fluent-border/40">
-              <div className="text-[11px] text-fluent-muted">App Version</div>
+              <div className="text-[11px] text-fluent-muted">{t.settings.appVersion}</div>
               <div className="text-sm font-semibold text-slate-100">v{appInfo?.version || '1.9.0'}</div>
             </div>
             <div className="p-3 rounded-fluent bg-fluent-sidebar/40 border border-fluent-border/40">
-              <div className="text-[11px] text-fluent-muted">Electron</div>
+              <div className="text-[11px] text-fluent-muted">{t.settings.electron}</div>
               <div className="text-sm font-semibold text-slate-100">v{appInfo?.electronVersion || '34.0.0'}</div>
             </div>
             <div className="p-3 rounded-fluent bg-fluent-sidebar/40 border border-fluent-border/40">
-              <div className="text-[11px] text-fluent-muted">Node.js</div>
+              <div className="text-[11px] text-fluent-muted">{t.settings.node}</div>
               <div className="text-sm font-semibold text-slate-100">v{appInfo?.nodeVersion || '20.18.0'}</div>
             </div>
             <div className="p-3 rounded-fluent bg-fluent-sidebar/40 border border-fluent-border/40">
-              <div className="text-[11px] text-fluent-muted">Plattform / Arch</div>
+              <div className="text-[11px] text-fluent-muted">{t.settings.platformArch}</div>
               <div className="text-sm font-semibold text-slate-100">
                 {appInfo?.osBuild || 'Windows 11'} ({appInfo?.arch || 'x64'})
               </div>
@@ -474,7 +474,7 @@ export const SettingsPage: React.FC = () => {
             <div className="flex items-center gap-3">
               <ShieldCheck className="w-5 h-5 text-fluent-accent shrink-0" />
               <div className="text-xs text-fluent-muted">
-                100% Native Windows 11 Integration ohne Dummys oder Mockups. Entwickelt für Systemadministratoren und Power-User.
+                {t.settings.nativeIntegrationDesc}
               </div>
             </div>
 
@@ -484,7 +484,7 @@ export const SettingsPage: React.FC = () => {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-fluent bg-fluent-card border border-fluent-border hover:border-slate-500 text-xs font-semibold text-slate-200 transition-all shrink-0"
             >
               <Github className="w-3.5 h-3.5" />
-              <span>GitHub Repository</span>
+              <span>{t.settings.gitHubRepo}</span>
               <ExternalLink className="w-3 h-3 text-fluent-muted" />
             </button>
           </div>

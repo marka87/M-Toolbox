@@ -21,53 +21,10 @@ import {
 } from 'lucide-react'
 import { useBackupMigration } from '../hooks/useBackupMigration'
 import { Card } from '../components/ui/Card'
-
-const DEFAULT_CHECKLIST = [
-  {
-    id: 'usb_iso',
-    title: 'Windows 11 Boot-Stick erstellen (min. 8 GB USB)',
-    detail: 'Erstelle mit dem offiziellen Microsoft Media Creation Tool oder Rufus einen bootfähigen Windows 11 Installations-Stick.',
-    link: 'https://www.microsoft.com/software-download/windows11',
-    linkText: 'Media Creation Tool herunterladen'
-  },
-  {
-    id: 'portable_app',
-    title: 'M-Toolbox Portable auf den USB-Stick kopieren',
-    detail: 'Kopiere die portable M-Toolbox EXE direkt auf den Installations-Stick. Nach dem Clean-Install kannst du M-Toolbox sofort ohne Setup starten.',
-    link: null,
-    linkText: null
-  },
-  {
-    id: 'save_bundle',
-    title: 'Reinstall-Bundle (.mtoolbox) auf dem USB-Stick speichern',
-    detail: 'Erstelle im Tab "Sicherung erstellen" ein Reinstall-Bundle mit OEM-Treibern (WLAN/LAN/Audio) und Apps, und sichere die .mtoolbox-Datei auf deinem Stick.',
-    link: null,
-    linkText: null
-  },
-  {
-    id: 'backup_data',
-    title: 'Persönliche Dateien extern sichern',
-    detail: 'Sichere Dokumente, Bilder, Downloads, Spielstände, Browser-Lesezeichen und wichtige AppData-Ordner auf einer externen SSD oder in der Cloud.',
-    link: null,
-    linkText: null
-  },
-  {
-    id: 'bitlocker_check',
-    title: 'BitLocker-Wiederherstellungsschlüssel sichern (falls aktiv)',
-    detail: 'Falls dein Laufwerk verschlüsselt ist, notiere den Wiederherstellungsschlüssel aus deinem Microsoft-Konto oder deaktiviere BitLocker vorübergehend.',
-    link: 'https://account.microsoft.com/devices/recoverykey',
-    linkText: 'Microsoft BitLocker-Schlüssel prüfen'
-  },
-  {
-    id: 'ms_account',
-    title: 'Microsoft-Konto Login & 2FA griffbereit halten',
-    detail: 'Halte deine Anmeldedaten und die Authenticator-App auf dem Smartphone bereit, um die Windows-Ersteinrichtung (OOBE) reibungslos abzuschließen.',
-    link: null,
-    linkText: null
-  }
-]
+import { useTranslation } from '../i18n/LanguageContext'
 
 export const BackupMigrationPage: React.FC = () => {
+  const { t } = useTranslation()
   const {
     activeTab,
     setActiveTab,
@@ -100,6 +57,51 @@ export const BackupMigrationPage: React.FC = () => {
     toggleAllMtbxApps,
     clearLogs
   } = useBackupMigration()
+
+  const checklistItems = useMemo(() => [
+    {
+      id: 'usb_iso',
+      title: t.backup.checklist_usb_iso_title,
+      detail: t.backup.checklist_usb_iso_detail,
+      link: 'https://www.microsoft.com/software-download/windows11',
+      linkText: t.backup.checklist_usb_iso_linkText
+    },
+    {
+      id: 'portable_app',
+      title: t.backup.checklist_portable_app_title,
+      detail: t.backup.checklist_portable_app_detail,
+      link: null,
+      linkText: null
+    },
+    {
+      id: 'save_bundle',
+      title: t.backup.checklist_save_bundle_title,
+      detail: t.backup.checklist_save_bundle_detail,
+      link: null,
+      linkText: null
+    },
+    {
+      id: 'backup_data',
+      title: t.backup.checklist_backup_data_title,
+      detail: t.backup.checklist_backup_data_detail,
+      link: null,
+      linkText: null
+    },
+    {
+      id: 'bitlocker_check',
+      title: t.backup.checklist_bitlocker_check_title,
+      detail: t.backup.checklist_bitlocker_check_detail,
+      link: 'https://account.microsoft.com/devices/recoverykey',
+      linkText: t.backup.checklist_bitlocker_check_linkText
+    },
+    {
+      id: 'ms_account',
+      title: t.backup.checklist_ms_account_title,
+      detail: t.backup.checklist_ms_account_detail,
+      link: null,
+      linkText: null
+    }
+  ], [t])
 
   // Full creation options
   const [includeDrivers, setIncludeDrivers] = useState(true)
@@ -188,13 +190,13 @@ export const BackupMigrationPage: React.FC = () => {
             <div className="p-2 rounded-xl bg-fluent-accent/10 text-fluent-accent">
               <Archive className="w-5 h-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-fluent-text">Backup & Migration</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-fluent-text">{t.backup.title}</h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-fluent-accent/15 text-fluent-accent border border-fluent-accent/30">
-              Universal Suite
+              {t.backup.badge}
             </span>
           </div>
           <p className="text-sm text-fluent-muted mt-1">
-            Zentrales Sicherungs- & Wiederherstellungszentrum: Schnelle JSON-Backups, OEM-Treiber-Pakete und Clean-Install-Leitfaden
+            {t.backup.subtitle}
           </p>
         </div>
 
@@ -203,20 +205,20 @@ export const BackupMigrationPage: React.FC = () => {
             onClick={() => selectAnyBackupFile()}
             disabled={isOperating}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover hover:border-fluent-border-hover text-fluent-text transition-all disabled:opacity-50"
-            title="Beliebige Sicherungsdatei (.json oder .mtoolbox) öffnen"
+            title={t.backup.openBackupTooltip}
           >
             <FolderOpen className="w-3.5 h-3.5 text-fluent-accent" />
-            Sicherung öffnen...
+            {t.backup.openBackupBtn}
           </button>
 
           <button
             onClick={() => refreshAllHistory()}
             disabled={isLoadingHistory || isOperating}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover hover:border-fluent-border-hover text-fluent-text transition-all disabled:opacity-50"
-            title="Historie neu laden"
+            title={t.backup.refreshTooltip}
           >
             <RefreshCw className={`w-3.5 h-3.5 text-fluent-accent ${isLoadingHistory ? 'animate-spin' : ''}`} />
-            Aktualisieren
+            {t.backup.refreshBtn}
           </button>
         </div>
       </div>
@@ -232,7 +234,7 @@ export const BackupMigrationPage: React.FC = () => {
           }`}
         >
           <Upload className="w-3.5 h-3.5" />
-          Sicherung erstellen
+          {t.backup.tabCreate}
         </button>
 
         <button
@@ -244,7 +246,7 @@ export const BackupMigrationPage: React.FC = () => {
           }`}
         >
           <Download className="w-3.5 h-3.5" />
-          Wiederherstellen
+          {t.backup.tabRestore}
           {selectedBackup && (
             <span className="w-2 h-2 rounded-full bg-fluent-accent animate-pulse" />
           )}
@@ -259,9 +261,9 @@ export const BackupMigrationPage: React.FC = () => {
           }`}
         >
           <CheckSquare className="w-3.5 h-3.5" />
-          Clean-Install Checkliste
+          {t.backup.tabChecklist}
           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-fluent-card border border-fluent-border text-fluent-muted">
-            {checkedItems.size}/{DEFAULT_CHECKLIST.length}
+            {checkedItems.size}/{checklistItems.length}
           </span>
         </button>
 
@@ -274,7 +276,7 @@ export const BackupMigrationPage: React.FC = () => {
           }`}
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          Sicherungs-Verlauf ({localJsonBackups.length + mtbxHistory.length})
+          {t.backup.tabHistory.replace('{count}', String(localJsonBackups.length + mtbxHistory.length))}
         </button>
       </div>
 
@@ -284,7 +286,7 @@ export const BackupMigrationPage: React.FC = () => {
           <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
           <span className="flex-1">{error}</span>
           <button onClick={clearLogs} className="text-rose-400 hover:text-rose-200 text-xs font-semibold">
-            Ausblenden
+            {t.backup.dismissError}
           </button>
         </div>
       )}
@@ -326,8 +328,8 @@ export const BackupMigrationPage: React.FC = () => {
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-fluent-text">Schnell-Backup (.json)</h3>
-                    <span className="text-[11px] text-fluent-muted">Kompakt & portabel (ca. 100 KB)</span>
+                    <h3 className="text-sm font-bold text-fluent-text">{t.backup.modeQuickTitle}</h3>
+                    <span className="text-[11px] text-fluent-muted">{t.backup.modeQuickSubtitle}</span>
                   </div>
                 </div>
                 {createType === 'quick' && (
@@ -337,7 +339,7 @@ export const BackupMigrationPage: React.FC = () => {
                 )}
               </div>
               <p className="text-xs text-fluent-muted mt-3 leading-relaxed">
-                Sichert installierte Winget-Programme, Windows Explorer- & Taskbar-Konfiguration, benutzerinstallierte Schriftarten, Wallpaper und PowerShell-Module. Ideal für regelmäßige Konfigurations-Backups.
+                {t.backup.modeQuickDesc}
               </p>
             </div>
 
@@ -356,8 +358,8 @@ export const BackupMigrationPage: React.FC = () => {
                     <HardDrive className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-fluent-text">Vollständiges Reinstall-Bundle (.mtoolbox)</h3>
-                    <span className="text-[11px] text-fluent-muted">Für Clean-Installs & PC-Wechsel</span>
+                    <h3 className="text-sm font-bold text-fluent-text">{t.backup.modeFullTitle}</h3>
+                    <span className="text-[11px] text-fluent-muted">{t.backup.modeFullSubtitle}</span>
                   </div>
                 </div>
                 {createType === 'full' && (
@@ -367,7 +369,7 @@ export const BackupMigrationPage: React.FC = () => {
                 )}
               </div>
               <p className="text-xs text-fluent-muted mt-3 leading-relaxed">
-                Exportiert zusätzlich echte OEM-Hardware-Treiber (Plug & Play INF/SYS für WLAN/LAN/Audio via pnputil), Tweaks und WLAN-Profile. Ermöglicht sofortige Offline-Treiberinstallation nach der Neuinstallation.
+                {t.backup.modeFullDesc}
               </p>
             </div>
           </div>
@@ -377,10 +379,10 @@ export const BackupMigrationPage: React.FC = () => {
             <Card className="p-6 space-y-5">
               <div className="space-y-1">
                 <h3 className="text-sm font-semibold text-slate-100">
-                  Enthaltene Komponenten im Schnell-Backup
+                  {t.backup.quickIncludedTitle}
                 </h3>
                 <p className="text-xs text-fluent-muted">
-                  Folgende Elemente werden automatisch in die JSON-Sicherung aufgenommen:
+                  {t.backup.quickIncludedSubtitle}
                 </p>
               </div>
 
@@ -388,40 +390,40 @@ export const BackupMigrationPage: React.FC = () => {
                 <div className="p-3.5 rounded-xl border border-fluent-border bg-fluent-card/50 flex items-center gap-3">
                   <Package className="w-4 h-4 text-fluent-accent" />
                   <div className="text-xs">
-                    <div className="font-semibold text-fluent-text">Winget Software-Pakete</div>
-                    <div className="text-fluent-muted text-[11px]">Installierte Programme & IDs</div>
+                    <div className="font-semibold text-fluent-text">{t.backup.compWingetTitle}</div>
+                    <div className="text-fluent-muted text-[11px]">{t.backup.compWingetDesc}</div>
                   </div>
                 </div>
 
                 <div className="p-3.5 rounded-xl border border-fluent-border bg-fluent-card/50 flex items-center gap-3">
                   <Sliders className="w-4 h-4 text-fluent-accent" />
                   <div className="text-xs">
-                    <div className="font-semibold text-fluent-text">Explorer & Taskbar</div>
-                    <div className="text-fluent-muted text-[11px]">Dateiendungen, Ausrichtung etc.</div>
+                    <div className="font-semibold text-fluent-text">{t.backup.compExplorerTitle}</div>
+                    <div className="text-fluent-muted text-[11px]">{t.backup.compExplorerDesc}</div>
                   </div>
                 </div>
 
                 <div className="p-3.5 rounded-xl border border-fluent-border bg-fluent-card/50 flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-fluent-accent" />
                   <div className="text-xs">
-                    <div className="font-semibold text-fluent-text">Fonts & Schriftarten</div>
-                    <div className="text-fluent-muted text-[11px]">Benutzerinstallierte Fonts</div>
+                    <div className="font-semibold text-fluent-text">{t.backup.compFontsTitle}</div>
+                    <div className="text-fluent-muted text-[11px]">{t.backup.compFontsDesc}</div>
                   </div>
                 </div>
 
                 <div className="p-3.5 rounded-xl border border-fluent-border bg-fluent-card/50 flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-fluent-accent" />
                   <div className="text-xs">
-                    <div className="font-semibold text-fluent-text">Desktop Wallpaper</div>
-                    <div className="text-fluent-muted text-[11px]">Aktuelles Hintergrundbild</div>
+                    <div className="font-semibold text-fluent-text">{t.backup.compWallpaperTitle}</div>
+                    <div className="text-fluent-muted text-[11px]">{t.backup.compWallpaperDesc}</div>
                   </div>
                 </div>
 
                 <div className="p-3.5 rounded-xl border border-fluent-border bg-fluent-card/50 flex items-center gap-3">
                   <Cpu className="w-4 h-4 text-fluent-accent" />
                   <div className="text-xs">
-                    <div className="font-semibold text-fluent-text">PowerShell Module</div>
-                    <div className="text-fluent-muted text-[11px]">Installierte PS-Pakete</div>
+                    <div className="font-semibold text-fluent-text">{t.backup.compPowerShellTitle}</div>
+                    <div className="text-fluent-muted text-[11px]">{t.backup.compPowerShellDesc}</div>
                   </div>
                 </div>
               </div>
@@ -432,7 +434,7 @@ export const BackupMigrationPage: React.FC = () => {
                   disabled={isOperating}
                   className="px-4 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-text transition-all disabled:opacity-50"
                 >
-                  Speicherort wählen...
+                  {t.backup.chooseLocationBtn}
                 </button>
                 <button
                   onClick={() => createQuickBackup(false)}
@@ -440,7 +442,7 @@ export const BackupMigrationPage: React.FC = () => {
                   className="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 transition-all disabled:opacity-50 flex items-center gap-2"
                 >
                   <Sparkles className={`w-3.5 h-3.5 ${isOperating ? 'animate-spin' : ''}`} />
-                  {isOperating ? 'Sicherung läuft...' : 'Standard-Backup erstellen (.json)'}
+                  {isOperating ? t.backup.creatingQuickBtn : t.backup.createQuickBtn}
                 </button>
               </div>
             </Card>
@@ -453,16 +455,16 @@ export const BackupMigrationPage: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1">
                     <h3 className="text-sm font-semibold text-slate-100">
-                      Reinstall-Komponenten konfigurieren
+                      {t.backup.fullConfigTitle}
                     </h3>
                     <p className="text-xs text-fluent-muted">
-                      Wähle aus, welche Hardware- und Softwarebestandteile in das .mtoolbox-Paket gepackt werden sollen:
+                      {t.backup.fullConfigSubtitle}
                     </p>
                   </div>
                   {isDiscovering && (
                     <div className="flex items-center gap-2 text-xs text-fluent-accent">
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      Erfasse Systemtreiber & Apps...
+                      {t.backup.discoveringSystem}
                     </div>
                   )}
                 </div>
@@ -479,12 +481,12 @@ export const BackupMigrationPage: React.FC = () => {
                     <div className="text-xs">
                       <div className="font-semibold text-fluent-text flex items-center gap-1.5">
                         <Cpu className="w-3.5 h-3.5 text-fluent-accent" />
-                        Hardware-Treiber
+                        {t.backup.compDriversTitle}
                       </div>
                       <div className="text-fluent-muted text-[11px] mt-0.5">
                         {discoveredData.drivers
-                          ? `${discoveredData.drivers.packages.length} Pakete (WLAN, LAN, Audio)`
-                          : 'OEM INF/SYS Treiber'}
+                          ? t.backup.compDriversPackagesCount.replace('{count}', String(discoveredData.drivers.packages.length))
+                          : t.backup.compDriversFallback}
                       </div>
                     </div>
                   </label>
@@ -500,10 +502,12 @@ export const BackupMigrationPage: React.FC = () => {
                     <div className="text-xs">
                       <div className="font-semibold text-fluent-text flex items-center gap-1.5">
                         <Package className="w-3.5 h-3.5 text-fluent-accent" />
-                        Software-Programme
+                        {t.backup.compAppsTitle}
                       </div>
                       <div className="text-fluent-muted text-[11px] mt-0.5">
-                        {selectedCreationApps.size} von {discoveredData.apps.length} ausgewählt
+                        {t.backup.compAppsSelectedCount
+                          .replace('{selected}', String(selectedCreationApps.size))
+                          .replace('{total}', String(discoveredData.apps.length))}
                       </div>
                     </div>
                   </label>
@@ -519,10 +523,10 @@ export const BackupMigrationPage: React.FC = () => {
                     <div className="text-xs">
                       <div className="font-semibold text-fluent-text flex items-center gap-1.5">
                         <Sliders className="w-3.5 h-3.5 text-fluent-accent" />
-                        Windows Tweaks
+                        {t.backup.compTweaksTitle}
                       </div>
                       <div className="text-fluent-muted text-[11px] mt-0.5">
-                        Explorer & Systemoptimierungen
+                        {t.backup.compTweaksDesc}
                       </div>
                     </div>
                   </label>
@@ -538,10 +542,10 @@ export const BackupMigrationPage: React.FC = () => {
                     <div className="text-xs">
                       <div className="font-semibold text-fluent-text flex items-center gap-1.5">
                         <Wifi className="w-3.5 h-3.5 text-fluent-accent" />
-                        WLAN-Profile
+                        {t.backup.compWifiTitle}
                       </div>
                       <div className="text-fluent-muted text-[11px] mt-0.5">
-                        Gespeicherte Netzwerke
+                        {t.backup.compWifiDesc}
                       </div>
                     </div>
                   </label>
@@ -552,7 +556,9 @@ export const BackupMigrationPage: React.FC = () => {
                   <div className="space-y-3 pt-2">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="text-xs font-semibold text-slate-200">
-                        Programme für die Neuinstallation auswählen ({selectedCreationApps.size} / {discoveredData.apps.length})
+                        {t.backup.selectAppsTitle
+                          .replace('{selected}', String(selectedCreationApps.size))
+                          .replace('{total}', String(discoveredData.apps.length))}
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="relative">
@@ -561,7 +567,7 @@ export const BackupMigrationPage: React.FC = () => {
                             type="text"
                             value={appSearch}
                             onChange={(e) => setAppSearch(e.target.value)}
-                            placeholder="Apps filtern..."
+                            placeholder={t.backup.filterAppsPlaceholder}
                             className="bg-fluent-card border border-fluent-border rounded-lg pl-8 pr-2.5 py-1 text-xs text-fluent-text placeholder:text-fluent-muted focus:outline-none"
                           />
                         </div>
@@ -575,7 +581,9 @@ export const BackupMigrationPage: React.FC = () => {
                           }}
                           className="px-2.5 py-1 rounded-lg text-xs font-medium bg-fluent-card border border-fluent-border text-fluent-text hover:bg-fluent-card-hover"
                         >
-                          {selectedCreationApps.size === discoveredData.apps.length ? 'Alle abwählen' : 'Alle auswählen'}
+                          {selectedCreationApps.size === discoveredData.apps.length
+                            ? t.backup.deselectAllApps
+                            : t.backup.selectAllApps}
                         </button>
                       </div>
                     </div>
@@ -621,7 +629,7 @@ export const BackupMigrationPage: React.FC = () => {
                     className="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-md shadow-indigo-500/20 transition-all disabled:opacity-50 flex items-center gap-2"
                   >
                     <HardDrive className={`w-3.5 h-3.5 ${isOperating ? 'animate-spin' : ''}`} />
-                    {isOperating ? 'Erstelle Reinstall-Bundle...' : 'Reinstall-Bundle speichern (.mtoolbox)'}
+                    {isOperating ? t.backup.savingBundleBtn : t.backup.saveBundleBtn}
                   </button>
                 </div>
               </Card>
@@ -634,7 +642,7 @@ export const BackupMigrationPage: React.FC = () => {
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-fluent-text flex items-center gap-2">
                   <RefreshCw className="w-3.5 h-3.5 text-fluent-accent animate-spin" />
-                  Sicherung wird erstellt...
+                  {t.backup.backupRunningTitle}
                 </span>
                 {reinstallProgress && (
                   <span className="font-mono font-bold text-fluent-accent">
@@ -678,12 +686,12 @@ export const BackupMigrationPage: React.FC = () => {
                 <div className="p-4 rounded-2xl bg-fluent-accent/10 text-fluent-accent group-hover:scale-110 transition-transform mb-3">
                   <Download className="w-8 h-8" />
                 </div>
-                <h3 className="text-base font-bold text-fluent-text">Sicherungsdatei auswählen</h3>
+                <h3 className="text-base font-bold text-fluent-text">{t.backup.dropzoneTitle}</h3>
                 <p className="text-xs text-fluent-muted max-w-md mt-1">
-                  Klicke hier, um eine <b>.json</b>-Sicherung oder ein <b>.mtoolbox</b>-Reinstall-Archiv vom USB-Stick oder Festplatte zu laden.
+                  {t.backup.dropzoneDesc}
                 </p>
                 <span className="mt-4 px-4 py-1.5 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border text-fluent-text group-hover:border-fluent-accent">
-                  Datei durchsuchen...
+                  {t.backup.browseFileBtn}
                 </span>
               </div>
 
@@ -691,7 +699,7 @@ export const BackupMigrationPage: React.FC = () => {
               {localJsonBackups.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-xs font-semibold text-slate-200">
-                    Oder aus lokal gefundenen Sicherungen wählen ({localJsonBackups.length})
+                    {t.backup.localBackupsTitle.replace('{count}', String(localJsonBackups.length))}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {localJsonBackups.map((b, idx) => {
@@ -716,7 +724,7 @@ export const BackupMigrationPage: React.FC = () => {
                             </div>
                           </div>
                           <button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-fluent-card-hover border border-fluent-border text-fluent-text shrink-0">
-                            Laden
+                            {t.backup.loadBtn}
                           </button>
                         </div>
                       )
@@ -743,15 +751,15 @@ export const BackupMigrationPage: React.FC = () => {
                             : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                         }`}
                       >
-                        {selectedBackup.type === 'mtoolbox' ? 'Reinstall Bundle (.mtoolbox)' : 'Schnell-Backup (.json)'}
+                        {selectedBackup.type === 'mtoolbox' ? t.backup.badgeReinstallBundle : t.backup.badgeQuickBackup}
                       </span>
                     </div>
                     <div className="text-xs text-fluent-muted flex flex-wrap items-center gap-3 pt-0.5">
-                      <span>Erstellt: <b>{new Date(selectedBackup.createdAt).toLocaleString()}</b></span>
+                      <span>{t.backup.createdLabel} <b>{new Date(selectedBackup.createdAt).toLocaleString()}</b></span>
                       <span>•</span>
-                      <span>PC: <b>{selectedBackup.computerName}</b></span>
+                      <span>{t.backup.pcLabel} <b>{selectedBackup.computerName}</b></span>
                       <span>•</span>
-                      <span>OS: <b>{selectedBackup.osVersion}</b></span>
+                      <span>{t.backup.osLabel} <b>{selectedBackup.osVersion}</b></span>
                     </div>
                   </div>
 
@@ -759,7 +767,7 @@ export const BackupMigrationPage: React.FC = () => {
                     onClick={() => selectAnyBackupFile()}
                     className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-text transition-all self-start sm:self-center"
                   >
-                    Andere Datei wählen
+                    {t.backup.otherFileBtn}
                   </button>
                 </div>
               </Card>
@@ -769,10 +777,10 @@ export const BackupMigrationPage: React.FC = () => {
                 <Card className="p-5 space-y-4">
                   <div className="space-y-1">
                     <h3 className="text-sm font-semibold text-slate-100">
-                      Wiederherzustellende Kategorien
+                      {t.backup.restoreCatsTitle}
                     </h3>
                     <p className="text-xs text-fluent-muted">
-                      Wähle aus, welche Elemente aus dem JSON-Backup wiederhergestellt werden sollen:
+                      {t.backup.restoreCatsSubtitle}
                     </p>
                   </div>
 
@@ -785,9 +793,9 @@ export const BackupMigrationPage: React.FC = () => {
                         className="mt-0.5 rounded text-fluent-accent focus:ring-0"
                       />
                       <div className="text-xs">
-                        <div className="font-semibold text-fluent-text">Winget-Programme</div>
+                        <div className="font-semibold text-fluent-text">{t.backup.compWingetTitle}</div>
                         <div className="text-fluent-muted text-[11px] mt-0.5">
-                          {selectedBackup.jsonSummary.wingetCount} Pakete installieren
+                          {t.backup.restoreWingetDesc.replace('{count}', String(selectedBackup.jsonSummary.wingetCount))}
                         </div>
                       </div>
                     </label>
@@ -800,9 +808,9 @@ export const BackupMigrationPage: React.FC = () => {
                         className="mt-0.5 rounded text-fluent-accent focus:ring-0"
                       />
                       <div className="text-xs">
-                        <div className="font-semibold text-fluent-text">Explorer & Taskbar</div>
+                        <div className="font-semibold text-fluent-text">{t.backup.compExplorerTitle}</div>
                         <div className="text-fluent-muted text-[11px] mt-0.5">
-                          Einstellungen zurücksetzen
+                          {t.backup.restoreExplorerDesc}
                         </div>
                       </div>
                     </label>
@@ -815,9 +823,9 @@ export const BackupMigrationPage: React.FC = () => {
                         className="mt-0.5 rounded text-fluent-accent focus:ring-0"
                       />
                       <div className="text-xs">
-                        <div className="font-semibold text-fluent-text">Schriftarten (Fonts)</div>
+                        <div className="font-semibold text-fluent-text">{t.backup.compFontsTitle}</div>
                         <div className="text-fluent-muted text-[11px] mt-0.5">
-                          {selectedBackup.jsonSummary.fontsCount} Fonts installieren
+                          {t.backup.restoreFontsDesc.replace('{count}', String(selectedBackup.jsonSummary.fontsCount))}
                         </div>
                       </div>
                     </label>
@@ -830,9 +838,9 @@ export const BackupMigrationPage: React.FC = () => {
                         className="mt-0.5 rounded text-fluent-accent focus:ring-0"
                       />
                       <div className="text-xs">
-                        <div className="font-semibold text-fluent-text">Desktop Wallpaper</div>
+                        <div className="font-semibold text-fluent-text">{t.backup.compWallpaperTitle}</div>
                         <div className="text-fluent-muted text-[11px] mt-0.5">
-                          Hintergrundbild setzen
+                          {t.backup.restoreWallpaperDesc}
                         </div>
                       </div>
                     </label>
@@ -845,9 +853,9 @@ export const BackupMigrationPage: React.FC = () => {
                         className="mt-0.5 rounded text-fluent-accent focus:ring-0"
                       />
                       <div className="text-xs">
-                        <div className="font-semibold text-fluent-text">PowerShell Module</div>
+                        <div className="font-semibold text-fluent-text">{t.backup.compPowerShellTitle}</div>
                         <div className="text-fluent-muted text-[11px] mt-0.5">
-                          {selectedBackup.jsonSummary.powershellModulesCount} Module installieren
+                          {t.backup.restorePowerShellDesc.replace('{count}', String(selectedBackup.jsonSummary.powershellModulesCount))}
                         </div>
                       </div>
                     </label>
@@ -860,7 +868,7 @@ export const BackupMigrationPage: React.FC = () => {
                       className="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 transition-all disabled:opacity-50 flex items-center gap-2"
                     >
                       <RotateCcw className={`w-3.5 h-3.5 ${isOperating ? 'animate-spin' : ''}`} />
-                      {isOperating ? 'Wiederherstellung läuft...' : 'Ausgewählte Komponenten wiederherstellen'}
+                      {isOperating ? t.backup.restoringBtn : t.backup.restoreSelectedBtn}
                     </button>
                   </div>
                 </Card>
@@ -871,10 +879,10 @@ export const BackupMigrationPage: React.FC = () => {
                 <Card className="p-5 space-y-4">
                   <div className="space-y-1">
                     <h3 className="text-sm font-semibold text-slate-100">
-                      Reinstall-Bundle Komponenten
+                      {t.backup.mtbxCompTitle}
                     </h3>
                     <p className="text-xs text-fluent-muted">
-                      Wähle aus, welche Teile des Reinstall-Archivs auf diesem System eingerichtet werden sollen:
+                      {t.backup.mtbxCompSubtitle}
                     </p>
                   </div>
 
@@ -891,10 +899,10 @@ export const BackupMigrationPage: React.FC = () => {
                       <div className="text-xs">
                         <div className="font-semibold text-fluent-text flex items-center gap-1.5">
                           <Cpu className="w-3.5 h-3.5 text-fluent-accent" />
-                          Hardware-Treiber
+                          {t.backup.compDriversTitle}
                         </div>
                         <div className="text-fluent-muted text-[11px] mt-0.5">
-                          {selectedBackup.mtbxSummary.driverCount} OEM-Treiber via pnputil
+                          {t.backup.mtbxDriversDesc.replace('{count}', String(selectedBackup.mtbxSummary.driverCount))}
                         </div>
                       </div>
                     </label>
@@ -911,10 +919,12 @@ export const BackupMigrationPage: React.FC = () => {
                       <div className="text-xs">
                         <div className="font-semibold text-fluent-text flex items-center gap-1.5">
                           <Package className="w-3.5 h-3.5 text-fluent-accent" />
-                          Software-Programme
+                          {t.backup.compAppsTitle}
                         </div>
                         <div className="text-fluent-muted text-[11px] mt-0.5">
-                          {mtbxRestoreOptions.selectedAppIds.size} von {selectedBackup.mtbxSummary.appCount} Apps
+                          {t.backup.mtbxAppsDesc
+                            .replace('{selected}', String(mtbxRestoreOptions.selectedAppIds.size))
+                            .replace('{total}', String(selectedBackup.mtbxSummary.appCount))}
                         </div>
                       </div>
                     </label>
@@ -931,10 +941,10 @@ export const BackupMigrationPage: React.FC = () => {
                       <div className="text-xs">
                         <div className="font-semibold text-fluent-text flex items-center gap-1.5">
                           <Sliders className="w-3.5 h-3.5 text-fluent-accent" />
-                          Windows Tweaks
+                          {t.backup.compTweaksTitle}
                         </div>
                         <div className="text-fluent-muted text-[11px] mt-0.5">
-                          Systemkonfiguration anwenden
+                          {t.backup.mtbxTweaksDesc}
                         </div>
                       </div>
                     </label>
@@ -947,7 +957,7 @@ export const BackupMigrationPage: React.FC = () => {
                       <div className="space-y-3 pt-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-slate-200">
-                            Apps zur Installation auswählen:
+                            {t.backup.selectAppsToInstallTitle}
                           </span>
                           <button
                             onClick={() =>
@@ -956,8 +966,8 @@ export const BackupMigrationPage: React.FC = () => {
                             className="px-2.5 py-1 rounded-lg text-xs font-medium bg-fluent-card border border-fluent-border text-fluent-text hover:bg-fluent-card-hover"
                           >
                             {mtbxRestoreOptions.selectedAppIds.size === selectedBackup.mtbxSummary.apps.length
-                              ? 'Alle abwählen'
-                              : 'Alle auswählen'}
+                              ? t.backup.deselectAllApps
+                              : t.backup.selectAllApps}
                           </button>
                         </div>
 
@@ -995,7 +1005,7 @@ export const BackupMigrationPage: React.FC = () => {
                       className="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-md shadow-indigo-500/20 transition-all disabled:opacity-50 flex items-center gap-2"
                     >
                       <RotateCcw className={`w-3.5 h-3.5 ${isOperating ? 'animate-spin' : ''}`} />
-                      {isOperating ? 'Wiederherstellung läuft...' : 'Reinstall-Bundle jetzt anwenden'}
+                      {isOperating ? t.backup.restoringBtn : t.backup.applyBundleBtn}
                     </button>
                   </div>
                 </Card>
@@ -1007,7 +1017,7 @@ export const BackupMigrationPage: React.FC = () => {
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-fluent-text flex items-center gap-2">
                       <RefreshCw className="w-3.5 h-3.5 text-fluent-accent animate-spin" />
-                      Wiederherstellung läuft...
+                      {t.backup.restoringRunningTitle}
                     </span>
                     {reinstallProgress && (
                       <span className="font-mono font-bold text-fluent-accent">
@@ -1048,14 +1058,18 @@ export const BackupMigrationPage: React.FC = () => {
               <div className="space-y-1">
                 <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
                   <CheckSquare className="w-4 h-4 text-fluent-accent" />
-                  Vorbereitungs-Checkliste für die Windows-Neuinstallation
+                  {t.backup.checklistTitle}
                 </h3>
                 <p className="text-xs text-fluent-muted">
-                  Hake die Schritte nacheinander ab, um bei einem Clean-Install keine Daten oder Treiber zu vergessen.
+                  {t.backup.checklistSubtitle}
                 </p>
               </div>
               <div className="flex items-center gap-2 text-xs font-semibold text-fluent-accent">
-                <span>{checkedItems.size} von {DEFAULT_CHECKLIST.length} erledigt</span>
+                <span>
+                  {t.backup.checklistProgress
+                    .replace('{done}', String(checkedItems.size))
+                    .replace('{total}', String(checklistItems.length))}
+                </span>
               </div>
             </div>
 
@@ -1064,13 +1078,13 @@ export const BackupMigrationPage: React.FC = () => {
               <div
                 className="h-full bg-emerald-500 transition-all duration-500"
                 style={{
-                  width: `${Math.round((checkedItems.size / DEFAULT_CHECKLIST.length) * 100)}%`
+                  width: `${Math.round((checkedItems.size / checklistItems.length) * 100)}%`
                 }}
               />
             </div>
 
             <div className="space-y-3 pt-2">
-              {DEFAULT_CHECKLIST.map((item, idx) => {
+              {checklistItems.map((item, idx) => {
                 const isDone = checkedItems.has(item.id)
                 return (
                   <div
@@ -1129,7 +1143,7 @@ export const BackupMigrationPage: React.FC = () => {
         <div className="space-y-5">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-semibold text-slate-200">
-              Vorhandene Sicherungen & Reinstall-Archive ({localJsonBackups.length + mtbxHistory.length})
+              {t.backup.historyListTitle.replace('{count}', String(localJsonBackups.length + mtbxHistory.length))}
             </h3>
             <button
               onClick={() => refreshAllHistory()}
@@ -1137,15 +1151,15 @@ export const BackupMigrationPage: React.FC = () => {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-text"
             >
               <RefreshCw className={`w-3 h-3 ${isLoadingHistory ? 'animate-spin' : ''}`} />
-              Aktualisieren
+              {t.backup.refreshBtn}
             </button>
           </div>
 
           {localJsonBackups.length === 0 && mtbxHistory.length === 0 ? (
             <Card className="p-8 text-center text-xs text-fluent-muted space-y-2">
               <Archive className="w-8 h-8 mx-auto text-fluent-muted/60" />
-              <p className="font-semibold text-fluent-text">Noch keine Sicherungen im Verlauf vorhanden</p>
-              <p>Erstelle ein Schnell-Backup (.json) oder Reinstall-Bundle (.mtoolbox) im ersten Tab.</p>
+              <p className="font-semibold text-fluent-text">{t.backup.noHistoryTitle}</p>
+              <p>{t.backup.noHistoryDesc}</p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1170,7 +1184,7 @@ export const BackupMigrationPage: React.FC = () => {
                         <span>{b.wingetCount} Apps</span>
                       </div>
                       <p className="text-[11px] text-fluent-text/80">
-                        {b.wingetCount} Apps, Explorer-Settings, Fonts & Wallpaper
+                        {t.backup.historyAppsDesc.replace('{count}', String(b.wingetCount))}
                       </p>
                     </div>
 
@@ -1179,7 +1193,7 @@ export const BackupMigrationPage: React.FC = () => {
                         onClick={() => loadAndPreviewFile(b.filePath || '')}
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-fluent-accent/15 text-fluent-accent hover:bg-fluent-accent hover:text-white transition-all"
                       >
-                        In Wiederherstellung laden
+                        {t.backup.loadIntoRestoreBtn}
                       </button>
                     </div>
                   </div>
@@ -1205,7 +1219,7 @@ export const BackupMigrationPage: React.FC = () => {
                       {new Date(m.createdAt).toLocaleString()}
                     </div>
                     <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium">
-                      Status: {m.status}
+                      {t.backup.statusLabel.replace('{status}', m.status)}
                     </span>
                   </div>
 
@@ -1214,7 +1228,7 @@ export const BackupMigrationPage: React.FC = () => {
                       onClick={() => selectAnyBackupFile()}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-text transition-all"
                     >
-                      Datei öffnen...
+                      {t.backup.openFileBtn}
                     </button>
                   </div>
                 </div>

@@ -1,42 +1,45 @@
 import React from 'react'
 import { Moon, Sun, Monitor, Check } from 'lucide-react'
 import type { AppTheme } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface ThemeSelectorProps {
   currentTheme: AppTheme
   onChange: (theme: AppTheme) => void
 }
 
-const THEMES: Array<{
-  id: AppTheme
-  label: string
-  description: string
-  icon: React.ReactNode
-}> = [
-  {
-    id: 'dark',
-    label: 'Dunkel',
-    description: 'Fluent Dark Mode (Standard)',
-    icon: <Moon className="w-5 h-5 text-indigo-400" />
-  },
-  {
-    id: 'light',
-    label: 'Hell',
-    description: 'Helles Windows-Farbschema',
-    icon: <Sun className="w-5 h-5 text-amber-400" />
-  },
-  {
-    id: 'system',
-    label: 'System',
-    description: 'Windows 11 Design automatisch folgen',
-    icon: <Monitor className="w-5 h-5 text-blue-400" />
-  }
-]
-
 export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ currentTheme, onChange }) => {
+  const { t } = useTranslation()
+
+  const themes: Array<{
+    id: AppTheme
+    label: string
+    description: string
+    icon: React.ReactNode
+  }> = [
+    {
+      id: 'dark',
+      label: t.settings.themeDark,
+      description: t.settings.themeDarkDesc,
+      icon: <Moon className="w-5 h-5 text-indigo-400" />
+    },
+    {
+      id: 'light',
+      label: t.settings.themeLight,
+      description: t.settings.themeLightDesc,
+      icon: <Sun className="w-5 h-5 text-amber-400" />
+    },
+    {
+      id: 'system',
+      label: t.settings.themeSystem,
+      description: t.settings.themeSystemDesc,
+      icon: <Monitor className="w-5 h-5 text-blue-400" />
+    }
+  ]
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      {THEMES.map((theme) => {
+      {themes.map((theme) => {
         const isSelected = currentTheme === theme.id
         return (
           <button

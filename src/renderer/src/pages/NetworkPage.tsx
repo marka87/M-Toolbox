@@ -20,10 +20,12 @@ import { NetworkAdapterCard } from '../components/ui/NetworkAdapterCard'
 import { PingMatrixCard } from '../components/ui/PingMatrixCard'
 import { DnsBenchmarkCard } from '../components/ui/DnsBenchmarkCard'
 import { PortScannerCard } from '../components/ui/PortScannerCard'
+import { useTranslation } from '../i18n/LanguageContext'
 
 type TabType = 'overview' | 'dns' | 'ports'
 
 export const NetworkPage: React.FC = () => {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [copiedWan, setCopiedWan] = useState(false)
 
@@ -70,9 +72,9 @@ export const NetworkPage: React.FC = () => {
             <Network className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-fluent-text">Netzwerk Toolkit</h1>
+            <h1 className="text-2xl font-bold text-fluent-text">{t.network.title}</h1>
             <p className="text-xs text-fluent-muted">
-              Adapterdiagnose, Latenzmessung, DNS-Benchmark und Port-Scanner
+              {t.network.subtitle}
             </p>
           </div>
         </div>
@@ -82,36 +84,36 @@ export const NetworkPage: React.FC = () => {
           <button
             onClick={flushDns}
             disabled={isFlushingDns}
-            title="Leert den Windows DNS-Auflösungscache"
+            title={t.network.flushDnsTooltip}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-fluent-card border border-fluent-border/60 hover:bg-fluent-border/30 text-fluent-text text-xs font-medium transition-colors disabled:opacity-50"
           >
             <Trash2 className={`w-3.5 h-3.5 ${isFlushingDns ? 'animate-spin' : ''}`} />
-            DNS leeren
+            {t.network.flushDnsBtn}
           </button>
 
           <button
             onClick={renewIp}
             disabled={isRenewingIp}
-            title="Fordert eine neue DHCP-IP beim Router an"
+            title={t.network.renewIpTooltip}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-fluent-card border border-fluent-border/60 hover:bg-fluent-border/30 text-fluent-text text-xs font-medium transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRenewingIp ? 'animate-spin' : ''}`} />
-            IP erneuern
+            {t.network.renewIpBtn}
           </button>
 
           <button
             onClick={openNetworkConnections}
-            title="Öffnet die Windows-Netzwerkverbindungen (ncpa.cpl)"
+            title={t.network.adaptersCplTooltip}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-fluent-card border border-fluent-border/60 hover:bg-fluent-border/30 text-fluent-text text-xs font-medium transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            Adapter (ncpa.cpl)
+            {t.network.adaptersCplBtn}
           </button>
 
           <button
             onClick={reload}
             disabled={loadingDiagnostics}
-            title="Diagnosedaten aktualisieren"
+            title={t.network.refreshTooltip}
             className="p-2 rounded-xl bg-fluent-card border border-fluent-border/60 hover:bg-fluent-border/30 text-fluent-muted hover:text-fluent-text transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${loadingDiagnostics ? 'animate-spin' : ''}`} />
@@ -145,7 +147,7 @@ export const NetworkPage: React.FC = () => {
         <div className="p-4 rounded-xl bg-fluent-card/40 border border-fluent-border/40 space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs text-fluent-muted flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-fluent-accent" /> Öffentliche WAN-IP
+              <Globe className="w-3.5 h-3.5 text-fluent-accent" /> {t.network.wanTitle}
             </span>
             <span
               className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-semibold ${
@@ -154,18 +156,18 @@ export const NetworkPage: React.FC = () => {
                   : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
               }`}
             >
-              {wan.isOnline ? 'Online' : 'Offline'}
+              {wan.isOnline ? t.network.onlineBadge : t.network.offlineBadge}
             </span>
           </div>
 
           <div className="flex items-center justify-between pt-1">
             <span className="text-lg font-bold font-mono text-fluent-text">
-              {wan.ip || 'Nicht ermittelt'}
+              {wan.ip || t.network.notDetected}
             </span>
             {wan.ip && (
               <button
                 onClick={copyWanIp}
-                title="WAN IP kopieren"
+                title={t.network.copyWanTooltip}
                 className="p-1 rounded text-fluent-muted hover:text-fluent-accent transition-colors"
               >
                 {copiedWan ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -177,7 +179,7 @@ export const NetworkPage: React.FC = () => {
         {/* Default Gateway Card */}
         <div className="p-4 rounded-xl bg-fluent-card/40 border border-fluent-border/40 space-y-1.5">
           <span className="text-xs text-fluent-muted flex items-center gap-1.5">
-            <Server className="w-3.5 h-3.5 text-indigo-400" /> Standard-Gateway (Router)
+            <Server className="w-3.5 h-3.5 text-indigo-400" /> {t.network.gatewayTitle}
           </span>
           <div className="text-lg font-bold font-mono text-fluent-text pt-1">
             {defaultGateway || '-'}
@@ -188,7 +190,7 @@ export const NetworkPage: React.FC = () => {
         <div className="p-4 rounded-xl bg-fluent-card/40 border border-fluent-border/40 space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs text-fluent-muted flex items-center gap-1.5">
-              <Radio className="w-3.5 h-3.5 text-emerald-400" /> Primäre Schnittstelle
+              <Radio className="w-3.5 h-3.5 text-emerald-400" /> {t.network.primaryInterfaceTitle}
             </span>
             {primaryAdapter?.linkSpeed && (
               <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded bg-fluent-bg text-fluent-text border border-fluent-border/30">
@@ -197,7 +199,7 @@ export const NetworkPage: React.FC = () => {
             )}
           </div>
           <div className="text-sm font-semibold text-fluent-text truncate pt-1">
-            {primaryAdapter?.name || 'Keine Verbindung'}
+            {primaryAdapter?.name || t.network.noConnection}
           </div>
         </div>
       </div>
@@ -213,7 +215,7 @@ export const NetworkPage: React.FC = () => {
           }`}
         >
           <Activity className="w-3.5 h-3.5" />
-          Übersicht & Latenz
+          {t.network.tabOverview}
         </button>
 
         <button
@@ -225,7 +227,7 @@ export const NetworkPage: React.FC = () => {
           }`}
         >
           <Zap className="w-3.5 h-3.5 text-emerald-400" />
-          DNS Benchmark
+          {t.network.tabDns}
         </button>
 
         <button
@@ -237,7 +239,7 @@ export const NetworkPage: React.FC = () => {
           }`}
         >
           <Search className="w-3.5 h-3.5 text-indigo-400" />
-          Port-Scanner
+          {t.network.tabPorts}
         </button>
       </div>
 
@@ -255,18 +257,18 @@ export const NetworkPage: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-fluent-text">
-                Erkannte Netzwerk-Adapter ({adapters.length})
+                {t.network.detectedAdapters.replace('{count}', String(adapters.length))}
               </h3>
             </div>
 
             {loadingDiagnostics ? (
               <div className="p-8 text-center space-y-2 bg-fluent-card/20 rounded-xl border border-fluent-border/30">
                 <RefreshCw className="w-5 h-5 text-fluent-accent animate-spin mx-auto" />
-                <p className="text-xs text-fluent-muted">Lese Netzwerkadapter aus Windows...</p>
+                <p className="text-xs text-fluent-muted">{t.network.readingAdapters}</p>
               </div>
             ) : adapters.length === 0 ? (
               <div className="p-8 text-center bg-fluent-card/20 rounded-xl border border-fluent-border/30 text-xs text-fluent-muted">
-                Keine Netzwerkadapter gefunden.
+                {t.network.noAdaptersFound}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">

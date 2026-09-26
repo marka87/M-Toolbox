@@ -22,6 +22,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import type { AdvancedToolItem } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface ToolLauncherCardProps {
   tool: AdvancedToolItem
@@ -54,6 +55,10 @@ export const ToolLauncherCard: React.FC<ToolLauncherCardProps> = ({
   isLaunching,
   onLaunch
 }) => {
+  const { t } = useTranslation()
+  const toolName = (t.advanced as Record<string, string>)[`tool_${tool.id}_title`] || tool.name
+  const toolDesc = (t.advanced as Record<string, string>)[`tool_${tool.id}_desc`] || tool.description
+
   return (
     <div
       onClick={() => !isLaunching && onLaunch(tool.id)}
@@ -68,7 +73,7 @@ export const ToolLauncherCard: React.FC<ToolLauncherCardProps> = ({
           <div className="flex items-center gap-1.5 shrink-0">
             {tool.requiresAdmin && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                <Shield className="w-2.5 h-2.5" /> Admin
+                <Shield className="w-2.5 h-2.5" /> {t.advanced.adminBadge}
               </span>
             )}
             <span className="font-mono text-[10px] text-fluent-muted px-1.5 py-0.5 rounded bg-fluent-bg/80 border border-fluent-border/40">
@@ -79,17 +84,17 @@ export const ToolLauncherCard: React.FC<ToolLauncherCardProps> = ({
 
         <div>
           <h4 className="text-sm font-semibold text-fluent-text group-hover:text-fluent-accent transition-colors">
-            {tool.name}
+            {toolName}
           </h4>
           <p className="text-xs text-fluent-muted line-clamp-2 mt-1 leading-relaxed">
-            {tool.description}
+            {toolDesc}
           </p>
         </div>
       </div>
 
       <div className="pt-3 mt-3 border-t border-fluent-border/30 flex items-center justify-between">
         <span className="text-[11px] text-fluent-muted group-hover:text-fluent-text transition-colors">
-          Klicken zum Ausführen
+          {t.advanced.clickToLaunch}
         </span>
         <button
           type="button"
@@ -105,10 +110,11 @@ export const ToolLauncherCard: React.FC<ToolLauncherCardProps> = ({
           ) : (
             <ExternalLink className="w-3 h-3" />
           )}
-          {isLaunching ? 'Startet...' : 'Öffnen'}
+          {isLaunching ? t.advanced.launching : t.advanced.open}
         </button>
       </div>
     </div>
   )
 }
+
 

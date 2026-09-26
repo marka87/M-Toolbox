@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Search, CheckCircle2, XCircle, Play } from 'lucide-react'
 import type { PortScanReport } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface PortScannerCardProps {
   report: PortScanReport | null
@@ -8,32 +9,33 @@ interface PortScannerCardProps {
   onScan: (target: string, ports: number[]) => void
 }
 
-const PRESET_PORT_GROUPS = [
-  {
-    id: 'common',
-    label: 'Standard (Web & Remote)',
-    ports: [80, 443, 22, 21, 3389, 445, 135, 8080]
-  },
-  {
-    id: 'dev',
-    label: 'Entwicklung & DBs',
-    ports: [3000, 5173, 8080, 3306, 5432, 6379, 27017]
-  },
-  {
-    id: 'all_common',
-    label: 'Erweitert (Top 16)',
-    ports: [21, 22, 25, 53, 80, 110, 135, 139, 143, 443, 445, 1433, 3000, 3306, 3389, 8080]
-  }
-]
-
 export const PortScannerCard: React.FC<PortScannerCardProps> = ({
   report,
   isScanning,
   onScan
 }) => {
+  const { t } = useTranslation()
   const [target, setTarget] = useState('127.0.0.1')
   const [selectedPreset, setSelectedPreset] = useState('common')
   const [customPortsInput, setCustomPortsInput] = useState('')
+
+  const presetPortGroups = [
+    {
+      id: 'common',
+      label: t.network.portProfileCommon,
+      ports: [80, 443, 22, 21, 3389, 445, 135, 8080]
+    },
+    {
+      id: 'dev',
+      label: t.network.portProfileDev,
+      ports: [3000, 5173, 8080, 3306, 5432, 6379, 27017]
+    },
+    {
+      id: 'all_common',
+      label: t.network.portProfileTop16,
+      ports: [21, 22, 25, 53, 80, 110, 135, 139, 143, 443, 445, 1433, 3000, 3306, 3389, 8080]
+    }
+  ]
 
   const handleStartScan = (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,7 +61,7 @@ export const PortScannerCard: React.FC<PortScannerCardProps> = ({
       }
       if (ports.length === 0) ports = [80, 443]
     } else {
-      const preset = PRESET_PORT_GROUPS.find((g) => g.id === selectedPreset)
+      const preset = presetPortGroups.find((g) => g.id === selectedPreset)
       ports = preset ? preset.ports : [80, 443]
     }
 
@@ -75,10 +77,10 @@ export const PortScannerCard: React.FC<PortScannerCardProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-fluent-text">
-              Nativer TCP Port-Scanner
+              {t.network.portScannerTitle}
             </h3>
             <p className="text-xs text-fluent-muted">
-              Prüft offene Netzwerk- und Server-Ports auf lokalen und entfernten Hosts
+              {t.network.portScannerSubtitle}
             </p>
           </div>
         </div>
@@ -89,7 +91,7 @@ export const PortScannerCard: React.FC<PortScannerCardProps> = ({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           <div className="flex-1">
             <label className="text-[11px] font-medium text-fluent-muted block mb-1">
-              Zieladresse / Host
+              {t.network.portTargetLabel}
             </label>
             <input
               type="text"
@@ -102,19 +104,19 @@ export const PortScannerCard: React.FC<PortScannerCardProps> = ({
 
           <div className="sm:w-60">
             <label className="text-[11px] font-medium text-fluent-muted block mb-1">
-              Port-Profil
+              {t.network.portProfileLabel}
             </label>
             <select
               value={selectedPreset}
               onChange={(e) => setSelectedPreset(e.target.value)}
               className="w-full px-3 py-1.5 rounded-lg bg-fluent-bg/70 border border-fluent-border/60 text-xs text-fluent-text focus:outline-none focus:border-fluent-accent"
             >
-              {PRESET_PORT_GROUPS.map((g) => (
+              {presetPortGroups.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.label} ({g.ports.length} Ports)
                 </option>
               ))}
-              <option value="custom">Benutzerdefiniert...</option>
+              <option value="custom">{t.network.portProfileCustom}</option>
             </select>
           </div>
 
@@ -125,7 +127,7 @@ export const PortScannerCard: React.FC<PortScannerCardProps> = ({
               className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-fluent-accent hover:bg-fluent-accent/90 text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
             >
               <Play className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
-              {isScanning ? 'Scan läuft...' : 'Ports scannen'}
+              {isScanning ? t.network.portScanningBtn : t.network.portScanBtn}
             </button>
           </div>
         </div>
@@ -133,7 +135,7 @@ export const PortScannerCard: React.FC<PortScannerCardProps> = ({
         {selectedPreset === 'custom' && (
           <div>
             <label className="text-[11px] font-medium text-fluent-muted block mb-1">
-              Benutzerdefinierte Ports (z. B. 80, 443, 3000-3010)
+              {t.network.portCustomPortsLabel}
             </label>
             <input
               type="text"
@@ -151,14 +153,14 @@ export const PortScannerCard: React.FC<PortScannerCardProps> = ({
         <div className="space-y-3 pt-2 border-t border-fluent-border/30">
           <div className="flex items-center justify-between text-xs">
             <span className="text-fluent-muted">
-              Ergebnis für <strong className="text-fluent-text font-mono">{report.target}</strong>:
+              {t.network.portResultFor} <strong className="text-fluent-text font-mono">{report.target}</strong>:
             </span>
             <div className="flex items-center gap-3">
               <span className="text-emerald-400 font-semibold">
-                {report.openCount} offen
+                {t.network.portOpenCount.replace('{count}', String(report.openCount))}
               </span>
               <span className="text-neutral-400">
-                {report.scannedCount - report.openCount} geschlossen
+                {t.network.portClosedCount.replace('{count}', String(report.scannedCount - report.openCount))}
               </span>
               <span className="text-fluent-muted font-mono text-[11px]">
                 ({report.durationMs}ms)
@@ -190,11 +192,11 @@ export const PortScannerCard: React.FC<PortScannerCardProps> = ({
                   <div className="shrink-0">
                     {p.isOpen ? (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        <CheckCircle2 className="w-3 h-3" /> Offen
+                        <CheckCircle2 className="w-3 h-3" /> {t.network.portOpenBadge}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-normal text-neutral-400">
-                        <XCircle className="w-3 h-3" /> Zu
+                        <XCircle className="w-3 h-3" /> {t.network.portClosedBadge}
                       </span>
                     )}
                   </div>

@@ -2,6 +2,7 @@ import React from 'react'
 import { Check } from 'lucide-react'
 import type { AccentColor } from '@shared/types'
 import { ACCENT_COLOR_CONFIG } from '../../hooks/useSettings'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface AccentColorPickerProps {
   currentColor: AccentColor
@@ -12,7 +13,16 @@ export const AccentColorPicker: React.FC<AccentColorPickerProps> = ({
   currentColor,
   onChange
 }) => {
+  const { t } = useTranslation()
   const colorKeys = Object.keys(ACCENT_COLOR_CONFIG) as AccentColor[]
+
+  const colorLabels: Record<AccentColor, string> = {
+    blue: t.settings.colorBlue,
+    indigo: t.settings.colorPurple,
+    emerald: t.settings.colorEmerald,
+    rose: t.settings.colorRose,
+    amber: t.settings.colorAmber
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -38,7 +48,7 @@ export const AccentColorPicker: React.FC<AccentColorPickerProps> = ({
               {isSelected && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
             </span>
             <span className={`text-xs font-medium ${isSelected ? 'text-slate-100' : 'text-fluent-muted'}`}>
-              {config.label}
+              {colorLabels[key] || config.label}
             </span>
           </button>
         )

@@ -1,6 +1,7 @@
 import React from 'react'
 import { Globe, RefreshCw, Trophy, Zap, AlertTriangle } from 'lucide-react'
 import type { DnsBenchmarkItem } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface DnsBenchmarkCardProps {
   results: DnsBenchmarkItem[]
@@ -17,6 +18,8 @@ export const DnsBenchmarkCard: React.FC<DnsBenchmarkCardProps> = ({
   onTestDomainChange,
   onRunBenchmark
 }) => {
+  const { t } = useTranslation()
+
   return (
     <div className="p-5 rounded-2xl bg-fluent-card/50 border border-fluent-border/60 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -26,10 +29,10 @@ export const DnsBenchmarkCard: React.FC<DnsBenchmarkCardProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-fluent-text">
-              DNS-Performance Benchmark
+              {t.network.dnsTitle}
             </h3>
             <p className="text-xs text-fluent-muted">
-              Auflösungsgeschwindigkeit gängiger DNS-Resolver im Vergleich zum System-DNS
+              {t.network.dnsSubtitle}
             </p>
           </div>
         </div>
@@ -48,7 +51,7 @@ export const DnsBenchmarkCard: React.FC<DnsBenchmarkCardProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isBenchmarking ? 'animate-spin' : ''}`} />
-            {isBenchmarking ? 'Testet...' : 'Benchmark starten'}
+            {isBenchmarking ? t.network.dnsTestingBtn : t.network.dnsStartBenchmarkBtn}
           </button>
         </div>
       </div>
@@ -58,7 +61,7 @@ export const DnsBenchmarkCard: React.FC<DnsBenchmarkCardProps> = ({
         <div className="py-10 text-center space-y-2 bg-fluent-bg/40 rounded-xl border border-dashed border-fluent-border/60">
           <Globe className="w-8 h-8 text-fluent-muted/60 mx-auto" />
           <p className="text-xs text-fluent-muted">
-            Klicke auf &quot;Benchmark starten&quot;, um die Auflösungszeiten für &quot;{testDomain || 'google.com'}&quot; zu messen.
+            {t.network.dnsEmptyPrompt.replace('{domain}', testDomain || 'google.com')}
           </p>
         </div>
       ) : (
@@ -100,7 +103,7 @@ export const DnsBenchmarkCard: React.FC<DnsBenchmarkCardProps> = ({
                       )}
                       {isWinner && (
                         <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                          Am schnellsten
+                          {t.network.dnsFastestBadge}
                         </span>
                       )}
                     </div>

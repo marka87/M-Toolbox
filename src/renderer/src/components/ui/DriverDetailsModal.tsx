@@ -11,6 +11,7 @@ import {
   Globe
 } from 'lucide-react'
 import type { DeviceItem } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface DriverDetailsModalProps {
   device: DeviceItem | null
@@ -29,6 +30,7 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
   onSearchOnline,
   isExporting
 }) => {
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
 
   if (!device) return null
@@ -55,7 +57,7 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
                 {device.deviceDescription}
               </h3>
               <p className="text-xs text-fluent-muted truncate">
-                {device.manufacturerName} • Klasse: {device.className}
+                {device.manufacturerName} • {t.drivers.modalClassLabel} {device.className}
               </p>
             </div>
           </div>
@@ -74,10 +76,17 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
             <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/40 text-red-200 space-y-1.5">
               <div className="flex items-center gap-2 font-semibold text-red-300">
                 <AlertTriangle className="w-4 h-4 text-red-400" />
-                <span>Fehlerstatus: {device.problemCode ? `Problem-Code ${device.problemCode}` : 'Gerätefehler'}</span>
+                <span>
+                  {t.drivers.modalErrorStatus.replace(
+                    '{code}',
+                    device.problemCode
+                      ? t.drivers.modalErrorCode.replace('{code}', String(device.problemCode))
+                      : t.drivers.modalDeviceError
+                  )}
+                </span>
               </div>
               <p className="text-xs text-red-300/90 leading-relaxed">
-                {device.problemDescription || 'Windows hat ein Problem mit diesem Gerät gemeldet.'}
+                {device.problemDescription || t.drivers.modalErrorDefaultDesc}
               </p>
             </div>
           )}
@@ -85,31 +94,31 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
           {/* Gerätedetails */}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-fluent-muted mb-3">
-              Hardware-Identifikation
+              {t.drivers.modalHardwareIdTitle}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-fluent-card-subtle/70 border border-fluent-border/60">
-                <span className="text-xs text-fluent-muted block mb-1">Gerätename:</span>
+                <span className="text-xs text-fluent-muted block mb-1">{t.drivers.modalDeviceNameLabel}</span>
                 <span className="text-sm font-medium text-fluent-text select-all">
                   {device.deviceDescription}
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-fluent-card-subtle/70 border border-fluent-border/60">
-                <span className="text-xs text-fluent-muted block mb-1">Hersteller:</span>
+                <span className="text-xs text-fluent-muted block mb-1">{t.drivers.modalManufacturerLabel}</span>
                 <span className="text-sm font-medium text-fluent-text select-all">
                   {device.manufacturerName}
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-fluent-card-subtle/70 border border-fluent-border/60">
-                <span className="text-xs text-fluent-muted block mb-1">Geräteklasse & GUID:</span>
+                <span className="text-xs text-fluent-muted block mb-1">{t.drivers.modalClassGuidLabel}</span>
                 <span className="text-xs font-mono text-fluent-text break-all">
                   {device.className} ({device.classGuid || 'N/A'})
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-fluent-card-subtle/70 border border-fluent-border/60">
-                <span className="text-xs text-fluent-muted block mb-1">Status:</span>
+                <span className="text-xs text-fluent-muted block mb-1">{t.drivers.modalStatusLabel}</span>
                 <span className="text-sm font-medium text-fluent-text">
-                  {device.status} {device.isThirdParty ? '• Drittanbieter / OEM' : '• Windows Standard'}
+                  {device.status} {device.isThirdParty ? `• ${t.drivers.modalStatusOem}` : `• ${t.drivers.modalStatusWindows}`}
                 </span>
               </div>
             </div>
@@ -117,7 +126,7 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
             {/* Instance ID with Copy button */}
             <div className="mt-3 p-3 rounded-xl bg-fluent-card-subtle/70 border border-fluent-border/60 flex items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <span className="text-xs text-fluent-muted block mb-1">Geräteinstanz-Pfad (Instance ID):</span>
+                <span className="text-xs text-fluent-muted block mb-1">{t.drivers.modalInstancePathLabel}</span>
                 <span className="text-xs font-mono text-fluent-text break-all select-all">
                   {device.instanceId}
                 </span>
@@ -125,17 +134,17 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
               <button
                 onClick={handleCopyInstanceId}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover transition-colors shrink-0"
-                title="Instanz-ID in die Zwischenablage kopieren"
+                title={t.drivers.modalCopyTooltip}
               >
                 {copied ? (
                   <>
                     <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    Kopiert!
+                    {t.drivers.modalCopied}
                   </>
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5 text-fluent-muted" />
-                    Kopieren
+                    {t.drivers.modalCopy}
                   </>
                 )}
               </button>
@@ -145,29 +154,29 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
           {/* Treiberdetails */}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-fluent-muted mb-3">
-              Treiberpaket-Informationen
+              {t.drivers.modalDriverInfoTitle}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-fluent-card-subtle/70 border border-fluent-border/60">
-                <span className="text-xs text-fluent-muted block mb-1">Treiberdatei (INF):</span>
+                <span className="text-xs text-fluent-muted block mb-1">{t.drivers.modalInfLabel}</span>
                 <span className="text-sm font-mono font-medium text-fluent-accent select-all">
-                  {device.driverName || 'Kein Treiber zugeordnet'}
+                  {device.driverName || t.drivers.modalNoDriverAssigned}
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-fluent-card-subtle/70 border border-fluent-border/60">
-                <span className="text-xs text-fluent-muted block mb-1">Treiber-Anbieter:</span>
+                <span className="text-xs text-fluent-muted block mb-1">{t.drivers.modalProviderLabel}</span>
                 <span className="text-sm font-medium text-fluent-text select-all">
                   {device.driverProvider || device.manufacturerName}
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-fluent-card-subtle/70 border border-fluent-border/60">
-                <span className="text-xs text-fluent-muted block mb-1">Treiberversion:</span>
+                <span className="text-xs text-fluent-muted block mb-1">{t.drivers.modalDriverVersionLabel}</span>
                 <span className="text-sm font-medium text-fluent-text">
                   {device.driverVersion || 'N/A'}
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-fluent-card-subtle/70 border border-fluent-border/60">
-                <span className="text-xs text-fluent-muted block mb-1">Treiberdatum:</span>
+                <span className="text-xs text-fluent-muted block mb-1">{t.drivers.modalDriverDateLabel}</span>
                 <span className="text-sm font-medium text-fluent-text">
                   {device.driverDate || 'N/A'}
                 </span>
@@ -179,7 +188,7 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
               <div className="mt-3 p-3 rounded-xl bg-fluent-card-subtle/70 border border-fluent-border/60 flex items-center gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
                 <div className="min-w-0">
-                  <span className="text-xs text-fluent-muted block">Digitale Signatur / Zertifikat:</span>
+                  <span className="text-xs text-fluent-muted block">{t.drivers.modalSignerLabel}</span>
                   <span className="text-xs font-medium text-fluent-text select-all">
                     {device.signerName}
                   </span>
@@ -199,7 +208,7 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
                 className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-accent text-white hover:bg-fluent-accent-hover transition-colors disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
-                Treiber exportieren
+                {t.drivers.modalExportBtn}
               </button>
             )}
 
@@ -208,7 +217,7 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover transition-colors"
             >
               <RotateCcw className="w-4 h-4 text-fluent-muted" />
-              Gerät neu starten
+              {t.drivers.modalRestartBtn}
             </button>
 
             {onSearchOnline && (
@@ -219,10 +228,10 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
                   )
                 }
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-muted hover:text-fluent-text transition-colors"
-                title="Im Microsoft Update-Katalog nach zertifizierten Treibern suchen"
+                title={t.drivers.searchOnlineCatalogTooltip}
               >
                 <Globe className="w-4 h-4 text-fluent-accent" />
-                Microsoft-Katalog
+                {t.drivers.modalCatalogBtn}
               </button>
             )}
           </div>
@@ -231,7 +240,7 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 rounded-xl text-xs font-medium text-fluent-text bg-fluent-card-subtle hover:bg-fluent-card-hover transition-colors"
           >
-            Schließen
+            {t.drivers.modalCloseBtn}
           </button>
         </div>
       </div>
