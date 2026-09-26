@@ -23,6 +23,7 @@ import { useRamGuardian } from '../hooks/useRamGuardian'
 import { Card } from '../components/ui/Card'
 import type { StatusType } from '../components/ui/StatusBadge'
 import { formatBytes } from '@shared/utils/format'
+import { useTranslation } from '../i18n/LanguageContext'
 
 function formatMB(mb: number): string {
   if (mb >= 1024) {
@@ -32,6 +33,7 @@ function formatMB(mb: number): string {
 }
 
 export const RAMGuardianPage: React.FC = () => {
+  const { t } = useTranslation()
   const {
     stats,
     processes,
@@ -82,7 +84,7 @@ export const RAMGuardianPage: React.FC = () => {
         bgGradient: 'from-emerald-500/10 to-transparent',
         badgeColor: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10',
         textColor: 'text-emerald-400',
-        title: 'Optimal'
+        title: t.dashboard.statusOptimal
       }
     }
     switch (healthScore.category) {
@@ -92,7 +94,7 @@ export const RAMGuardianPage: React.FC = () => {
           bgGradient: 'from-emerald-500/15 via-emerald-500/5 to-transparent',
           badgeColor: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10',
           textColor: 'text-emerald-400',
-          title: 'Optimal'
+          title: t.dashboard.statusOptimal
         }
       case 'Gut':
         return {
@@ -100,7 +102,7 @@ export const RAMGuardianPage: React.FC = () => {
           bgGradient: 'from-blue-500/15 via-blue-500/5 to-transparent',
           badgeColor: 'border-blue-500/30 text-blue-400 bg-blue-500/10',
           textColor: 'text-blue-400',
-          title: 'Gut'
+          title: t.dashboard.statusNormal
         }
       case 'Aufmerksamkeit':
         return {
@@ -108,7 +110,7 @@ export const RAMGuardianPage: React.FC = () => {
           bgGradient: 'from-amber-500/15 via-amber-500/5 to-transparent',
           badgeColor: 'border-amber-500/30 text-amber-400 bg-amber-500/10',
           textColor: 'text-amber-400',
-          title: 'Aufmerksamkeit'
+          title: t.dashboard.statusMedium
         }
       case 'Kritisch':
       default:
@@ -117,10 +119,10 @@ export const RAMGuardianPage: React.FC = () => {
           bgGradient: 'from-rose-500/15 via-rose-500/5 to-transparent',
           badgeColor: 'border-rose-500/30 text-rose-400 bg-rose-500/10',
           textColor: 'text-rose-400',
-          title: 'Kritisch'
+          title: t.dashboard.statusCritical
         }
     }
-  }, [healthScore])
+  }, [healthScore, t])
 
   // Render 24h history chart
   const renderHistoryGraph = () => {
@@ -128,8 +130,8 @@ export const RAMGuardianPage: React.FC = () => {
       return (
         <div className="h-32 flex flex-col items-center justify-center border border-dashed border-fluent-border rounded-xl text-xs text-fluent-muted p-4">
           <Clock className="w-5 h-5 mb-1.5 text-fluent-muted/60" />
-          <span>24-Stunden-Verlauf wird aufgezeichnet</span>
-          <span className="text-[10px] text-fluent-muted/50 mt-0.5">Messpunkte werden im Minutentakt gesichert</span>
+          <span>{t.ramGuardian.historyRecording}</span>
+          <span className="text-[10px] text-fluent-muted/50 mt-0.5">{t.ramGuardian.historyMinutePoints}</span>
         </div>
       )
     }
@@ -161,12 +163,12 @@ export const RAMGuardianPage: React.FC = () => {
         <div className="flex items-center justify-between text-xs text-fluent-muted">
           <span className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-fluent-accent" />
-            RAM-Verlauf ({points.length} Messungen)
+            {t.ramGuardian.historyTitle.replace('{count}', String(points.length))}
           </span>
           <div className="flex items-center gap-3 font-mono text-[11px]">
-            <span>Min: <b className="text-emerald-400">{minUsage}%</b></span>
-            <span>Ø: <b className="text-blue-400">{avgUsage}%</b></span>
-            <span>Max: <b className="text-amber-400">{maxUsage}%</b></span>
+            <span>{t.ramGuardian.min.replace('{val}', String(minUsage))}</span>
+            <span>{t.ramGuardian.avg.replace('{val}', String(avgUsage))}</span>
+            <span>{t.ramGuardian.max.replace('{val}', String(maxUsage))}</span>
           </div>
         </div>
 
@@ -221,10 +223,10 @@ export const RAMGuardianPage: React.FC = () => {
             <div className="p-2 rounded-xl bg-fluent-accent/10 text-fluent-accent">
               <Activity className="w-5 h-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-fluent-text">RAM Guardian</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-fluent-text">{t.ramGuardian.title}</h1>
           </div>
           <p className="text-sm text-fluent-muted mt-1">
-            Intelligente Speicherdiagnose, Leak-Erkennung und App-Hygiene – schützt den Windows-Cache
+            {t.ramGuardian.subtitle}
           </p>
         </div>
 
@@ -233,20 +235,20 @@ export const RAMGuardianPage: React.FC = () => {
             onClick={() => refreshAll()}
             disabled={isLoading}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover hover:border-fluent-border-hover text-fluent-text transition-all disabled:opacity-50"
-            title="Arbeitsspeicher-Metriken neu laden"
+            title={t.ramGuardian.refreshTooltip}
           >
             <RefreshCw className={`w-3.5 h-3.5 text-fluent-accent ${isLoading ? 'animate-spin' : ''}`} />
-            Aktualisieren
+            {t.ramGuardian.refreshBtn}
           </button>
 
           <button
             onClick={() => cleanWindows()}
             disabled={isCleaning}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
-            title="Temporäre Windows-Caches gefahrlos bereinigen (Prefetch bleibt geschützt)"
+            title={t.ramGuardian.cleanWindowsTooltip}
           >
             <Sparkles className={`w-3.5 h-3.5 ${isCleaning ? 'animate-spin' : ''}`} />
-            {isCleaning ? 'Bereinige...' : 'Windows sicher bereinigen'}
+            {isCleaning ? t.ramGuardian.cleaningBtn : t.ramGuardian.cleanWindowsBtn}
           </button>
         </div>
       </div>
@@ -257,11 +259,10 @@ export const RAMGuardianPage: React.FC = () => {
           <AlertOctagon className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
           <div className="text-xs space-y-1">
             <p className="font-semibold text-rose-200">
-              Warnung: Dauerhaft hohe Speicherauslastung ({stats.usagePercent}% seit über 10 Minuten)
+              {t.ramGuardian.persistentWarningTitle.replace('{percent}', String(stats.usagePercent))}
             </p>
             <p className="text-rose-300/90 leading-relaxed">
-              Dein System steht unter anhaltendem Speicherdruck. Es wird vermehrt komprimiert oder auf die SSD ausgelagert. 
-              Prüfe die Prozesse in der unteren Liste auf Speicherfresser oder Memory Leaks.
+              {t.ramGuardian.persistentWarningDesc}
             </p>
           </div>
         </div>
@@ -272,15 +273,13 @@ export const RAMGuardianPage: React.FC = () => {
         <ShieldCheck className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
         <div className="text-xs space-y-1">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-cyan-100">Windows Standby-Speicher & Cache sind kein Müll</span>
+            <span className="font-semibold text-cyan-100">{t.ramGuardian.archCalloutTitle}</span>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-medium">
-              Architektur-Prinzip
+              {t.ramGuardian.archCalloutBadge}
             </span>
           </div>
           <p className="text-cyan-200/80 leading-relaxed">
-            Windows nutzt ungenutzten RAM proaktiv als Zwischenspeicher (Standby-Cache), um Programmstarts drastisch zu beschleunigen. 
-            Dieser Cache wird <b>vollautomatisch und verzögerungsfrei freigegeben</b>, sobald eine Anwendung oder ein Spiel Speicher anfordert. 
-            M-Toolbox verwendet bewusst <b>keine künstlichen RAM-Cleaner</b> (wie z. B. EmptyWorkingSet), da diese Daten lediglich ins langsame Pagefile zwingen und die Performance verschlechtern.
+            {t.ramGuardian.archCalloutDesc}
           </p>
         </div>
       </div>
@@ -292,7 +291,7 @@ export const RAMGuardianPage: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-semibold uppercase tracking-wider text-fluent-muted">
-                  Gesundheitsbewertung (Score)
+                  {t.ramGuardian.healthScoreTitle}
                 </span>
                 <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${healthConfig.badgeColor}`}>
                   {healthScore.category}
@@ -302,7 +301,7 @@ export const RAMGuardianPage: React.FC = () => {
                 <span className={`text-4xl font-extrabold tracking-tight ${healthConfig.textColor}`}>
                   {healthScore.score}
                 </span>
-                <span className="text-sm font-medium text-fluent-muted">/ 100 Punkte</span>
+                <span className="text-sm font-medium text-fluent-muted">{t.ramGuardian.pointsOutOf}</span>
               </div>
               <p className="text-xs text-fluent-text/90 max-w-xl leading-relaxed">
                 {healthScore.summary}
@@ -312,33 +311,33 @@ export const RAMGuardianPage: React.FC = () => {
             {/* Breakdown Sub-Bars */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 min-w-[320px]">
               <div className="p-2.5 rounded-xl bg-fluent-card/80 border border-fluent-border-subtle">
-                <div className="text-[10px] text-fluent-muted">Autostart</div>
+                <div className="text-[10px] text-fluent-muted">{t.ramGuardian.startupPkt}</div>
                 <div className="text-xs font-bold text-fluent-text mt-0.5">
-                  {healthScore.breakdown.startupScore} / 25 Pkt
+                  {t.ramGuardian.pktFormat.replace('{score}', String(healthScore.breakdown.startupScore)).replace('{max}', '25')}
                 </div>
               </div>
               <div className="p-2.5 rounded-xl bg-fluent-card/80 border border-fluent-border-subtle">
-                <div className="text-[10px] text-fluent-muted">Dienste & Leaks</div>
+                <div className="text-[10px] text-fluent-muted">{t.ramGuardian.servicesPkt}</div>
                 <div className="text-xs font-bold text-fluent-text mt-0.5">
-                  {healthScore.breakdown.serviceScore} / 15 Pkt
+                  {t.ramGuardian.pktFormat.replace('{score}', String(healthScore.breakdown.serviceScore)).replace('{max}', '15')}
                 </div>
               </div>
               <div className="p-2.5 rounded-xl bg-fluent-card/80 border border-fluent-border-subtle">
-                <div className="text-[10px] text-fluent-muted">Auslastung</div>
+                <div className="text-[10px] text-fluent-muted">{t.ramGuardian.loadPkt}</div>
                 <div className="text-xs font-bold text-fluent-text mt-0.5">
-                  {healthScore.breakdown.ramLoadScore} / 30 Pkt
+                  {t.ramGuardian.pktFormat.replace('{score}', String(healthScore.breakdown.ramLoadScore)).replace('{max}', '30')}
                 </div>
               </div>
               <div className="p-2.5 rounded-xl bg-fluent-card/80 border border-fluent-border-subtle">
-                <div className="text-[10px] text-fluent-muted">Komprimierung</div>
+                <div className="text-[10px] text-fluent-muted">{t.ramGuardian.compressionPkt}</div>
                 <div className="text-xs font-bold text-fluent-text mt-0.5">
-                  {healthScore.breakdown.compressionScore} / 20 Pkt
+                  {t.ramGuardian.pktFormat.replace('{score}', String(healthScore.breakdown.compressionScore)).replace('{max}', '20')}
                 </div>
               </div>
               <div className="p-2.5 rounded-xl bg-fluent-card/80 border border-fluent-border-subtle">
-                <div className="text-[10px] text-fluent-muted">Cache-Qualität</div>
+                <div className="text-[10px] text-fluent-muted">{t.ramGuardian.cacheQualityPkt}</div>
                 <div className="text-xs font-bold text-fluent-text mt-0.5">
-                  {healthScore.breakdown.cacheHealthScore} / 10 Pkt
+                  {t.ramGuardian.pktFormat.replace('{score}', String(healthScore.breakdown.cacheHealthScore)).replace('{max}', '10')}
                 </div>
               </div>
             </div>
@@ -353,7 +352,7 @@ export const RAMGuardianPage: React.FC = () => {
           <div className="flex items-center justify-between text-xs text-fluent-muted mb-2">
             <span className="flex items-center gap-1.5">
               <Server className="w-4 h-4 text-fluent-accent" />
-              Belegter RAM
+              {t.ramGuardian.usedRam}
             </span>
             <span className="font-semibold text-fluent-text">
               {stats ? `${stats.usagePercent}%` : '–'}
@@ -363,7 +362,7 @@ export const RAMGuardianPage: React.FC = () => {
             {stats ? formatBytes(stats.usedBytes) : '–'}
           </div>
           <div className="text-[11px] text-fluent-muted mt-1">
-            Gesamt: {stats ? formatBytes(stats.totalBytes) : '–'}
+            {t.ramGuardian.totalRam.replace('{total}', stats ? formatBytes(stats.totalBytes) : '–')}
           </div>
           {/* Bar */}
           <div className="w-full h-1.5 bg-fluent-card-hover rounded-full mt-3 overflow-hidden">
@@ -385,15 +384,15 @@ export const RAMGuardianPage: React.FC = () => {
           <div className="flex items-center justify-between text-xs text-fluent-muted mb-2">
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Verfügbar
+              {t.ramGuardian.availableRam}
             </span>
-            <span className="text-xs text-emerald-400 font-medium">Sofort nutzbar</span>
+            <span className="text-xs text-emerald-400 font-medium">{t.ramGuardian.immediatelyUsable}</span>
           </div>
           <div className="text-xl font-bold text-fluent-text">
             {stats ? formatBytes(stats.availableBytes) : '–'}
           </div>
           <div className="text-[11px] text-fluent-muted mt-1">
-            Frei & Nullseiten: {stats ? formatBytes(stats.freeAndZeroBytes) : '–'}
+            {t.ramGuardian.freeAndZero.replace('{size}', stats ? formatBytes(stats.freeAndZeroBytes) : '–')}
           </div>
           <div className="w-full h-1.5 bg-fluent-card-hover rounded-full mt-3 overflow-hidden">
             <div
@@ -412,17 +411,17 @@ export const RAMGuardianPage: React.FC = () => {
           <div className="flex items-center justify-between text-xs text-fluent-muted mb-2">
             <span className="flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-cyan-400" />
-              Cache & Standby
+              {t.ramGuardian.cacheStandby}
             </span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300">
-              Aktiv beschleunigt
+              {t.ramGuardian.activelyAccelerated}
             </span>
           </div>
           <div className="text-xl font-bold text-fluent-text">
             {stats ? formatBytes(stats.cacheBytes) : '–'}
           </div>
           <div className="text-[11px] text-fluent-muted mt-1">
-            Wird bei Bedarf sofort freigegeben
+            {t.ramGuardian.releasedOnDemand}
           </div>
           <div className="w-full h-1.5 bg-fluent-card-hover rounded-full mt-3 overflow-hidden">
             <div
@@ -441,17 +440,17 @@ export const RAMGuardianPage: React.FC = () => {
           <div className="flex items-center justify-between text-xs text-fluent-muted mb-2">
             <span className="flex items-center gap-1.5">
               <Layers className="w-4 h-4 text-indigo-400" />
-              Komprimiert
+              {t.ramGuardian.compressedRam}
             </span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300">
-              Windows In-Memory
+              {t.ramGuardian.winInMemory}
             </span>
           </div>
           <div className="text-xl font-bold text-fluent-text">
             {stats ? formatBytes(stats.compressedBytes) : '–'}
           </div>
           <div className="text-[11px] text-fluent-muted mt-1">
-            Committed: {stats ? formatBytes(stats.committedBytes) : '–'}
+            {t.ramGuardian.committed.replace('{size}', stats ? formatBytes(stats.committedBytes) : '–')}
           </div>
           <div className="w-full h-1.5 bg-fluent-card-hover rounded-full mt-3 overflow-hidden">
             <div
@@ -479,7 +478,7 @@ export const RAMGuardianPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-fluent-accent" />
             <h2 className="text-sm font-semibold tracking-wide text-slate-100">
-              Intelligente Empfehlungen ({recommendations.length})
+              {t.ramGuardian.recommendationsTitle.replace('{count}', String(recommendations.length))}
             </h2>
           </div>
 
@@ -555,7 +554,7 @@ export const RAMGuardianPage: React.FC = () => {
           }`}
         >
           <Cpu className="w-3.5 h-3.5" />
-          Speicherfresser ({processes.length})
+          {t.ramGuardian.tabProcesses.replace('{count}', String(processes.length))}
         </button>
 
         <button
@@ -567,7 +566,7 @@ export const RAMGuardianPage: React.FC = () => {
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          App-Hygiene & Autostart
+          {t.ramGuardian.tabHygiene}
         </button>
 
         <button
@@ -579,7 +578,7 @@ export const RAMGuardianPage: React.FC = () => {
           }`}
         >
           <Trash2 className="w-3.5 h-3.5" />
-          Windows-Bereinigung
+          {t.ramGuardian.tabCleanup}
         </button>
       </div>
 
@@ -593,12 +592,12 @@ export const RAMGuardianPage: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Prozess nach Name oder PID filtern..."
+                placeholder={t.ramGuardian.searchPlaceholder}
                 className="w-full bg-fluent-card border border-fluent-border rounded-xl pl-9 pr-3 py-1.5 text-xs text-fluent-text placeholder:text-fluent-muted focus:outline-none focus:border-fluent-accent transition-all"
               />
             </div>
             <div className="text-xs text-fluent-muted">
-              Zeige {filteredProcesses.length} von {processes.length} Prozessen
+              {t.ramGuardian.showingProcesses.replace('{filtered}', String(filteredProcesses.length)).replace('{total}', String(processes.length))}
             </div>
           </div>
 
@@ -606,12 +605,12 @@ export const RAMGuardianPage: React.FC = () => {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-fluent-border bg-fluent-card/90 text-fluent-muted">
-                  <th className="py-2.5 px-4 font-semibold">Prozess</th>
-                  <th className="py-2.5 px-4 font-semibold">PID</th>
-                  <th className="py-2.5 px-4 font-semibold text-right">Aktueller RAM</th>
-                  <th className="py-2.5 px-4 font-semibold text-right">Ø Schnitt</th>
-                  <th className="py-2.5 px-4 font-semibold text-center">Trend</th>
-                  <th className="py-2.5 px-4 font-semibold">Diagnose / Status</th>
+                  <th className="py-2.5 px-4 font-semibold">{t.ramGuardian.colProcess}</th>
+                  <th className="py-2.5 px-4 font-semibold">{t.ramGuardian.colPid}</th>
+                  <th className="py-2.5 px-4 font-semibold text-right">{t.ramGuardian.colCurrentRam}</th>
+                  <th className="py-2.5 px-4 font-semibold text-right">{t.ramGuardian.colAvgRam}</th>
+                  <th className="py-2.5 px-4 font-semibold text-center">{t.ramGuardian.colTrend}</th>
+                  <th className="py-2.5 px-4 font-semibold">{t.ramGuardian.colStatus}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-fluent-border-subtle">
@@ -637,17 +636,17 @@ export const RAMGuardianPage: React.FC = () => {
                       </td>
                       <td className="py-2.5 px-4 text-center">
                         {proc.trend === 'up' && (
-                          <span className="inline-flex items-center text-rose-400 gap-0.5" title="Verbrauch steigt">
+                          <span className="inline-flex items-center text-rose-400 gap-0.5" title={t.ramGuardian.trendUpTooltip}>
                             <TrendingUp className="w-3.5 h-3.5" />
                           </span>
                         )}
                         {proc.trend === 'down' && (
-                          <span className="inline-flex items-center text-emerald-400 gap-0.5" title="Verbrauch sinkt">
+                          <span className="inline-flex items-center text-emerald-400 gap-0.5" title={t.ramGuardian.trendDownTooltip}>
                             <TrendingDown className="w-3.5 h-3.5" />
                           </span>
                         )}
                         {proc.trend === 'stable' && (
-                          <span className="inline-flex items-center text-fluent-muted" title="Verbrauch stabil">
+                          <span className="inline-flex items-center text-fluent-muted" title={t.ramGuardian.trendStableTooltip}>
                             <Minus className="w-3.5 h-3.5" />
                           </span>
                         )}
@@ -656,14 +655,14 @@ export const RAMGuardianPage: React.FC = () => {
                         {proc.isLeakSuspect ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">
                             <AlertTriangle className="w-3 h-3" />
-                            Leak-Verdacht (+{proc.leakGrowthMB} MB)
+                            {t.ramGuardian.leakSuspect.replace('{growth}', String(proc.leakGrowthMB))}
                           </span>
                         ) : proc.workingSetMB > 800 ? (
                           <span className="text-[11px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 font-medium">
-                            Großer Speicherbedarf
+                            {t.ramGuardian.highDemand}
                           </span>
                         ) : (
-                          <span className="text-[11px] text-fluent-muted">Normal</span>
+                          <span className="text-[11px] text-fluent-muted">{t.ramGuardian.normalDemand}</span>
                         )}
                       </td>
                     </tr>
@@ -682,17 +681,17 @@ export const RAMGuardianPage: React.FC = () => {
           <div className="p-4 rounded-2xl bg-fluent-card border border-fluent-border flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-xs font-semibold uppercase tracking-wider text-fluent-muted">
-                Autostart-Belastung
+                {t.ramGuardian.startupBurden}
               </span>
               <p className="text-sm font-bold text-slate-100">
-                {hygiene?.headline || 'Wird analysiert...'}
+                {hygiene?.headline || t.ramGuardian.analyzingStartup}
               </p>
             </div>
             <div className="text-right">
               <span className="text-2xl font-extrabold text-fluent-accent">
                 {hygiene ? formatMB(hygiene.totalStartupRAMMB) : '–'}
               </span>
-              <div className="text-[11px] text-fluent-muted">Reservierter Start-RAM</div>
+              <div className="text-[11px] text-fluent-muted">{t.ramGuardian.reservedStartupRam}</div>
             </div>
           </div>
 
@@ -701,7 +700,7 @@ export const RAMGuardianPage: React.FC = () => {
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 text-amber-400" />
-                Erkannte Software-Duplikate ({hygiene.duplicateGroups.length})
+                {t.ramGuardian.duplicateTitle.replace('{count}', String(hygiene.duplicateGroups.length))}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {hygiene.duplicateGroups.map((group, idx) => (
@@ -737,18 +736,18 @@ export const RAMGuardianPage: React.FC = () => {
           {/* Autostart apps list */}
           <div className="space-y-3">
             <h3 className="text-xs font-semibold text-slate-200">
-              Autostart-Einträge & Speicherbedarf ({hygiene?.startupApps.length || 0})
+              {t.ramGuardian.startupEntriesTitle.replace('{count}', String(hygiene?.startupApps.length || 0))}
             </h3>
             <div className="overflow-x-auto rounded-xl border border-fluent-border bg-fluent-card/70">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-fluent-border bg-fluent-card/90 text-fluent-muted">
-                    <th className="py-2.5 px-4 font-semibold">Programm</th>
-                    <th className="py-2.5 px-4 font-semibold">Ort / Ebene</th>
-                    <th className="py-2.5 px-4 font-semibold text-right">Geschätzter RAM</th>
-                    <th className="py-2.5 px-4 font-semibold text-center">Status</th>
-                    <th className="py-2.5 px-4 font-semibold text-center">Auswirkung</th>
-                    <th className="py-2.5 px-4 font-semibold text-right">Aktion</th>
+                    <th className="py-2.5 px-4 font-semibold">{t.ramGuardian.colProgram}</th>
+                    <th className="py-2.5 px-4 font-semibold">{t.ramGuardian.colLocation}</th>
+                    <th className="py-2.5 px-4 font-semibold text-right">{t.ramGuardian.colEstimatedRam}</th>
+                    <th className="py-2.5 px-4 font-semibold text-center">{t.ramGuardian.colState}</th>
+                    <th className="py-2.5 px-4 font-semibold text-center">{t.ramGuardian.colImpact}</th>
+                    <th className="py-2.5 px-4 font-semibold text-right">{t.ramGuardian.colAction}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-fluent-border-subtle">
@@ -769,28 +768,28 @@ export const RAMGuardianPage: React.FC = () => {
                       <td className="py-2.5 px-4 text-center">
                         {app.isRunning ? (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
-                            Läuft
+                            {t.ramGuardian.stateRunning}
                           </span>
                         ) : (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-fluent-card-hover text-fluent-muted">
-                            Inaktiv
+                            {t.ramGuardian.stateInactive}
                           </span>
                         )}
                       </td>
                       <td className="py-2.5 px-4 text-center">
                         {app.impact === 'high' && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 font-semibold">
-                            Hoch
+                            {t.ramGuardian.impactHigh}
                           </span>
                         )}
                         {app.impact === 'medium' && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 font-medium">
-                            Mittel
+                            {t.ramGuardian.impactMedium}
                           </span>
                         )}
                         {app.impact === 'low' && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-fluent-card-hover text-fluent-muted">
-                            Gering
+                            {t.ramGuardian.impactLow}
                           </span>
                         )}
                       </td>
@@ -799,9 +798,9 @@ export const RAMGuardianPage: React.FC = () => {
                           onClick={() => handleDisableStartup(app.name, app.name)}
                           disabled={disablingId === app.name}
                           className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-fluent-card border border-fluent-border hover:border-rose-500/40 hover:text-rose-400 text-fluent-text transition-all disabled:opacity-50"
-                          title="Aus Autostart entfernen"
+                          title={t.ramGuardian.disableStartupTooltip}
                         >
-                          {disablingId === app.name ? '...' : 'Deaktivieren'}
+                          {disablingId === app.name ? '...' : t.ramGuardian.disableAction}
                         </button>
                       </td>
                     </tr>
@@ -821,11 +820,10 @@ export const RAMGuardianPage: React.FC = () => {
               <div className="space-y-1">
                 <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  Sichere Windows-Systembereinigung
+                  {t.ramGuardian.safeCleanupTitle}
                 </h3>
                 <p className="text-xs text-fluent-muted leading-relaxed max-w-2xl">
-                  Bereinigt temporäre Update- und Installations-Dateien auf Dateisystem-Ebene, 
-                  ohne den laufenden RAM zu stören und ohne nützliche Windows-Caches zu beschädigen.
+                  {t.ramGuardian.safeCleanupDesc}
                 </p>
               </div>
 
@@ -835,7 +833,7 @@ export const RAMGuardianPage: React.FC = () => {
                 className="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 transition-all disabled:opacity-50 flex items-center gap-2"
               >
                 <Trash2 className={`w-3.5 h-3.5 ${isCleaning ? 'animate-spin' : ''}`} />
-                {isCleaning ? 'Bereinige...' : 'Jetzt bereinigen'}
+                {isCleaning ? t.ramGuardian.cleaningBtn : t.ramGuardian.cleanNowBtn}
               </button>
             </div>
 
@@ -843,33 +841,33 @@ export const RAMGuardianPage: React.FC = () => {
               <div className="p-3 rounded-xl border border-fluent-border bg-fluent-card/50 flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div className="text-xs space-y-0.5">
-                  <span className="font-semibold text-fluent-text">Temporäre Benutzer-Dateien</span>
-                  <p className="text-fluent-muted text-[11px]">Dateien in %TEMP% und temporäre Installer</p>
+                  <span className="font-semibold text-fluent-text">{t.ramGuardian.tempUserFiles}</span>
+                  <p className="text-fluent-muted text-[11px]">{t.ramGuardian.tempUserFilesDesc}</p>
                 </div>
               </div>
 
               <div className="p-3 rounded-xl border border-fluent-border bg-fluent-card/50 flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div className="text-xs space-y-0.5">
-                  <span className="font-semibold text-fluent-text">Windows Update Cache</span>
-                  <p className="text-fluent-muted text-[11px]">Heruntergeladene Installationspakete in SoftwareDistribution</p>
+                  <span className="font-semibold text-fluent-text">{t.ramGuardian.winUpdateCache}</span>
+                  <p className="text-fluent-muted text-[11px]">{t.ramGuardian.winUpdateCacheDesc}</p>
                 </div>
               </div>
 
               <div className="p-3 rounded-xl border border-fluent-border bg-fluent-card/50 flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div className="text-xs space-y-0.5">
-                  <span className="font-semibold text-fluent-text">Übermittlungsoptimierungs-Cache</span>
-                  <p className="text-fluent-muted text-[11px]">Verteilungs-Caches für Windows Updates (Delivery Optimization)</p>
+                  <span className="font-semibold text-fluent-text">{t.ramGuardian.deliveryOptimizationCache}</span>
+                  <p className="text-fluent-muted text-[11px]">{t.ramGuardian.deliveryOptimizationCacheDesc}</p>
                 </div>
               </div>
 
               <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex items-start gap-3">
                 <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div className="text-xs space-y-0.5">
-                  <span className="font-semibold text-emerald-300">🛡️ Prefetch geschützt (Unberührt)</span>
+                  <span className="font-semibold text-emerald-300">{t.ramGuardian.prefetchProtected}</span>
                   <p className="text-emerald-200/80 text-[11px]">
-                    Der Prefetch-Ordner wird niemals gelöscht, um Startverzögerungen von Programmen zu verhindern.
+                    {t.ramGuardian.prefetchProtectedDesc}
                   </p>
                 </div>
               </div>
@@ -885,10 +883,10 @@ export const RAMGuardianPage: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center justify-between font-semibold">
-                  <span>{cleanupResult.success ? 'Bereinigung erfolgreich' : 'Fehler bei der Bereinigung'}</span>
+                  <span>{cleanupResult.success ? t.ramGuardian.cleanupSuccess : t.ramGuardian.cleanupFailed}</span>
                   {cleanupResult.freedBytes > 0 && (
                     <span className="font-mono">
-                      +{formatBytes(cleanupResult.freedBytes)} freigegeben
+                      {t.ramGuardian.freedBytes.replace('{bytes}', formatBytes(cleanupResult.freedBytes))}
                     </span>
                   )}
                 </div>

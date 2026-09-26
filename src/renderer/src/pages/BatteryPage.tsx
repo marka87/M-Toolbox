@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { useBattery } from '../hooks/useBattery'
 import { Card } from '../components/ui/Card'
+import { useTranslation } from '../i18n/LanguageContext'
 
 function formatMWh(mwh: number): string {
   if (mwh >= 1000) {
@@ -30,17 +31,8 @@ function formatMWh(mwh: number): string {
   return `${mwh} mWh`
 }
 
-function formatRemainingTime(seconds: number): string {
-  if (seconds <= 0 || seconds > 172800) return 'Wird berechnet...'
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  if (hours > 0) {
-    return `${hours} Std. ${minutes} Min.`
-  }
-  return `${minutes} Min.`
-}
-
 export const BatteryPage: React.FC = () => {
+  const { t, language } = useTranslation()
   const {
     info,
     powerProfiles,
@@ -65,6 +57,16 @@ export const BatteryPage: React.FC = () => {
     generateReport
   } = useBattery()
 
+  const formatRemainingTime = (seconds: number): string => {
+    if (seconds <= 0 || seconds > 172800) return t.battery.calculating
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    if (hours > 0) {
+      return language === 'en' ? `${hours}h ${minutes}m` : `${hours} Std. ${minutes} Min.`
+    }
+    return language === 'en' ? `${minutes}m` : `${minutes} Min.`
+  }
+
   const [secondsAgo, setSecondsAgo] = React.useState<number | null>(null)
   React.useEffect(() => {
     const update = () => {
@@ -82,7 +84,7 @@ export const BatteryPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-fluent-muted">
         <RefreshCw className="w-8 h-8 animate-spin mb-3 text-fluent-accent" />
-        <span className="text-xs">Lade Akku- und Energie-Informationen...</span>
+        <span className="text-xs">{t.battery.loading}</span>
       </div>
     )
   }
@@ -98,13 +100,13 @@ export const BatteryPage: React.FC = () => {
             <div className="p-2 rounded-xl bg-fluent-accent/10 text-fluent-accent">
               <BatteryCharging className="w-5 h-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-fluent-text">Batterie-Manager</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-fluent-text">{t.battery.title}</h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-fluent-accent/15 text-fluent-accent border border-fluent-accent/30">
-              {hasBattery ? 'Laptop Modus' : 'Desktop Modus'}
+              {hasBattery ? t.battery.laptopMode : t.battery.desktopMode}
             </span>
           </div>
           <p className="text-sm text-fluent-muted mt-1">
-            Echtzeit-Ladestatus, Kapazitäts- und Gesundheitsanalyse, Verschleißgrad und Windows-Energieschemas
+            {t.battery.subtitle}
           </p>
         </div>
 
@@ -120,8 +122,8 @@ export const BatteryPage: React.FC = () => {
                 }`}
                 title={
                   isLiveMonitoring
-                    ? `Echtzeit-Überwachung aktiv (alle ${liveIntervalSec}s) - Klick zum Pausieren`
-                    : 'Klicken, um Echtzeit-Überwachung zu starten'
+                    ? t.battery.liveTooltipActive.replace('{interval}', String(liveIntervalSec))
+                    : t.battery.liveTooltipInactive
                 }
               >
                 <span
@@ -130,7 +132,11 @@ export const BatteryPage: React.FC = () => {
                   }`}
                 />
                 <Activity className="w-3.5 h-3.5 text-fluent-accent" />
-                <span>{isLiveMonitoring ? `Live (${liveIntervalSec}s)` : 'Live pausiert'}</span>
+                <span>
+                  {isLiveMonitoring
+                    ? t.battery.liveMonitoringActive.replace('{interval}', String(liveIntervalSec))
+                    : t.battery.liveMonitoringPaused}
+                </span>
               </button>
               {isLiveMonitoring && (
                 <div className="flex items-center gap-0.5 pl-1.5 pr-0.5 border-l border-fluent-border/60">
@@ -143,7 +149,7 @@ export const BatteryPage: React.FC = () => {
                           ? 'bg-fluent-accent text-white font-bold shadow-sm'
                           : 'text-fluent-muted hover:text-fluent-text hover:bg-fluent-card-hover'
                       }`}
-                      title={`Aktualisierungsintervall: alle ${sec} Sekunden`}
+                      title={t.battery.intervalTooltip.replace('{sec}', String(sec))}
                     >
                       {sec}s
                     </button>
@@ -158,10 +164,10 @@ export const BatteryPage: React.FC = () => {
               onClick={() => generateReport()}
               disabled={isGeneratingReport}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover hover:border-fluent-border-hover text-fluent-text transition-all disabled:opacity-50"
-              title="Detaillierten interaktiven Windows-Akkureport generieren und im Browser öffnen"
+              title={t.battery.reportTooltip}
             >
               <FileText className={`w-3.5 h-3.5 text-fluent-accent ${isGeneratingReport ? 'animate-spin' : ''}`} />
-              {isGeneratingReport ? 'Erstelle Bericht...' : 'Akkubericht (HTML) öffnen'}
+              {isGeneratingReport ? t.battery.creatingReport : t.battery.openReportBtn}
             </button>
           )}
 
@@ -169,10 +175,10 @@ export const BatteryPage: React.FC = () => {
             onClick={() => refresh()}
             disabled={isLoading}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover hover:border-fluent-border-hover text-fluent-text transition-all disabled:opacity-50"
-            title="Akkudaten neu einlesen"
+            title={t.battery.refreshTooltip}
           >
             <RefreshCw className={`w-3.5 h-3.5 text-fluent-accent ${isLoading ? 'animate-spin' : ''}`} />
-            Aktualisieren
+            {t.battery.refreshBtn}
           </button>
         </div>
       </div>
@@ -201,12 +207,12 @@ export const BatteryPage: React.FC = () => {
                 <span className="font-bold text-sm text-fluent-text">{info.drainAlert.title}</span>
                 {info.drainAlert.dischargeWattage > 0 && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/30 text-rose-200 border border-rose-500/40">
-                    -{info.drainAlert.dischargeWattage.toFixed(1)} W Entladerate
+                    {t.battery.drainSeverityDischarge.replace('{watt}', info.drainAlert.dischargeWattage.toFixed(1))}
                   </span>
                 )}
                 {info.drainAlert.cpuPercent > 0 && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/30 text-amber-200 border border-amber-500/40">
-                    {info.drainAlert.cpuPercent}% CPU
+                    {t.battery.drainSeverityCpu.replace('{percent}', String(info.drainAlert.cpuPercent))}
                   </span>
                 )}
               </div>
@@ -224,13 +230,15 @@ export const BatteryPage: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-all shadow-sm disabled:opacity-50"
               >
                 <Skull className={`w-3.5 h-3.5 ${killingPid === info.drainAlert.pid ? 'animate-spin' : ''}`} />
-                {killingPid === info.drainAlert.pid ? 'Beende...' : `App beenden (${info.drainAlert.processName})`}
+                {killingPid === info.drainAlert.pid
+                  ? t.battery.killingProcess
+                  : t.battery.killProcessBtn.replace('{name}', info.drainAlert.processName)}
               </button>
             )}
             <button
               onClick={dismissAlert}
               className="p-1.5 rounded-lg text-fluent-muted hover:text-fluent-text hover:bg-fluent-card-hover transition-all"
-              title="Warnung ausblenden"
+              title={t.battery.dismissAlertTooltip}
             >
               <X className="w-4 h-4" />
             </button>
@@ -255,8 +263,8 @@ export const BatteryPage: React.FC = () => {
             )}
             <span>
               {reportResult.success
-                ? `Offizieller Windows-Akkubericht wurde geöffnet: ${reportResult.filePath}`
-                : `Fehler beim Erstellen des Berichts: ${reportResult.error}`}
+                ? t.battery.reportSuccess.replace('{path}', reportResult.filePath || '')
+                : t.battery.reportError.replace('{error}', reportResult.error || '')}
             </span>
           </div>
         </div>
@@ -269,10 +277,9 @@ export const BatteryPage: React.FC = () => {
             <Laptop className="w-6 h-6" />
           </div>
           <div className="space-y-1.5">
-            <h3 className="text-sm font-bold text-fluent-text">Kein Akku erkannt (Desktop-PC)</h3>
+            <h3 className="text-sm font-bold text-fluent-text">{t.battery.desktopNoticeTitle}</h3>
             <p className="text-xs text-fluent-muted leading-relaxed">
-              Dieses System verfügt über keine Batterie und wird dauerhaft über das Stromnetz versorgt. 
-              Du kannst die folgenden Windows-Energieschemas (Ausbalanciert, Energiesparmodus, Höchstleistung) zur Steuerung der Systemleistung nutzen.
+              {t.battery.desktopNoticeDesc}
             </p>
           </div>
         </div>
@@ -287,7 +294,7 @@ export const BatteryPage: React.FC = () => {
             <Card className="p-6 space-y-5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-fluent-muted">
-                  Aktueller Ladestand
+                  {t.battery.currentCharge}
                 </span>
                 <div className="flex items-center gap-2">
                   {/* Live Wattage Badge */}
@@ -364,14 +371,14 @@ export const BatteryPage: React.FC = () => {
                       <>
                         <span className="flex items-center gap-1 text-emerald-400 font-medium">
                           <Plug className="w-3.5 h-3.5" />
-                          Netzteil aktiv
+                          {t.battery.acOnline}
                         </span>
                       </>
                     ) : (
                       <>
                         <span className="flex items-center gap-1 text-amber-400 font-medium">
                           <Battery className="w-3.5 h-3.5" />
-                          Akkubetrieb
+                          {t.battery.batteryPower}
                         </span>
                       </>
                     )}
@@ -389,23 +396,23 @@ export const BatteryPage: React.FC = () => {
                 <span className="flex items-center gap-2 text-fluent-muted">
                   <Clock className="w-4 h-4 text-fluent-accent" />
                   {info.isCharging
-                    ? 'Ladezeit-Schätzung'
+                    ? t.battery.chargingEstimate
                     : info.isAcOnline
-                    ? 'Stromversorgung'
-                    : 'Verbleibende Laufzeit'}
+                    ? t.battery.powerSupply
+                    : t.battery.remainingRuntime}
                 </span>
                 <span className="font-semibold text-fluent-text">
                   {info.isCharging
                     ? info.remainingSeconds > 0 && info.remainingSeconds < 172800
-                      ? `ca. ${formatRemainingTime(info.remainingSeconds)} bis 100%`
+                      ? t.battery.approxUntilFull.replace('{time}', formatRemainingTime(info.remainingSeconds))
                       : info.chargePercent >= 100
-                      ? 'Vollständig geladen'
-                      : 'Wird berechnet...'
+                      ? t.battery.fullyCharged
+                      : t.battery.calculating
                     : info.isDischarging
                     ? info.remainingSeconds > 0 && info.remainingSeconds < 172800
                       ? formatRemainingTime(info.remainingSeconds)
-                      : 'Wird berechnet...'
-                    : 'Dauerbetrieb am Netzteil'}
+                      : t.battery.calculating
+                    : t.battery.continuousAc}
                 </span>
               </div>
             </Card>
@@ -414,7 +421,7 @@ export const BatteryPage: React.FC = () => {
             <Card className="p-6 space-y-5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-fluent-muted">
-                  Akkugesundheit & Kapazität
+                  {t.battery.healthCapacityTitle}
                 </span>
                 <span
                   className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
@@ -431,38 +438,38 @@ export const BatteryPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 rounded-xl bg-fluent-card/60 border border-fluent-border-subtle">
-                  <div className="text-[11px] text-fluent-muted">Ursprüngliche Kapazität</div>
+                  <div className="text-[11px] text-fluent-muted">{t.battery.originalCapacity}</div>
                   <div className="text-base font-bold text-fluent-text mt-0.5">
                     {formatMWh(info.designCapacityMWh)}
                   </div>
-                  <div className="text-[10px] text-fluent-muted mt-0.5">Auslegung ab Werk</div>
+                  <div className="text-[10px] text-fluent-muted mt-0.5">{t.battery.factorySpec}</div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-fluent-card/60 border border-fluent-border-subtle">
-                  <div className="text-[11px] text-fluent-muted">Aktuelle Maximalkapazität</div>
+                  <div className="text-[11px] text-fluent-muted">{t.battery.currentMaxCapacity}</div>
                   <div className="text-base font-bold text-fluent-accent mt-0.5">
                     {formatMWh(info.fullChargeCapacityMWh)}
                   </div>
-                  <div className="text-[10px] text-fluent-muted mt-0.5">Bei 100 % Ladung</div>
+                  <div className="text-[10px] text-fluent-muted mt-0.5">{t.battery.atFullCharge}</div>
                 </div>
               </div>
 
               {/* Capacity Comparison Bar */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-[11px] text-fluent-muted">
-                  <span>Kapazitäts-Erhalt: <b className="text-emerald-400">{info.healthPercent}%</b></span>
-                  <span>Verschleißgrad: <b className="text-rose-400">{info.wearLevelPercent}%</b></span>
+                  <span>{t.battery.capacityRetention} <b className="text-emerald-400">{info.healthPercent}%</b></span>
+                  <span>{t.battery.wearLevel} <b className="text-rose-400">{info.wearLevelPercent}%</b></span>
                 </div>
                 <div className="w-full h-2.5 bg-fluent-card-hover rounded-full overflow-hidden flex">
                   <div
                     className="h-full bg-emerald-500 transition-all duration-500"
                     style={{ width: `${info.healthPercent}%` }}
-                    title={`Verfügbare Restkapazität: ${info.healthPercent}%`}
+                    title={t.battery.availableCapacityTooltip.replace('{percent}', String(info.healthPercent))}
                   />
                   <div
                     className="h-full bg-rose-500/60 transition-all duration-500"
                     style={{ width: `${info.wearLevelPercent}%` }}
-                    title={`Verschleiß: ${info.wearLevelPercent}%`}
+                    title={t.battery.wearTooltip.replace('{percent}', String(info.wearLevelPercent))}
                   />
                 </div>
               </div>
@@ -474,7 +481,7 @@ export const BatteryPage: React.FC = () => {
             <Card className="p-4">
               <div className="text-[11px] text-fluent-muted flex items-center gap-1.5">
                 <Laptop className="w-3.5 h-3.5 text-fluent-accent" />
-                Hersteller
+                {t.battery.manufacturer}
               </div>
               <div className="text-sm font-bold text-fluent-text mt-1 truncate" title={info.manufacturer}>
                 {info.manufacturer}
@@ -487,39 +494,39 @@ export const BatteryPage: React.FC = () => {
             <Card className="p-4">
               <div className="text-[11px] text-fluent-muted flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-fluent-accent" />
-                Zellchemie
+                {t.battery.chemistry}
               </div>
               <div className="text-sm font-bold text-fluent-text mt-1">
                 {info.chemistry}
               </div>
               <div className="text-[10px] text-fluent-muted mt-0.5">
-                Wiederaufladbare Li-Zellen
+                {t.battery.rechargeableLi}
               </div>
             </Card>
 
             <Card className="p-4">
               <div className="text-[11px] text-fluent-muted flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-fluent-accent" />
-                Spannung
+                {t.battery.voltage}
               </div>
               <div className="text-sm font-bold text-fluent-text mt-1">
-                {info.voltageMv > 0 ? `${(info.voltageMv / 1000).toFixed(2)} V` : 'Standard'}
+                {info.voltageMv > 0 ? `${(info.voltageMv / 1000).toFixed(2)} V` : t.dashboard.defaultVal}
               </div>
               <div className="text-[10px] text-fluent-muted mt-0.5">
-                Nennspannung
+                {t.battery.nominalVoltage}
               </div>
             </Card>
 
             <Card className="p-4">
               <div className="text-[11px] text-fluent-muted flex items-center gap-1.5">
                 <RefreshCw className="w-3.5 h-3.5 text-fluent-accent" />
-                Ladezyklen
+                {t.battery.chargeCycles}
               </div>
               <div className="text-sm font-bold text-fluent-text mt-1">
                 {info.cycleCount > 0 ? info.cycleCount : '–'}
               </div>
               <div className="text-[10px] text-fluent-muted mt-0.5">
-                {info.cycleCount > 0 ? 'Gemeldete Zyklen' : 'Firmware-verwaltet'}
+                {info.cycleCount > 0 ? t.battery.reportedCycles : t.battery.firmwareManaged}
               </div>
             </Card>
           </div>
@@ -533,18 +540,18 @@ export const BatteryPage: React.FC = () => {
                     <Flame className="w-4 h-4" />
                   </div>
                   <h3 className="text-sm font-bold text-fluent-text">
-                    Energie-Fresser & Hintergrund-Last (Drain-Inspektor)
+                    {t.battery.drainInspectorTitle}
                   </h3>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-fluent-muted">
-                  <span>Echtzeit-Analyse der laufenden Anwendungen:</span>
+                  <span>{t.battery.drainInspectorSubtitle}</span>
                   {isScanningDrain ? (
                     <span className="text-fluent-accent flex items-center gap-1 font-medium">
-                      <RefreshCw className="w-3 h-3 animate-spin" /> analysiert...
+                      <RefreshCw className="w-3 h-3 animate-spin" /> {t.battery.analyzing}
                     </span>
                   ) : secondsAgo !== null ? (
                     <span className="text-[11px] text-slate-400">
-                      • aktualisiert vor {secondsAgo} s
+                      {t.battery.updatedAgo.replace('{sec}', String(secondsAgo))}
                     </span>
                   ) : null}
                 </div>
@@ -552,14 +559,14 @@ export const BatteryPage: React.FC = () => {
 
               {info.isDischarging && info.dischargeRateWatts > 0 ? (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs self-start sm:self-auto">
-                  <span className="text-amber-200/80">Gemessene Gesamt-Entladung:</span>
+                  <span className="text-amber-200/80">{t.battery.measuredDischarge}</span>
                   <span className="font-extrabold text-amber-300">
                     -{info.dischargeRateWatts.toFixed(1)} W
                   </span>
                 </div>
               ) : info.isCharging && info.chargeRateWatts > 0 ? (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/25 text-xs self-start sm:self-auto">
-                  <span className="text-cyan-200/80">Gemessene Laderate:</span>
+                  <span className="text-cyan-200/80">{t.battery.measuredCharge}</span>
                   <span className="font-extrabold text-cyan-300">
                     +{info.chargeRateWatts.toFixed(1)} W
                   </span>
@@ -572,11 +579,11 @@ export const BatteryPage: React.FC = () => {
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-fluent-border text-fluent-muted">
-                      <th className="pb-2.5 font-semibold">Anwendung / Prozess</th>
-                      <th className="pb-2.5 font-semibold">CPU-Last</th>
-                      <th className="pb-2.5 font-semibold">Arbeitsspeicher</th>
-                      <th className="pb-2.5 font-semibold">Energie-Auswirkung</th>
-                      <th className="pb-2.5 font-semibold text-right">Aktion</th>
+                      <th className="pb-2.5 font-semibold">{t.battery.tableProcess}</th>
+                      <th className="pb-2.5 font-semibold">{t.battery.tableCpu}</th>
+                      <th className="pb-2.5 font-semibold">{t.battery.tableMemory}</th>
+                      <th className="pb-2.5 font-semibold">{t.battery.tableImpact}</th>
+                      <th className="pb-2.5 font-semibold text-right">{t.battery.tableAction}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-fluent-border-subtle">
@@ -599,7 +606,7 @@ export const BatteryPage: React.FC = () => {
                                   </span>
                                   {proc.isSelf && (
                                     <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                                      Diese App
+                                      {t.battery.thisApp}
                                     </span>
                                   )}
                                 </div>
@@ -660,21 +667,21 @@ export const BatteryPage: React.FC = () => {
                             {proc.isSelf ? (
                               <span
                                 className="text-[11px] text-cyan-300/70 italic px-2"
-                                title="Die eigene Anwendung kann nicht beendet werden"
+                                title={t.battery.cannotKillSelf}
                               >
-                                Aktiv (Geschützt)
+                                {t.battery.activeProtected}
                               </span>
                             ) : (
                               <button
                                 onClick={() => killDrainProcess(proc.id)}
                                 disabled={isTargetKilling}
                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-fluent-card border border-fluent-border hover:bg-rose-500/20 hover:border-rose-500/40 hover:text-rose-200 text-fluent-muted transition-all disabled:opacity-50"
-                                title={`Prozess ${proc.name} (PID: ${proc.id}) sofort beenden`}
+                                title={t.battery.killProcessTooltip.replace('{name}', proc.name).replace('{pid}', String(proc.id))}
                               >
                                 <Skull
                                   className={`w-3 h-3 ${isTargetKilling ? 'animate-spin' : ''}`}
                                 />
-                                {isTargetKilling ? 'Beende...' : 'Beenden'}
+                                {isTargetKilling ? t.battery.killingProcess : t.battery.killBtn}
                               </button>
                             )}
                           </td>
@@ -686,7 +693,7 @@ export const BatteryPage: React.FC = () => {
               </div>
             ) : (
               <div className="p-6 rounded-xl border border-fluent-border bg-fluent-card/40 text-center text-xs text-fluent-muted">
-                Keine ressourcenhungrigen Hintergrund-Prozesse erkannt. Dein System läuft effizient im Leerlauf.
+                {t.battery.noDrainProcesses}
               </div>
             )}
           </Card>
@@ -700,11 +707,11 @@ export const BatteryPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-fluent-accent" />
               <h3 className="text-sm font-semibold text-slate-100">
-                Schnelle Energie-Profile
+                {t.battery.quickProfilesTitle}
               </h3>
             </div>
             <p className="text-xs text-fluent-muted">
-              1-Klick Umschaltung zwischen maximaler Akkulaufzeit, Alltagseffizienz und voller Leistung:
+              {t.battery.quickProfilesSubtitle}
             </p>
           </div>
 
@@ -745,7 +752,7 @@ export const BatteryPage: React.FC = () => {
                       </div>
                       {p.isActive && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-fluent-accent text-white shadow-sm">
-                          Aktiv
+                          {t.battery.activeBadge}
                         </span>
                       )}
                     </div>
@@ -756,11 +763,11 @@ export const BatteryPage: React.FC = () => {
 
                   <div className="space-y-1.5 pt-2 border-t border-fluent-border/40 text-[11px] text-fluent-muted">
                     <div className="flex justify-between">
-                      <span>CPU-Limit (Akku):</span>
+                      <span>{t.battery.cpuLimitBattery}</span>
                       <span className="font-semibold text-fluent-text">{p.cpuMaxPercentBattery}%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Display-Timeout:</span>
+                      <span>{t.battery.displayTimeout}</span>
                       <span className="font-semibold text-fluent-text">{p.screenTimeoutMinutesBattery} Min.</span>
                     </div>
 
@@ -773,14 +780,14 @@ export const BatteryPage: React.FC = () => {
                       }`}
                     >
                       {p.isActive ? (
-                        'Profil ist aktiv'
+                        t.battery.profileIsActive
                       ) : switchingMode === p.mode ? (
                         <span className="flex items-center justify-center gap-1.5">
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Wird aktiviert...</span>
+                          <span>{t.battery.activating}</span>
                         </span>
                       ) : (
-                        'Aktivieren'
+                        t.battery.activateBtn
                       )}
                     </button>
                   </div>
@@ -796,10 +803,10 @@ export const BatteryPage: React.FC = () => {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-fluent-accent" />
-            <h3 className="text-sm font-semibold text-slate-100">Windows Energieschemas & Leistungsprofile</h3>
+            <h3 className="text-sm font-semibold text-slate-100">{t.battery.powerSchemesTitle}</h3>
           </div>
           <p className="text-xs text-fluent-muted">
-            Wähle das aktive Energieprofil, um die Balance zwischen maximaler Akkulaufzeit und Spitzen-CPU-Leistung zu steuern:
+            {t.battery.powerSchemesSubtitle}
           </p>
         </div>
 
@@ -821,7 +828,7 @@ export const BatteryPage: React.FC = () => {
                     <span className="text-xs font-bold text-fluent-text">{plan.name}</span>
                     {isSelected && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-fluent-accent text-white font-semibold">
-                        Aktiv
+                        {t.battery.activeBadge}
                       </span>
                     )}
                   </div>
@@ -835,7 +842,7 @@ export const BatteryPage: React.FC = () => {
                     disabled={isSwitchingPlan}
                     className="px-2.5 py-1 rounded-lg text-xs font-medium bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-text transition-all"
                   >
-                    Aktivieren
+                    {t.battery.activateBtn}
                   </button>
                 )}
               </div>
@@ -848,28 +855,28 @@ export const BatteryPage: React.FC = () => {
       <Card className="p-6 space-y-4">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-sm font-semibold text-slate-100">Empfehlungen für maximale Akkulebensdauer</h3>
+          <h3 className="text-sm font-semibold text-slate-100">{t.battery.hygieneTitle}</h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
           <div className="p-3.5 rounded-xl border border-fluent-border bg-fluent-card/50 space-y-1">
-            <span className="font-semibold text-fluent-text">🔋 20 % – 80 % Ladefenster</span>
+            <span className="font-semibold text-fluent-text">{t.battery.hygieneChargeWindow}</span>
             <p className="text-fluent-muted text-[11px] leading-relaxed">
-              Lithium-Ionen-Akkus altern am wenigsten, wenn sie zwischen 20 % und 80 % gehalten werden. Häufiges Vollladen auf 100 % bei gleichzeitigem Dauerbetrieb am Netzteil belastet die Zellen am stärksten.
+              {t.battery.hygieneChargeWindowDesc}
             </p>
           </div>
 
           <div className="p-3.5 rounded-xl border border-fluent-border bg-fluent-card/50 space-y-1">
-            <span className="font-semibold text-fluent-text">🌡️ Hitze ist der größte Feind</span>
+            <span className="font-semibold text-fluent-text">{t.battery.hygieneHeat}</span>
             <p className="text-fluent-muted text-[11px] leading-relaxed">
-              Akkus sollten nicht über 35 °C betrieben oder gelagert werden. Achte beim Laden auf ausreichende Belüftung der Unterseite und vermeide weiche Oberflächen wie Bettdecken.
+              {t.battery.hygieneHeatDesc}
             </p>
           </div>
 
           <div className="p-3.5 rounded-xl border border-fluent-border bg-fluent-card/50 space-y-1">
-            <span className="font-semibold text-fluent-text">💡 Display & Standby optimieren</span>
+            <span className="font-semibold text-fluent-text">{t.battery.hygieneDisplay}</span>
             <p className="text-fluent-muted text-[11px] leading-relaxed">
-              Das Display verbraucht oft über 40 % der Gesamtenergie. Eine Absenkung der Helligkeit um nur 20 % verlängert die Laufzeit typischerweise um bis zu 45 Minuten.
+              {t.battery.hygieneDisplayDesc}
             </p>
           </div>
         </div>

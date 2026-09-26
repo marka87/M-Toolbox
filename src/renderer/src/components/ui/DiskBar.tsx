@@ -3,12 +3,14 @@ import { HardDrive } from 'lucide-react'
 import { StatusBadge, StatusType } from './StatusBadge'
 import type { DiskVolume } from '@shared/types'
 import { formatBytes } from '@shared/utils/format'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 interface DiskBarProps {
   volume: DiskVolume
 }
 
 export const DiskBar: React.FC<DiskBarProps> = ({ volume }) => {
+  const { t } = useTranslation()
   const getStatus = (percent: number): StatusType => {
     if (percent >= 90) return 'red'
     if (percent >= 75) return 'yellow'
@@ -42,7 +44,7 @@ export const DiskBar: React.FC<DiskBarProps> = ({ volume }) => {
               )}
               {volume.isSystemDrive && (
                 <span className="text-[10px] px-1.5 py-0.2 rounded bg-fluent-accent-muted text-fluent-accent font-medium">
-                  System
+                  {t.dashboard.systemBadge}
                 </span>
               )}
             </div>
@@ -53,7 +55,7 @@ export const DiskBar: React.FC<DiskBarProps> = ({ volume }) => {
         </div>
         <StatusBadge
           status={status}
-          text={`${volume.usagePercent}% belegt`}
+          text={t.dashboard.usedPercent.replace('{percent}', String(volume.usagePercent))}
         />
       </div>
 
@@ -65,8 +67,8 @@ export const DiskBar: React.FC<DiskBarProps> = ({ volume }) => {
       </div>
 
       <div className="flex items-center justify-between text-[11px] text-fluent-muted font-mono">
-        <span>{formatBytes(volume.freeBytes)} frei</span>
-        <span>Gesamt: {formatBytes(volume.sizeBytes)}</span>
+        <span>{t.dashboard.freeSpace.replace('{free}', formatBytes(volume.freeBytes))}</span>
+        <span>{t.dashboard.totalSpace.replace('{total}', formatBytes(volume.sizeBytes))}</span>
       </div>
     </div>
   )
