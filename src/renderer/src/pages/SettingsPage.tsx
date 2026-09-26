@@ -13,14 +13,17 @@ import {
   AlertCircle,
   Info,
   Sparkles,
-  Github
+  Github,
+  Globe
 } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { ThemeSelector } from '../components/ui/ThemeSelector'
 import { AccentColorPicker } from '../components/ui/AccentColorPicker'
 import { useSettings } from '../hooks/useSettings'
+import { useTranslation } from '../i18n/LanguageContext'
 
 export const SettingsPage: React.FC = () => {
+  const { t, language, setLanguage } = useTranslation()
   const {
     settings,
     appInfo,
@@ -49,7 +52,7 @@ export const SettingsPage: React.FC = () => {
   }
 
   const handleResetSettings = async () => {
-    if (window.confirm('Möchten Sie wirklich alle Einstellungen auf die Standardwerte zurücksetzen?')) {
+    if (window.confirm(t.settings.resetConfirm)) {
       setResetting(true)
       await resetSettings()
       setResetting(false)
@@ -90,10 +93,10 @@ export const SettingsPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-100">
-                Einstellungen & Personalisierung
+                {t.settings.title}
               </h1>
               <p className="text-xs text-fluent-muted">
-                Systemintegration, Design, Update-Prüfung und Konfiguration von M-Toolbox
+                {t.settings.subtitle}
               </p>
             </div>
           </div>
@@ -108,16 +111,56 @@ export const SettingsPage: React.FC = () => {
         )}
       </div>
 
+      {/* 0. Language / Sprache */}
+      <Card
+        title={t.settings.languageTitle}
+        subtitle={t.settings.languageSubtitle}
+        icon={<Globe className="w-5 h-5" />}
+      >
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setLanguage('de')
+              updateSettings({ language: 'de' })
+            }}
+            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
+              language === 'de'
+                ? 'border-fluent-accent bg-fluent-accent/15 text-white shadow-fluent-sm'
+                : 'border-fluent-border bg-fluent-card text-fluent-muted hover:text-slate-200 hover:bg-fluent-card/60'
+            }`}
+          >
+            <span className="text-base leading-none">🇩🇪</span>
+            <span>{t.settings.german}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setLanguage('en')
+              updateSettings({ language: 'en' })
+            }}
+            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
+              language === 'en'
+                ? 'border-fluent-accent bg-fluent-accent/15 text-white shadow-fluent-sm'
+                : 'border-fluent-border bg-fluent-card text-fluent-muted hover:text-slate-200 hover:bg-fluent-card/60'
+            }`}
+          >
+            <span className="text-base leading-none">🇬🇧</span>
+            <span>{t.settings.english}</span>
+          </button>
+        </div>
+      </Card>
+
       {/* 1. Appearance & Theme */}
       <Card
-        title="Personalisierung & Farbschema"
-        subtitle="Wählen Sie Ihr bevorzugtes Windows 11 Fluent Theme und Akzentfarbe"
+        title={t.settings.appearanceTitle}
+        subtitle={t.settings.appearanceSubtitle}
         icon={<Palette className="w-5 h-5" />}
       >
         <div className="space-y-5">
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2.5">
-              Farbschema (Theme)
+              {t.settings.themeLabel}
             </label>
             <ThemeSelector
               currentTheme={settings.theme}
@@ -127,7 +170,7 @@ export const SettingsPage: React.FC = () => {
 
           <div className="pt-3 border-t border-fluent-border-subtle">
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2.5">
-              Akzentfarbe
+              {t.settings.accentLabel}
             </label>
             <AccentColorPicker
               currentColor={settings.accentColor}
@@ -139,17 +182,17 @@ export const SettingsPage: React.FC = () => {
 
       {/* 2. General System Integration */}
       <Card
-        title="Systemintegration & Verhalten"
-        subtitle="Autostart, Fenster- und Ausführungsoptionen für Windows 11"
+        title={t.settings.systemTitle}
+        subtitle={t.settings.systemSubtitle}
         icon={<Sliders className="w-5 h-5" />}
       >
         <div className="space-y-4 divide-y divide-fluent-border-subtle">
           {/* Windows Autostart */}
           <div className="flex items-center justify-between pt-2 first:pt-0">
             <div>
-              <div className="text-sm font-medium text-slate-200">Mit Windows starten</div>
+              <div className="text-sm font-medium text-slate-200">{t.settings.autoStartLabel}</div>
               <div className="text-xs text-fluent-muted">
-                M-Toolbox automatisch beim Windows-Anmeldevorgang im Hintergrund starten
+                {t.settings.autoStartDesc}
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -166,9 +209,9 @@ export const SettingsPage: React.FC = () => {
           {/* Minimize to Tray */}
           <div className="flex items-center justify-between pt-4">
             <div>
-              <div className="text-sm font-medium text-slate-200">Im Infobereich (Tray) minimieren</div>
+              <div className="text-sm font-medium text-slate-200">{t.settings.trayLabel}</div>
               <div className="text-xs text-fluent-muted">
-                Beim Schließen in den Windows-Benachrichtigungsbereich minimieren statt beenden
+                {t.settings.trayDesc}
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -185,9 +228,9 @@ export const SettingsPage: React.FC = () => {
           {/* Transparency Effects */}
           <div className="flex items-center justify-between pt-4">
             <div>
-              <div className="text-sm font-medium text-slate-200">Transparenzeffekte (Mica / Acrylic)</div>
+              <div className="text-sm font-medium text-slate-200">{t.settings.transparencyLabel}</div>
               <div className="text-xs text-fluent-muted">
-                Moderne Windows 11 Transparenz- und Blur-Effekte auf Oberflächen anwenden
+                {t.settings.transparencyDesc}
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -204,9 +247,9 @@ export const SettingsPage: React.FC = () => {
           {/* Hardware Acceleration */}
           <div className="flex items-center justify-between pt-4">
             <div>
-              <div className="text-sm font-medium text-slate-200">GPU-Hardwarebeschleunigung</div>
+              <div className="text-sm font-medium text-slate-200">{t.settings.gpuAccelerationLabel}</div>
               <div className="text-xs text-fluent-muted">
-                Nutzt die Grafikkarte zur Beschleunigung von UI-Renderings. Bei Grafikfehlern, Flackern oder Abstürzen deaktivieren (erhöht dann die CPU-Last durch Software-Rendering). Neustart erforderlich.
+                {t.settings.gpuAccelerationDesc}
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -242,9 +285,9 @@ export const SettingsPage: React.FC = () => {
           {/* GPU Usage Telemetry (Default: Aus) */}
           <div className="flex items-center justify-between pt-4">
             <div>
-              <div className="text-sm font-medium text-slate-200">GPU-Auslastung anzeigen</div>
+              <div className="text-sm font-medium text-slate-200">{t.settings.gpuMonitoringLabel}</div>
               <div className="text-xs text-fluent-muted">
-                Aktiviert die GPU-Überwachung im HUD und Dashboard (startet nvidia-smi / WMI GPU-Abfragen)
+                {t.settings.gpuMonitoringDesc}
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -348,8 +391,8 @@ export const SettingsPage: React.FC = () => {
 
       {/* 4. Storage, Cache & Data Management */}
       <Card
-        title="Speicher, Cache & App-Daten"
-        subtitle="Verwalten Sie lokale Konfigurationsdateien, Logs und Cache-Speicher"
+        title={t.settings.cacheTitle}
+        subtitle={t.settings.cacheSubtitle}
         icon={<FolderOpen className="w-5 h-5" />}
       >
         <div className="space-y-4">
@@ -374,7 +417,7 @@ export const SettingsPage: React.FC = () => {
               className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-fluent bg-fluent-sidebar/60 border border-fluent-border hover:bg-fluent-card hover:border-slate-500 text-xs font-medium text-slate-200 transition-all shadow-fluent-sm"
             >
               <FolderOpen className="w-4 h-4 text-blue-400" />
-              <span>AppData-Ordner öffnen</span>
+              <span>{t.settings.openUserDataBtn}</span>
             </button>
 
             <button
@@ -383,7 +426,7 @@ export const SettingsPage: React.FC = () => {
               className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-fluent bg-fluent-sidebar/60 border border-fluent-border hover:bg-fluent-card hover:border-slate-500 text-xs font-medium text-slate-200 transition-all shadow-fluent-sm"
             >
               <Trash2 className="w-4 h-4 text-amber-400" />
-              <span>Cache & Logs leeren</span>
+              <span>{t.settings.clearCacheBtn}</span>
             </button>
 
             <button
@@ -393,7 +436,7 @@ export const SettingsPage: React.FC = () => {
               className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-fluent bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-xs font-medium text-red-300 transition-all shadow-fluent-sm disabled:opacity-50"
             >
               <RotateCcw className="w-4 h-4 text-red-400" />
-              <span>Einstellungen zurücksetzen</span>
+              <span>{t.settings.resetSettingsBtn}</span>
             </button>
           </div>
         </div>
@@ -401,8 +444,8 @@ export const SettingsPage: React.FC = () => {
 
       {/* 5. System & Build Info (About) */}
       <Card
-        title="Über M-Toolbox"
-        subtitle="Systemarchitektur, Runtime-Versionen und Open-Source Informationen"
+        title={t.settings.aboutTitle}
+        subtitle={t.settings.aboutSubtitle}
         icon={<Info className="w-5 h-5" />}
       >
         <div className="space-y-4">

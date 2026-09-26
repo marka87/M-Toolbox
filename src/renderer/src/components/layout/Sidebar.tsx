@@ -15,27 +15,27 @@ import {
   BatteryCharging
 } from 'lucide-react'
 import type { NavigationModule } from '@shared/types'
+import { useTranslation } from '../../i18n/LanguageContext'
 
-interface NavItem {
+interface NavItemConfig {
   id: NavigationModule
-  label: string
   icon: React.ComponentType<{ className?: string }>
-  badge?: string
+  hasBadge?: boolean
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'software', label: 'Software Center', icon: Package },
-  { id: 'backup', label: 'Backup & Migration', icon: Archive },
-  { id: 'driver', label: 'Driver Center', icon: Cpu },
-  { id: 'ram-guardian', label: 'RAM Guardian', icon: Activity },
-  { id: 'battery', label: 'Batterie-Manager', icon: BatteryCharging, badge: 'Neu' },
-  { id: 'cleanup', label: 'Cleanup Center', icon: Trash2 },
-  { id: 'repair', label: 'Repair Center', icon: Wrench },
-  { id: 'tweaks', label: 'Tweaks', icon: Sliders },
-  { id: 'network', label: 'Netzwerk Toolkit', icon: Network },
-  { id: 'advanced', label: 'Advanced Tools', icon: Terminal },
-  { id: 'settings', label: 'Settings', icon: Settings },
+const NAV_ITEMS: NavItemConfig[] = [
+  { id: 'dashboard', icon: LayoutDashboard },
+  { id: 'software', icon: Package },
+  { id: 'backup', icon: Archive },
+  { id: 'driver', icon: Cpu },
+  { id: 'ram-guardian', icon: Activity },
+  { id: 'battery', icon: BatteryCharging, hasBadge: true },
+  { id: 'cleanup', icon: Trash2 },
+  { id: 'repair', icon: Wrench },
+  { id: 'tweaks', icon: Sliders },
+  { id: 'network', icon: Network },
+  { id: 'advanced', icon: Terminal },
+  { id: 'settings', icon: Settings },
 ]
 
 interface SidebarProps {
@@ -44,16 +44,19 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onSelectModule }) => {
+  const { t } = useTranslation()
+
   return (
     <aside className="w-64 bg-fluent-sidebar border-r border-fluent-border flex flex-col justify-between select-none shrink-0 h-full">
       <div className="p-3">
         <div className="px-3 py-2 text-[11px] font-semibold tracking-wider text-fluent-subtext uppercase">
-          Module
+          {t.nav.modulesHeader}
         </div>
         <nav className="space-y-1 mt-1">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon
             const isActive = activeModule === item.id
+            const label = t.nav[item.id] || item.id
 
             return (
               <button
@@ -74,11 +77,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onSelectModule }
                       isActive ? 'text-fluent-accent' : 'text-fluent-subtext group-hover:text-slate-300'
                     }`}
                   />
-                  <span>{item.label}</span>
+                  <span>{label}</span>
                 </div>
-                {item.badge && (
+                {item.hasBadge && (
                   <span className="px-1.5 py-0.5 rounded text-[10px] bg-fluent-border text-fluent-subtext">
-                    {item.badge}
+                    {t.common.new}
                   </span>
                 )}
               </button>
@@ -93,8 +96,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onSelectModule }
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-fluent-status-green" />
             <div className="flex flex-col">
-              <span className="text-[11px] font-medium text-slate-200">System geschützt</span>
-              <span className="text-[10px] text-fluent-subtext">Bereit für Wartung</span>
+              <span className="text-[11px] font-medium text-slate-200">{t.sidebar.systemProtected}</span>
+              <span className="text-[10px] text-fluent-subtext">{t.sidebar.readyForMaintenance}</span>
             </div>
           </div>
           <span className="w-2 h-2 rounded-full bg-fluent-status-green animate-ping" />

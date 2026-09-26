@@ -12,6 +12,7 @@ import type {
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
   accentColor: 'blue',
+  language: 'de',
   startModule: 'dashboard',
   autoStart: false,
   minimizeToTray: false,

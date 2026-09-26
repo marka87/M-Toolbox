@@ -1,7 +1,10 @@
 import React from 'react'
 import { Minus, Square, X, Wrench, Gauge } from 'lucide-react'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 export const Titlebar: React.FC = () => {
+  const { t } = useTranslation()
+
   const handleMinimize = () => {
     window.mToolbox?.system?.minimize()
   }
@@ -34,28 +37,28 @@ export const Titlebar: React.FC = () => {
         <button
           onClick={handleToggleWidget}
           className="w-10 h-10 flex items-center justify-center text-fluent-muted hover:text-cyan-400 hover:bg-white/5 transition-colors"
-          title="Desktop Mini-HUD Widget (Overlay) ein-/ausblenden"
+          title={t.titlebar.toggleHud}
         >
           <Gauge className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={handleMinimize}
           className="w-10 h-10 flex items-center justify-center text-fluent-muted hover:text-white hover:bg-white/5 transition-colors"
-          title="Minimieren"
+          title={t.titlebar.minimize}
         >
           <Minus className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={handleMaximize}
           className="w-10 h-10 flex items-center justify-center text-fluent-muted hover:text-white hover:bg-white/5 transition-colors"
-          title="Maximieren"
+          title={t.titlebar.maximize}
         >
           <Square className="w-3 h-3" />
         </button>
         <button
           onClick={handleClose}
           className="w-10 h-10 flex items-center justify-center text-fluent-muted hover:text-white hover:bg-red-600 transition-colors"
-          title="Schließen"
+          title={t.titlebar.close}
         >
           <X className="w-3.5 h-3.5" />
         </button>

@@ -608,10 +608,12 @@ export interface HostsFileContent {
 
 export type AppTheme = 'dark' | 'light' | 'system'
 export type AccentColor = 'blue' | 'indigo' | 'emerald' | 'rose' | 'amber'
+export type AppLanguage = 'de' | 'en'
 
 export interface AppSettings {
   theme: AppTheme
   accentColor: AccentColor
+  language?: AppLanguage
   startModule: NavigationModule
   autoStart: boolean
   minimizeToTray: boolean

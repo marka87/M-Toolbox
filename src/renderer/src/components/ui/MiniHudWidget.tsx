@@ -20,6 +20,7 @@ import {
   formatHudRemainingTime,
   getMetricColor
 } from '../../utils/hud-formatter'
+import { useTranslation } from '../../i18n/LanguageContext'
 
 const dragStyle = { WebkitAppRegion: 'drag' } as React.CSSProperties
 const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
@@ -107,12 +108,17 @@ const BatteryTile = React.memo<{
   chargePercent: number
   watts: number
   remainingSeconds?: number
+  language?: string
   spanFull?: boolean
-}>(({ isAcOnline, isCharging, chargePercent, watts, remainingSeconds, spanFull }) => {
+}>(({ isAcOnline, isCharging, chargePercent, watts, remainingSeconds, language, spanFull }) => {
   const percentColor = chargePercent > 20 ? 'text-emerald-400' : 'text-rose-400'
   const barColor = chargePercent > 20 ? 'bg-emerald-400' : 'bg-rose-500'
 
-  const statusText = isCharging ? 'LADEN' : isAcOnline ? 'NETZ' : 'AKKU'
+  const statusText = isCharging
+    ? language === 'en' ? 'CHARGING' : 'LADEN'
+    : isAcOnline
+    ? language === 'en' ? 'AC' : 'NETZ'
+    : language === 'en' ? 'BATTERY' : 'AKKU'
   const timeText = formatHudRemainingTime(remainingSeconds)
 
   return (
@@ -181,6 +187,7 @@ const DEMO_STEPS = [
 ]
 
 export const MiniHudWidget: React.FC = () => {
+  const { t, language } = useTranslation()
   const [metrics, setMetrics] = useState<LiveMetrics | null>(null)
   const [battery, setBattery] = useState<HudBatteryState | null>(null)
   const [showGpuUsage, setShowGpuUsage] = useState<boolean>(false)
@@ -497,18 +504,18 @@ export const MiniHudWidget: React.FC = () => {
       onMouseLeave={handleMouseLeave}
       className="w-[240px] select-none cursor-move flex flex-col p-2 rounded-xl bg-slate-950/95 border border-slate-800 text-slate-100 font-sans antialiased box-border"
       style={dragStyle}
-      title="Doppelklick: M-Toolbox öffnen | Gedrückt halten zum Verschieben"
+      title={t.hud.dragHint}
     >
       {/* Top Header Bar */}
       <div className="flex items-center justify-between pt-0.5 pb-1">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
           <span className="text-[10px] font-bold tracking-wide text-slate-300 uppercase font-mono whitespace-nowrap shrink-0">
-            M-TOOLBOX HUD
+            {t.hud.title}
           </span>
           {isDemoMode && (
             <span className="px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[8px] font-mono font-bold border border-amber-500/30 shrink-0">
-              DEMO
+              {t.hud.demo}
             </span>
           )}
         </div>
@@ -520,7 +527,7 @@ export const MiniHudWidget: React.FC = () => {
             onClick={handleCleanRam}
             disabled={isCleaningRam}
             className="p-0.5 rounded text-slate-400 hover:text-cyan-300 hover:bg-slate-800 relative transition-colors"
-            title="Arbeitsspeicher bereinigen (EmptyWorkingSet)"
+            title={t.hud.cleanRam}
           >
             <Sparkles className={`w-3.5 h-3.5 ${isCleaningRam ? 'animate-spin text-cyan-400' : ''}`} />
             {cleanFeedback && (
@@ -534,7 +541,7 @@ export const MiniHudWidget: React.FC = () => {
           <button
             onClick={handleCycleOpacity}
             className="p-0.5 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-            title={`Transparenz umschalten (aktuell ${Math.round(opacity * 100)}%)`}
+            title={t.hud.toggleOpacity.replace('{percent}', String(Math.round(opacity * 100)))}
           >
             <Eye className="w-3.5 h-3.5" />
           </button>
@@ -547,7 +554,7 @@ export const MiniHudWidget: React.FC = () => {
                 ? 'text-sky-400 hover:bg-slate-800'
                 : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
             }`}
-            title={isClickThrough ? 'Click-Through aktiv (Klicks gehen durch)' : 'Click-Through inaktiv'}
+            title={isClickThrough ? t.hud.clickThroughActive : t.hud.clickThroughInactive}
           >
             <MousePointer className="w-3.5 h-3.5" />
           </button>
@@ -560,11 +567,7 @@ export const MiniHudWidget: React.FC = () => {
                 ? 'text-amber-400 hover:bg-slate-800'
                 : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
             }`}
-            title={
-              isAlwaysOnTop
-                ? 'Always-on-Top aktiv (klicken zum Lösen)'
-                : 'Always-on-Top inaktiv (klicken zum Anheften)'
-            }
+            title={isAlwaysOnTop ? t.hud.alwaysOnTopActive : t.hud.alwaysOnTopInactive}
           >
             {isAlwaysOnTop ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
           </button>
@@ -573,7 +576,7 @@ export const MiniHudWidget: React.FC = () => {
           <button
             onClick={handleClose}
             className="p-0.5 rounded text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
-            title="Widget schließen"
+            title={t.hud.closeWidget}
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -592,6 +595,7 @@ export const MiniHudWidget: React.FC = () => {
             chargePercent={chargePercent}
             watts={wattsNumber}
             remainingSeconds={isDemoMode ? currentDemo?.remSec : battery?.remainingSeconds}
+            language={language}
             spanFull={!showGpuUsage}
           />
         )}
