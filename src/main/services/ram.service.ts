@@ -5,6 +5,7 @@ import { databaseService } from './database.service'
 import { advancedService } from './advanced.service'
 import { SoftwareService } from './software.service'
 import { powershellService } from './powershell.service'
+import { powerShellWorker } from './powershell-worker.service'
 import type {
   RAMLiveStats,
   RAMProcessItem,
@@ -51,10 +52,19 @@ export class RAMService {
   }
 
   /**
-   * Helper to execute PowerShell scripts using PowerShellService.
+   * Helper to execute PowerShell scripts using persistent worker with one-shot fallback.
    */
-  private async runPowerShell(script: string, timeout = 8000): Promise<string> {
-    return powershellService.runPowerShell(script, timeout)
+  private async runPowerShell(
+    script: string,
+    timeout = 8000,
+    countTowardsErrors = true
+  ): Promise<string> {
+    try {
+      return await powerShellWorker.runCommand(script, timeout, { countTowardsErrors })
+    } catch (err: any) {
+      console.warn('[RAMService] Worker execution failed, falling back to one-shot PowerShell:', err?.message || err)
+      return powershellService.runPowerShell(script, timeout)
+    }
   }
 
   /**
