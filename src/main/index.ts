@@ -117,6 +117,17 @@ function createWindow() {
   })
 }
 
+// Hardware acceleration control (must be applied BEFORE app.whenReady)
+try {
+  const initialSettings = SettingsService.getInstance().getSettings()
+  if (initialSettings.hardwareAcceleration === false) {
+    console.log('[App] Disabling GPU hardware acceleration per user settings')
+    app.disableHardwareAcceleration()
+  }
+} catch (err) {
+  console.warn('[App] Failed to check hardware acceleration setting:', err)
+}
+
 app.whenReady().then(() => {
   // Initialize Database
   DatabaseService.getInstance()

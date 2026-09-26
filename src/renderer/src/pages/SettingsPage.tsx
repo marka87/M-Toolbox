@@ -206,7 +206,7 @@ export const SettingsPage: React.FC = () => {
             <div>
               <div className="text-sm font-medium text-slate-200">GPU-Hardwarebeschleunigung</div>
               <div className="text-xs text-fluent-muted">
-                Nutzt Grafikkarte zur Beschleunigung von UI-Renderings und Animationen (Neustart erforderlich)
+                Nutzt die Grafikkarte zur Beschleunigung von UI-Renderings. Bei Grafikfehlern, Flackern oder Abstürzen deaktivieren (erhöht dann die CPU-Last durch Software-Rendering). Neustart erforderlich.
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
