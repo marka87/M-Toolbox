@@ -30,3 +30,14 @@ export function getMetricColor(val: number): { text: string; bg: string } {
   if (val < 85) return { text: 'text-amber-400', bg: 'bg-amber-400' }
   return { text: 'text-rose-500', bg: 'bg-rose-500' }
 }
+
+export function formatHudRemainingTime(seconds?: number): string {
+  if (!seconds || seconds <= 0 || seconds > 172800) return ''
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  if (hours > 0) {
+    return `~${hours}h ${minutes}m`
+  }
+  return `~${minutes}m`
+}
+

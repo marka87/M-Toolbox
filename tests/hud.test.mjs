@@ -29,6 +29,16 @@ function getMetricColor(val) {
   return { text: 'text-rose-500', bg: 'bg-rose-500' }
 }
 
+function formatHudRemainingTime(seconds) {
+  if (!seconds || seconds <= 0 || seconds > 172800) return ''
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  if (hours > 0) {
+    return `~${hours}h ${minutes}m`
+  }
+  return `~${minutes}m`
+}
+
 describe('HUD Formatter & Layout Bounds Tests', () => {
   test('formatHudPercent formats and clamps integers with space and % sign', () => {
     assert.equal(formatHudPercent(0), '0 %')
@@ -95,5 +105,16 @@ describe('HUD Formatter & Layout Bounds Tests', () => {
       assert.ok(combined.length <= 8, `RAM label '${combined}' exceeds 8 chars`)
     }
   })
+
+  test('formatHudRemainingTime formats remaining hours and minutes cleanly', () => {
+    assert.equal(formatHudRemainingTime(0), '')
+    assert.equal(formatHudRemainingTime(-1), '')
+    assert.equal(formatHudRemainingTime(undefined), '')
+    assert.equal(formatHudRemainingTime(1800), '~30m')
+    assert.equal(formatHudRemainingTime(5400), '~1h 30m')
+    assert.equal(formatHudRemainingTime(7200), '~2h 0m')
+    assert.equal(formatHudRemainingTime(200000), '') // exceeds 48h limit
+  })
 })
+
 

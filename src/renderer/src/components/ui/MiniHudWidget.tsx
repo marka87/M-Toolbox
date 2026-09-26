@@ -17,7 +17,7 @@ import type { LiveMetrics, TelemetryMetric } from '../../../../shared/types'
 import {
   formatHudPercent,
   formatHudWattage,
-  formatHudRamGB,
+  formatHudRemainingTime,
   getMetricColor
 } from '../../utils/hud-formatter'
 
@@ -57,18 +57,15 @@ const CpuTile = React.memo<{ cpuVal: number }>(({ cpuVal }) => {
 })
 CpuTile.displayName = 'CpuTile'
 
-const RamTile = React.memo<{ ramVal: number; ramGB: number }>(({ ramVal, ramGB }) => {
+const RamTile = React.memo<{ ramVal: number }>(({ ramVal }) => {
   const color = getMetricColor(ramVal)
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between">
-      {/* Row 1: Label + dimmed extra left | Value right */}
+      {/* Row 1: Label left | Value right */}
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-1 leading-none">
         <div className="flex items-baseline gap-1 min-w-0">
           <Activity className="w-3 h-3 text-indigo-400 shrink-0 self-center" />
           <span className="text-[11px] font-semibold text-slate-300 shrink-0 whitespace-nowrap">RAM</span>
-          <span className="text-[9.5px] text-slate-500 font-normal shrink-0 whitespace-nowrap">
-            {formatHudRamGB(ramGB)}
-          </span>
         </div>
         <span
           className={`font-mono text-xs font-bold [font-variant-numeric:tabular-nums] text-right whitespace-nowrap shrink-0 min-w-[5ch] ${color.text}`}
@@ -109,12 +106,14 @@ const BatteryTile = React.memo<{
   isCharging: boolean
   chargePercent: number
   watts: number
+  remainingSeconds?: number
   spanFull?: boolean
-}>(({ isAcOnline, isCharging, chargePercent, watts, spanFull }) => {
+}>(({ isAcOnline, isCharging, chargePercent, watts, remainingSeconds, spanFull }) => {
   const percentColor = chargePercent > 20 ? 'text-emerald-400' : 'text-rose-400'
   const barColor = chargePercent > 20 ? 'bg-emerald-400' : 'bg-rose-500'
 
   const statusText = isCharging ? 'LADEN' : isAcOnline ? 'NETZ' : 'AKKU'
+  const timeText = formatHudRemainingTime(remainingSeconds)
 
   return (
     <div
@@ -122,7 +121,7 @@ const BatteryTile = React.memo<{
         spanFull ? 'col-span-2' : ''
       }`}
     >
-      {/* Row 1: Label left | 2 Fixed Right Slots (Percent 5ch & Wattage 8ch) */}
+      {/* Row 1: Label + Time left | 2 Fixed Right Slots (Percent 5ch & Wattage 8ch) */}
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-2 leading-none">
         <div className="flex items-baseline gap-1.5 min-w-0">
           {isCharging ? (
@@ -135,6 +134,11 @@ const BatteryTile = React.memo<{
           <span className="text-[11px] font-semibold text-slate-300 shrink-0 whitespace-nowrap">
             {statusText}
           </span>
+          {timeText && (
+            <span className="text-[9.5px] text-slate-400 font-normal shrink-0 whitespace-nowrap">
+              {timeText}
+            </span>
+          )}
         </div>
 
         {/* Slot 1: Percent (Right-aligned, tabular 5ch) */}
@@ -163,16 +167,17 @@ interface HudBatteryState {
   isCharging: boolean
   chargeRateWatts: number
   dischargeRateWatts: number
+  remainingSeconds?: number
 }
 
 // Dev-only extreme test values for layout stress testing
 const DEMO_STEPS = [
-  { cpu: 0, ram: 5, ramGB: 8, bat: 5, watts: -5.2, isCharging: false, isAc: false },
-  { cpu: 4, ram: 45, ramGB: 14, bat: 87, watts: -17.0, isCharging: false, isAc: false },
-  { cpu: 9, ram: 100, ramGB: 64, bat: 100, watts: -105.5, isCharging: false, isAc: false },
-  { cpu: 10, ram: 45, ramGB: 14, bat: 87, watts: 65.0, isCharging: true, isAc: true },
-  { cpu: 45, ram: 5, ramGB: 8, bat: 100, watts: 0.0, isCharging: false, isAc: true },
-  { cpu: 100, ram: 100, ramGB: 64, bat: 5, watts: -17.0, isCharging: false, isAc: false }
+  { cpu: 0, ram: 5, bat: 5, watts: -5.2, isCharging: false, isAc: false, remSec: 3600 },
+  { cpu: 4, ram: 45, bat: 87, watts: -17.0, isCharging: false, isAc: false, remSec: 7200 },
+  { cpu: 9, ram: 100, bat: 100, watts: -105.5, isCharging: false, isAc: false, remSec: 0 },
+  { cpu: 10, ram: 45, bat: 87, watts: 65.0, isCharging: true, isAc: true, remSec: 1800 },
+  { cpu: 45, ram: 5, bat: 100, watts: 0.0, isCharging: false, isAc: true, remSec: 0 },
+  { cpu: 100, ram: 100, bat: 5, watts: -17.0, isCharging: false, isAc: false, remSec: 1200 }
 ]
 
 export const MiniHudWidget: React.FC = () => {
@@ -316,7 +321,8 @@ export const MiniHudWidget: React.FC = () => {
             chargePercent: data.battery.percent,
             isCharging: data.battery.isCharging,
             chargeRateWatts: data.battery.chargeRateWatts,
-            dischargeRateWatts: data.battery.dischargeRateWatts
+            dischargeRateWatts: data.battery.dischargeRateWatts,
+            remainingSeconds: data.battery.remainingSeconds
           })
         }
 
@@ -466,7 +472,6 @@ export const MiniHudWidget: React.FC = () => {
 
   const cpuVal = currentDemo ? currentDemo.cpu : metrics?.cpuUsagePercent ?? 0
   const ramVal = currentDemo ? currentDemo.ram : metrics?.ramUsagePercent ?? 0
-  const ramGB = currentDemo ? currentDemo.ramGB : metrics?.ramUsedGB ?? 0
   const gpuVal = metrics?.gpuUsagePercent ?? 0
 
   const hasBattery = currentDemo ? true : battery?.hasBattery ?? false
@@ -578,7 +583,7 @@ export const MiniHudWidget: React.FC = () => {
       {/* Metrics Grid with React.memo tiles: Equal columns, consistent gap and padding */}
       <div className="grid grid-cols-2 gap-1.5 mt-1.5">
         <CpuTile cpuVal={cpuVal} />
-        <RamTile ramVal={ramVal} ramGB={ramGB} />
+        <RamTile ramVal={ramVal} />
         {showGpuUsage && <GpuTile gpuVal={gpuVal} />}
         {hasBattery && (
           <BatteryTile
@@ -586,6 +591,7 @@ export const MiniHudWidget: React.FC = () => {
             isCharging={isCharging}
             chargePercent={chargePercent}
             watts={wattsNumber}
+            remainingSeconds={isDemoMode ? currentDemo?.remSec : battery?.remainingSeconds}
             spanFull={!showGpuUsage}
           />
         )}

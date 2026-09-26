@@ -109,6 +109,7 @@ export interface LiveMetrics {
     chargeRateWatts: number
     dischargeRateWatts: number
     healthPercent?: number
+    remainingSeconds?: number
   }
 }
 

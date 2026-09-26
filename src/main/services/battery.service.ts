@@ -79,6 +79,10 @@ export class BatteryService {
     this.lastPowerPlansTime = 0
   }
 
+  public getStaticCache(): CachedStaticData | null {
+    return this.staticCache
+  }
+
   private async runPowerShell(
     script: string,
     timeout = 7000,

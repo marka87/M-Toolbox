@@ -31,6 +31,7 @@ export interface TelemetryBatteryState {
   chargeRateWatts: number
   dischargeRateWatts: number
   healthPercent?: number
+  remainingSeconds?: number
 }
 
 export interface TelemetrySnapshot {
@@ -798,6 +799,7 @@ export class TelemetryService {
         LineStatus = $p.PowerLineStatus.ToString();
         Percent = [int]($p.BatteryLifePercent * 100);
         Status = $p.BatteryChargeStatus.ToString();
+        RemainingSeconds = if ($p.BatteryLifeRemaining -gt 0 -and $p.BatteryLifeRemaining -lt 172800) { [int]$p.BatteryLifeRemaining } else { -1 };
         ChargeRate = if ($wmi) { [int64]$wmi.ChargeRate } else { 0 };
         DischargeRate = if ($wmi) { [int64]$wmi.DischargeRate } else { 0 };
       } | ConvertTo-Json -Compress
@@ -819,6 +821,7 @@ export class TelemetryService {
           this.cache.battery.chargeRateWatts = 0
           this.cache.battery.dischargeRateWatts = 0
           this.cache.battery.healthPercent = 100
+          this.cache.battery.remainingSeconds = -1
           this.cache.timestamp = Date.now()
           return
         }
@@ -829,11 +832,33 @@ export class TelemetryService {
         const chargeRate = parsed.ChargeRate ? Math.round((parsed.ChargeRate / 1000) * 10) / 10 : 0
         const dischargeRate = parsed.DischargeRate ? Math.round((parsed.DischargeRate / 1000) * 10) / 10 : 0
 
+        // Calculate realistic remaining seconds
+        let remainingSeconds = typeof parsed.RemainingSeconds === 'number' ? parsed.RemainingSeconds : -1
+        const staticData = batteryService.getStaticCache()
+        const fullCapacity = staticData?.fullChargeCapacityMWh || 0
+
+        if (isCharging) {
+          if (percent >= 100) {
+            remainingSeconds = 0
+          } else if (fullCapacity > 0 && chargeRate > 0) {
+            const remainingMWh = (fullCapacity * (1 - percent / 100)) / 1000
+            const hoursNeeded = remainingMWh / chargeRate
+            const sec = Math.round(hoursNeeded * 3600)
+            if (sec > 0 && sec < 172800) remainingSeconds = sec
+          }
+        } else if (!isAcOnline && remainingSeconds <= 0 && fullCapacity > 0 && dischargeRate > 0 && percent > 0) {
+          const currentEnergyWh = (fullCapacity * (percent / 100)) / 1000
+          const hoursLeft = currentEnergyWh / dischargeRate
+          const sec = Math.round(hoursLeft * 3600)
+          if (sec > 0 && sec < 172800) remainingSeconds = sec
+        }
+
         this.cache.battery.isAcOnline = isAcOnline
         this.cache.battery.isCharging = isCharging
         this.cache.battery.percent = percent
         this.cache.battery.chargeRateWatts = chargeRate
         this.cache.battery.dischargeRateWatts = dischargeRate
+        this.cache.battery.remainingSeconds = remainingSeconds
         this.cache.timestamp = Date.now()
       }
     } catch {
@@ -897,7 +922,7 @@ export class TelemetryService {
   private broadcastIfChanged(): void {
     const metrics = this.getLiveMetrics()
     // Compare key values to avoid spamming renderer IPC if values didn't change
-    const signature = `${metrics.cpuUsagePercent}_${metrics.ramUsagePercent}_${metrics.networkReceiveKBps}_${metrics.networkSendKBps}_${metrics.gpuUsagePercent}_${metrics.battery?.percent}_${metrics.battery?.isCharging}_${metrics.battery?.isAcOnline}_${metrics.battery?.chargeRateWatts}_${metrics.battery?.dischargeRateWatts}_${metrics.battery?.healthPercent}`
+    const signature = `${metrics.cpuUsagePercent}_${metrics.ramUsagePercent}_${metrics.networkReceiveKBps}_${metrics.networkSendKBps}_${metrics.gpuUsagePercent}_${metrics.battery?.percent}_${metrics.battery?.isCharging}_${metrics.battery?.isAcOnline}_${metrics.battery?.chargeRateWatts}_${metrics.battery?.dischargeRateWatts}_${metrics.battery?.healthPercent}_${Math.round((metrics.battery?.remainingSeconds || 0) / 60)}`
 
     if (signature === this.lastBroadcastJson) {
       return
