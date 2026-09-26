@@ -4,6 +4,10 @@ import fs from 'node:fs'
 import electron from 'vite-plugin-electron/simple'
 import react from '@vitejs/plugin-react'
 
+// Delete ELECTRON_RUN_AS_NODE to prevent Electron from running in plain Node mode
+// when launched from IDE terminals or environments where this variable is set
+delete process.env.ELECTRON_RUN_AS_NODE
+
 // Resolve canonical physical path to avoid Windows subst virtual drive mismatches (A: vs C:)
 const projectRoot = fs.existsSync(__dirname) ? fs.realpathSync.native(__dirname) : __dirname
 
