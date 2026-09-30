@@ -1,23 +1,18 @@
 @echo off
 setlocal
 cd /d "%~dp0"
+title M-Toolbox Release & Version Automation
 
-set "PATH=%LOCALAPPDATA%\Programs\NodeJS;%ProgramFiles%\nodejs;%PATH%"
-set "CSC_IDENTITY_AUTO_DISCOVERY=false"
-set "WIN_CSC_LINK="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0release.ps1" %*
+set "EXIT_CODE=%ERRORLEVEL%"
 
-echo [1/3] TypeScript-Pruefung...
-call npm run typecheck
-if errorlevel 1 exit /b 1
-
-echo [2/3] Renderer- und Electron-Build...
-call npm run build:renderer
-if errorlevel 1 exit /b 1
-
-echo [3/3] Windows-Installer und portable EXE...
-call npx electron-builder --win nsis portable
-if errorlevel 1 exit /b 1
+if %EXIT_CODE% NEQ 0 (
+    echo.
+    echo [FEHLER] Release-Vorgang mit Exit-Code %EXIT_CODE% abgebrochen.
+    pause
+    exit /b %EXIT_CODE%
+)
 
 echo.
-echo Release-Artefakte liegen in release\
+pause
 endlocal
