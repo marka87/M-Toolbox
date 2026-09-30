@@ -23,6 +23,8 @@ export const IPC_CHANNELS = {
     SELECT_BACKUP_FILE: 'backup:select-file',
     SAVE_BACKUP_DIALOG: 'backup:save-dialog',
     LIST_LOCAL_BACKUPS: 'backup:list-local',
+    DELETE_BACKUP: 'backup:delete',
+    OPEN_BACKUPS_FOLDER: 'backup:open-folder',
     PROGRESS_EVENT: 'backup:progress-event',
   },
   REINSTALL: {
@@ -128,6 +130,8 @@ export const IPC_CHANNELS = {
     MINIMIZE_WINDOW: 'system:minimize-window',
     MAXIMIZE_WINDOW: 'system:maximize-window',
     CLOSE_WINDOW: 'system:close-window',
+    RELAUNCH_APP: 'system:relaunch-app',
+    RESTART_AS_ADMIN: 'system:restart-as-admin',
     WINDOW_VISIBILITY_EVENT: 'system:window-visibility-event'
   },
   WIDGET: {

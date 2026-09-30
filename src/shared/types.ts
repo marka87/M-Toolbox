@@ -165,6 +165,7 @@ export interface SoftwarePackage {
   installedVersion?: string
   latestVersion?: string
   status: SoftwareStatus
+  requiresAdmin?: boolean
 }
 
 export interface InstalledPackage {

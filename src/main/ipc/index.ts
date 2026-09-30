@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, shell, dialog, powerMonitor } from 'electron'
+import { app, ipcMain, BrowserWindow, shell, dialog, powerMonitor } from 'electron'
 import { IPC_CHANNELS } from '../../shared/channels'
 import { DashboardService } from '../services/dashboard.service'
 import { SoftwareService } from '../services/software.service'
@@ -182,6 +182,15 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     }
   })
 
+  ipcMain.handle(IPC_CHANNELS.SYSTEM.RELAUNCH_APP, () => {
+    app.relaunch()
+    app.exit(0)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SYSTEM.RESTART_AS_ADMIN, async () => {
+    await repairService.restartAsAdmin()
+  })
+
   // Software Center IPC
   const softwareService = SoftwareService.getInstance()
 
@@ -297,6 +306,14 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.BACKUP.LIST_LOCAL_BACKUPS, async () => {
     return await backupService.listLocalBackups()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BACKUP.DELETE_BACKUP, async (_, filePath: string) => {
+    return await backupService.deleteBackup(filePath)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BACKUP.OPEN_BACKUPS_FOLDER, async () => {
+    await backupService.openBackupsFolder()
   })
 
   ipcMain.handle(IPC_CHANNELS.BACKUP.SELECT_BACKUP_FILE, async () => {

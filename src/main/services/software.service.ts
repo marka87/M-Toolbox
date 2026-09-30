@@ -13,6 +13,7 @@ interface CuratedPackageDef {
   description: string
   category: SoftwareCategory
   publisher?: string
+  requiresAdmin?: boolean
 }
 
 const CURATED_PACKAGES: CuratedPackageDef[] = [
@@ -87,7 +88,8 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     name: 'Visual Studio Code',
     description: 'Mächtiger, erweiterbarer Code-Editor für nahezu alle Programmiersprachen.',
     category: 'dev',
-    publisher: 'Microsoft Corporation'
+    publisher: 'Microsoft Corporation',
+    requiresAdmin: false
   },
   {
     id: 'Git.Git',
@@ -115,7 +117,8 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     name: 'Windows Terminal',
     description: 'Moderne Tab-Terminal-Anwendung für PowerShell, CMD und WSL.',
     category: 'dev',
-    publisher: 'Microsoft Corporation'
+    publisher: 'Microsoft Corporation',
+    requiresAdmin: false
   },
   {
     id: 'Notepad++.Notepad++',
@@ -357,7 +360,8 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     name: 'Spotify',
     description: 'Musik- und Podcast-Streamingdienst für Desktop.',
     category: 'media',
-    publisher: 'Spotify AB'
+    publisher: 'Spotify AB',
+    requiresAdmin: false
   },
   {
     id: 'OBSProject.OBSStudio',
@@ -434,7 +438,8 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     name: 'Windows Kamera',
     description: 'Microsoft-Kameraanwendung für Webcam-Aufnahmen und Videoanrufe.',
     category: 'media',
-    publisher: 'Microsoft Corporation'
+    publisher: 'Microsoft Corporation',
+    requiresAdmin: false
   },
 
   // Communication
@@ -443,21 +448,24 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     name: 'Discord',
     description: 'Sprach-, Video- und Text-Kommunikationsplattform für Communities & Gaming.',
     category: 'communication',
-    publisher: 'Discord Inc.'
+    publisher: 'Discord Inc.',
+    requiresAdmin: false
   },
   {
     id: 'Telegram.TelegramDesktop',
     name: 'Telegram Desktop',
     description: 'Schneller, sicherer und cloudbasierter Instant-Messenger.',
     category: 'communication',
-    publisher: 'Telegram FZ-LLC'
+    publisher: 'Telegram FZ-LLC',
+    requiresAdmin: false
   },
   {
     id: 'WhatsApp.WhatsApp',
     name: 'WhatsApp Desktop',
     description: 'Offizielle WhatsApp Desktop-Anwendung für Windows.',
     category: 'communication',
-    publisher: 'Meta / WhatsApp LLC'
+    publisher: 'Meta / WhatsApp LLC',
+    requiresAdmin: false
   },
   {
     id: 'OpenWhisperSystems.Signal',
@@ -471,7 +479,8 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
     name: 'Slack',
     description: 'Kollaborationsplattform für Teams und Arbeitsgruppen.',
     category: 'communication',
-    publisher: 'Slack Technologies'
+    publisher: 'Slack Technologies',
+    requiresAdmin: false
   },
   {
     id: 'Zoom.Zoom',
@@ -841,7 +850,8 @@ export class SoftwareService {
         publisher: cPkg.publisher,
         installedVersion,
         latestVersion,
-        status
+        status,
+        requiresAdmin: cPkg.requiresAdmin ?? true
       }
     })
   }
@@ -1036,7 +1046,8 @@ export class SoftwareService {
           publisher: source,
           latestVersion: version && version !== 'Unknown' ? version : undefined,
           installedVersion,
-          status
+          status,
+          requiresAdmin: !source.toLowerCase().includes('msstore')
         })
 
         if (results.length >= 40) break

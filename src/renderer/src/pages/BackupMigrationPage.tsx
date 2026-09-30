@@ -17,7 +17,8 @@ import {
   Upload,
   Search,
   Check,
-  HardDrive
+  HardDrive,
+  Trash2
 } from 'lucide-react'
 import { useBackupMigration } from '../hooks/useBackupMigration'
 import { Card } from '../components/ui/Card'
@@ -52,6 +53,8 @@ export const BackupMigrationPage: React.FC = () => {
     selectAnyBackupFile,
     loadAndPreviewFile,
     restoreActive,
+    deleteLocalBackup,
+    openBackupsFolder,
     toggleJsonCategory,
     toggleMtbxApp,
     toggleAllMtbxApps,
@@ -698,9 +701,19 @@ export const BackupMigrationPage: React.FC = () => {
               {/* Local Backups Table */}
               {localJsonBackups.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-xs font-semibold text-slate-200">
-                    {t.backup.localBackupsTitle.replace('{count}', String(localJsonBackups.length))}
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-slate-200">
+                      {t.backup.localBackupsTitle.replace('{count}', String(localJsonBackups.length))}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={openBackupsFolder}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-fluent text-[11px] font-medium text-fluent-accent hover:text-white bg-fluent-accent/10 hover:bg-fluent-accent/20 border border-fluent-accent/30 transition-all"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5" />
+                      <span>{t.backup.openFolderBtn}</span>
+                    </button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {localJsonBackups.map((b, idx) => {
                       const fileName = b.filePath ? b.filePath.split(/[/\\]/).pop() || 'Backup.json' : `Backup-${idx + 1}.json`
@@ -708,24 +721,49 @@ export const BackupMigrationPage: React.FC = () => {
                         <div
                           key={b.filePath || idx}
                           onClick={() => loadAndPreviewFile(b.filePath || '')}
-                          className="p-4 rounded-xl border border-fluent-border bg-fluent-card/70 hover:border-fluent-accent/50 cursor-pointer transition-all flex items-center justify-between"
+                          className="p-4 rounded-xl border border-fluent-border bg-fluent-card/70 hover:border-fluent-accent/50 cursor-pointer transition-all flex items-center justify-between gap-3 group"
                         >
-                          <div className="space-y-1 truncate pr-3">
+                          <div className="space-y-1 min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-bold text-fluent-text truncate">{fileName}</span>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-mono">
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-mono shrink-0">
                                 JSON
                               </span>
                             </div>
-                            <div className="text-[11px] text-fluent-muted flex items-center gap-2">
+                            <div className="text-[11px] text-fluent-muted flex flex-wrap items-center gap-2">
                               <span>{new Date(b.createdAt).toLocaleDateString()}</span>
                               <span>•</span>
                               <span>{b.wingetCount} Apps</span>
+                              {b.computerName && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-slate-300 font-medium">PC: {b.computerName}</span>
+                                </>
+                              )}
                             </div>
                           </div>
-                          <button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-fluent-card-hover border border-fluent-border text-fluent-text shrink-0">
-                            {t.backup.loadBtn}
-                          </button>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => loadAndPreviewFile(b.filePath || '')}
+                              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-fluent-accent/15 hover:bg-fluent-accent/25 border border-fluent-accent/30 text-fluent-accent hover:text-white transition-all"
+                            >
+                              {t.backup.loadBtn}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (b.filePath && window.confirm(t.backup.deleteBackupConfirm)) {
+                                  deleteLocalBackup(b.filePath)
+                                }
+                              }}
+                              title={t.backup.deleteBackupBtn}
+                              className="p-1.5 rounded-lg text-fluent-muted hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-all opacity-80 group-hover:opacity-100"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       )
                     })}

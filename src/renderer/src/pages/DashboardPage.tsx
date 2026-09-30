@@ -39,6 +39,25 @@ export const DashboardPage: React.FC = () => {
     return 'green'
   }
 
+  const formatVramShort = (mb: number, fallback: string): string => {
+    if (!mb || mb <= 0) return fallback
+    if (mb >= 1024) {
+      const gb = mb / 1024
+      return `${Number.isInteger(gb) ? gb : gb.toFixed(1)} GB`
+    }
+    return `${mb} MB`
+  }
+
+  const formatVramDetailed = (mb: number, fallback: string): string => {
+    if (!mb || mb <= 0) return fallback
+    if (mb >= 1024) {
+      const gb = mb / 1024
+      const gbFormatted = Number.isInteger(gb) ? gb.toString() : gb.toFixed(1)
+      return `${gbFormatted} GB (${mb.toLocaleString()} MB)`
+    }
+    return `${mb} MB`
+  }
+
   const cpuPercent = liveMetrics?.cpuUsagePercent ?? 0
   const ramPercent = liveMetrics?.ramUsagePercent ?? systemInfo?.ram.usagePercent ?? 0
   const gpuPercent = liveMetrics?.gpuUsagePercent ?? 0
@@ -139,10 +158,7 @@ export const DashboardPage: React.FC = () => {
                     },
                     {
                       label: t.dashboard.vram,
-                      value:
-                        systemInfo.gpus[0].adapterRAMMB > 0
-                          ? `${systemInfo.gpus[0].adapterRAMMB} MB`
-                          : t.dashboard.sharedVram
+                      value: formatVramShort(systemInfo.gpus[0].adapterRAMMB, t.dashboard.sharedVram)
                     }
                   ]
                 : undefined
@@ -341,7 +357,7 @@ export const DashboardPage: React.FC = () => {
                   />
                   <InfoItem
                     label={t.dashboard.dedicatedVram}
-                    value={gpu.adapterRAMMB > 0 ? `${gpu.adapterRAMMB} MB` : t.dashboard.sharedVramDesc}
+                    value={formatVramDetailed(gpu.adapterRAMMB, t.dashboard.sharedVramDesc)}
                   />
                   <InfoItem
                     label={t.dashboard.hardwareStatus}

@@ -248,6 +248,31 @@ export function useBackupMigration() {
     }
   }, [clearLogs, refreshAllHistory])
 
+  // Delete a local backup file
+  const deleteLocalBackup = useCallback(async (filePath: string): Promise<boolean> => {
+    try {
+      const ok = await window.mToolbox?.backup?.deleteBackup(filePath)
+      if (ok) {
+        setLocalJsonBackups((prev) => prev.filter((b) => b.filePath !== filePath))
+        setSelectedBackup((prev) => (prev?.filePath === filePath ? null : prev))
+      }
+      return Boolean(ok)
+    } catch (err: any) {
+      console.error('[useBackupMigration] deleteLocalBackup error:', err)
+      setError(err?.message || 'Fehler beim Löschen der Sicherungsdatei.')
+      return false
+    }
+  }, [])
+
+  // Open the local backups folder in Explorer
+  const openBackupsFolder = useCallback(async (): Promise<void> => {
+    try {
+      await window.mToolbox?.backup?.openBackupsFolder()
+    } catch (err: any) {
+      console.error('[useBackupMigration] openBackupsFolder error:', err)
+    }
+  }, [])
+
   // Select any backup file (.json or .mtoolbox)
   const selectAnyBackupFile = useCallback(async () => {
     if (!window.mToolbox?.backup) return
@@ -441,6 +466,8 @@ export function useBackupMigration() {
     selectAnyBackupFile,
     loadAndPreviewFile,
     restoreActive,
+    deleteLocalBackup,
+    openBackupsFolder,
     toggleJsonCategory,
     toggleMtbxApp,
     toggleAllMtbxApps,

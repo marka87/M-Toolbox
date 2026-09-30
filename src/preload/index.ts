@@ -90,6 +90,8 @@ export interface MToolboxAPI {
     restoreBackup: (filePathOrPayload: string | BackupPayload, selection: RestoreSelection) => Promise<{ success: boolean; error?: string }>
     previewBackup: (filePath: string) => Promise<BackupSummary>
     listLocalBackups: () => Promise<BackupSummary[]>
+    deleteBackup: (filePath: string) => Promise<boolean>
+    openBackupsFolder: () => Promise<void>
     selectBackupFile: () => Promise<string | null>
     saveBackupDialog: () => Promise<string | null>
     onProgress: (callback: (event: OperationLogEvent) => void) => () => void
@@ -195,6 +197,8 @@ export interface MToolboxAPI {
     minimize: () => Promise<void>
     maximize: () => Promise<void>
     close: () => Promise<void>
+    relaunch: () => Promise<void>
+    restartAsAdmin: () => Promise<void>
     openExternal: (url: string) => Promise<void>
     onVisibilityChange: (callback: (visible: boolean) => void) => () => void
   }
@@ -259,6 +263,10 @@ const api: MToolboxAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.BACKUP.PREVIEW_BACKUP, filePath),
     listLocalBackups: () =>
       ipcRenderer.invoke(IPC_CHANNELS.BACKUP.LIST_LOCAL_BACKUPS),
+    deleteBackup: (filePath: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP.DELETE_BACKUP, filePath),
+    openBackupsFolder: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP.OPEN_BACKUPS_FOLDER),
     selectBackupFile: () =>
       ipcRenderer.invoke(IPC_CHANNELS.BACKUP.SELECT_BACKUP_FILE),
     saveBackupDialog: () =>
@@ -421,6 +429,8 @@ const api: MToolboxAPI = {
     minimize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MINIMIZE_WINDOW),
     maximize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MAXIMIZE_WINDOW),
     close: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.CLOSE_WINDOW),
+    relaunch: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.RELAUNCH_APP),
+    restartAsAdmin: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.RESTART_AS_ADMIN),
     openExternal: (url) => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.OPEN_EXTERNAL, url),
     onVisibilityChange: (callback) => {
       const listener = (_event: Electron.IpcRendererEvent, visible: boolean) => {

@@ -1,6 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs'
-import { app } from 'electron'
+import { app, shell } from 'electron'
 import { PowerShellService } from './powershell.service'
 import { SoftwareService } from './software.service'
 import type {
@@ -248,6 +248,32 @@ export class BackupService {
     }
 
     return summaries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }
+
+  /**
+   * Deletes a local backup file
+   */
+  public async deleteBackup(filePath: string): Promise<boolean> {
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+        return true
+      }
+      return false
+    } catch (err) {
+      console.error('[BackupService] deleteBackup error:', err)
+      return false
+    }
+  }
+
+  /**
+   * Opens the backups directory in Windows Explorer
+   */
+  public async openBackupsFolder(): Promise<void> {
+    if (!fs.existsSync(this.backupsDir)) {
+      fs.mkdirSync(this.backupsDir, { recursive: true })
+    }
+    await shell.openPath(this.backupsDir)
   }
 
   /**

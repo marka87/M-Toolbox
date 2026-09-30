@@ -4,7 +4,29 @@ $os = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, Bu
 $act = Get-CimInstance SoftwareLicensingProduct -Filter "PartialProductKey IS NOT NULL" -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "*Windows*" } | Select-Object -First 1 Name, LicenseStatus, Description
 $cs = Get-CimInstance Win32_ComputerSystem | Select-Object Name, Domain, PartOfDomain
 $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 Name, Manufacturer, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed
-$gpus = @(Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, AdapterRAM, Status)
+$gpuReg = @{}
+try {
+    Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\000*" -ErrorAction SilentlyContinue | ForEach-Object {
+        $desc = $_.DriverDesc
+        $qwMem = $_.'HardwareInformation.qwMemorySize'
+        if ($desc -and $qwMem) {
+            $gpuReg[$desc] = [int64]$qwMem
+        }
+    }
+} catch {}
+
+$gpus = @(Get-CimInstance Win32_VideoController | ForEach-Object {
+    $ram = $_.AdapterRAM
+    if ($gpuReg.ContainsKey($_.Name) -and $gpuReg[$_.Name] -gt 0) {
+        $ram = $gpuReg[$_.Name]
+    }
+    [PSCustomObject]@{
+        Name = $_.Name
+        DriverVersion = $_.DriverVersion
+        AdapterRAM = $ram
+        Status = $_.Status
+    }
+})
 $memChips = @(Get-CimInstance Win32_PhysicalMemory | Select-Object Capacity, Speed, DeviceLocator, SMBIOSMemoryType, MemoryType, ConfiguredClockSpeed)
 $bios = Get-CimInstance Win32_BIOS | Select-Object Manufacturer, SMBIOSBIOSVersion, ReleaseDate, SerialNumber
 

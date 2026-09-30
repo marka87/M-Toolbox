@@ -11,7 +11,9 @@ import {
   Film,
   MessageSquare,
   Gamepad2,
-  Layers
+  Layers,
+  ShieldAlert,
+  ShieldCheck
 } from 'lucide-react'
 import type { SoftwarePackage, SoftwareCategory } from '@shared/types'
 import { useTranslation } from '../../i18n/LanguageContext'
@@ -173,9 +175,20 @@ export const PackageCard: React.FC<PackageCardProps> = ({
         </div>
 
         <div className="w-full min-w-0 px-1">
-          <h4 className="text-xs font-semibold text-slate-100 truncate" title={pkg.name}>
-            {pkg.name}
-          </h4>
+          <div className="flex items-center justify-center gap-1">
+            <h4 className="text-xs font-semibold text-slate-100 truncate" title={pkg.name}>
+              {pkg.name}
+            </h4>
+            {pkg.requiresAdmin !== false ? (
+              <span title={t.software.adminRequired} className="text-amber-400 shrink-0">
+                <ShieldAlert className="w-3 h-3" />
+              </span>
+            ) : (
+              <span title={t.software.userSpace} className="text-emerald-400 shrink-0">
+                <ShieldCheck className="w-3 h-3" />
+              </span>
+            )}
+          </div>
           <p className="text-[10px] text-fluent-muted truncate mt-0.5">
             {pkg.status === 'installed'
               ? `v${pkg.installedVersion || t.software.statusInstalled}`
@@ -222,6 +235,23 @@ export const PackageCard: React.FC<PackageCardProps> = ({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-slate-100 truncate">{pkg.name}</span>
+              {pkg.requiresAdmin !== false ? (
+                <span
+                  title={t.software.adminRequired}
+                  className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0"
+                >
+                  <ShieldAlert className="w-3 h-3" />
+                  <span>{t.software.adminBadge}</span>
+                </span>
+              ) : (
+                <span
+                  title={t.software.userSpace}
+                  className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0"
+                >
+                  <ShieldCheck className="w-3 h-3" />
+                  <span>{t.software.userBadge}</span>
+                </span>
+              )}
               <span className="text-[10px] text-fluent-muted truncate hidden md:inline">
                 {pkg.publisher || pkg.id}
               </span>
@@ -286,10 +316,29 @@ export const PackageCard: React.FC<PackageCardProps> = ({
               <Icon className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <h4 className="text-sm font-semibold text-slate-100 truncate" title={pkg.name}>
-                {pkg.name}
-              </h4>
-              <p className="text-[11px] text-fluent-muted truncate" title={pkg.publisher || pkg.id}>
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-sm font-semibold text-slate-100 truncate" title={pkg.name}>
+                  {pkg.name}
+                </h4>
+                {pkg.requiresAdmin !== false ? (
+                  <span
+                    title={t.software.adminRequired}
+                    className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0"
+                  >
+                    <ShieldAlert className="w-3 h-3" />
+                    <span>{t.software.adminBadge}</span>
+                  </span>
+                ) : (
+                  <span
+                    title={t.software.userSpace}
+                    className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0"
+                  >
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>{t.software.userBadge}</span>
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-fluent-muted truncate mt-0.5" title={pkg.publisher || pkg.id}>
                 {pkg.publisher || pkg.id}
               </p>
             </div>
