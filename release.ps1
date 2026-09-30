@@ -146,9 +146,10 @@ if (-not $NoPrompt) {
 # ------------------------------------------------------------------------------
 Write-Step "1/5" "Aktualisiere package.json auf v$finalVersion..."
 
-# Sauberes Ersetzen mit Regex, um Formatierung und Einrückung zu erhalten
+# Sauberes Ersetzen mit Regex, um Formatierung und Einrückung zu erhalten (strikt ohne UTF-8 BOM!)
 $updatedJson = $rawJson -replace '("version"\s*:\s*")[^"]+(")', "`${1}$finalVersion`${2}"
-[System.IO.File]::WriteAllText($pkgPath, $updatedJson, [System.Text.Encoding]::UTF8)
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($pkgPath, $updatedJson, $utf8NoBom)
 Write-Success "package.json erfolgreich aktualisiert."
 
 # ------------------------------------------------------------------------------
