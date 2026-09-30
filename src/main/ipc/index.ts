@@ -191,6 +191,19 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     await repairService.restartAsAdmin()
   })
 
+  ipcMain.handle(IPC_CHANNELS.SYSTEM.OPEN_EXTERNAL, async (_, url: string) => {
+    if (url && typeof url === 'string') {
+      try {
+        await shell.openExternal(url)
+        return true
+      } catch (err) {
+        console.error('[IPC] shell.openExternal failed:', err)
+        return false
+      }
+    }
+    return false
+  })
+
   // Software Center IPC
   const softwareService = SoftwareService.getInstance()
 
