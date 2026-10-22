@@ -1,4 +1,4 @@
-import { app, BrowserWindow, nativeTheme } from 'electron'
+import { app, BrowserWindow, nativeTheme, shell } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -8,6 +8,7 @@ import { DashboardService } from './services/dashboard.service'
 import { WidgetService } from './services/widget.service'
 import { SettingsService } from './services/settings.service'
 import { TrayService } from './services/tray.service'
+import { isAllowedExternalUrl } from './utils/external-url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -84,6 +85,14 @@ function createWindow() {
 
   mainWindow.webContents.on('console-message', (_, level, message, line, sourceId) => {
     console.log(`[Renderer Console] [Level ${level}] ${message} (${sourceId}:${line})`)
+  })
+
+  // target="_blank" links open in the default browser, never in a bare Electron window
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (isAllowedExternalUrl(url)) {
+      shell.openExternal(url).catch((err) => console.error('[App] shell.openExternal failed:', err))
+    }
+    return { action: 'deny' }
   })
 
   // Register all typed IPC handlers

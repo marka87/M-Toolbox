@@ -19,6 +19,7 @@ import { performanceService } from '../services/performance.service'
 import { WidgetService } from '../services/widget.service'
 import { telemetryService } from '../services/telemetry.service'
 import { trayService } from '../services/tray.service'
+import { isAllowedExternalUrl } from '../utils/external-url'
 import type { PowerProfileMode, AppSettings, TelemetryMetric } from '../../shared/types'
 import type { ReinstallRestoreOptions } from '../../shared/reinstall.types'
 
@@ -191,17 +192,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     await repairService.restartAsAdmin()
   })
 
-  ipcMain.handle(IPC_CHANNELS.SYSTEM.OPEN_EXTERNAL, async (_, url: string) => {
-    if (url && typeof url === 'string') {
-      try {
-        await shell.openExternal(url)
-        return true
-      } catch (err) {
-        console.error('[IPC] shell.openExternal failed:', err)
-        return false
-      }
-    }
-    return false
+  ipcMain.handle(IPC_CHANNELS.SYSTEM.OPEN_EXTERNAL, (_, url: unknown) => {
+    if (!isAllowedExternalUrl(url)) throw new Error(`Blocked external URL: ${String(url)}`)
+    return shell.openExternal(url)
   })
 
   // Software Center IPC

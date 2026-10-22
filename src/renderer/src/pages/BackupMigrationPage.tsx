@@ -1159,6 +1159,7 @@ export const BackupMigrationPage: React.FC = () => {
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => {
+                            e.preventDefault()
                             e.stopPropagation()
                             window.mToolbox?.system?.openExternal(item.link!)
                           }}
