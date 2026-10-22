@@ -2,7 +2,8 @@ import { spawn } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import { execAsync } from '../utils/exec'
+import { execAsync, execFileAsync } from '../utils/exec'
+import { parseStartupItemId, startupApprovedHex } from '../utils/startup-approved'
 import type {
   AdvancedToolItem,
   StartupItem,
@@ -231,6 +232,17 @@ export class AdvancedService {
     const psScript = `& {
       $items = @()
 
+      # StartupApproved (also used by Task Manager): first byte odd (03, 07) = disabled
+      function Test-Approved($approved, $name) {
+        $v = if ($approved) { $approved.PSObject.Properties[$name] }
+        if ($v -and $v.Value -is [byte[]] -and $v.Value.Length -gt 0) { return (($v.Value[0] -band 1) -eq 0) }
+        return $true
+      }
+      $approvedBase = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved"
+      $hkcuApproved = Get-ItemProperty -Path "HKCU:\\$approvedBase\\Run" -ErrorAction SilentlyContinue
+      $hklmApproved = Get-ItemProperty -Path "HKLM:\\$approvedBase\\Run" -ErrorAction SilentlyContinue
+      $folderApproved = Get-ItemProperty -Path "HKCU:\\$approvedBase\\StartupFolder" -ErrorAction SilentlyContinue
+
       # 1. HKCU Run
       $hkcu = Get-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" -ErrorAction SilentlyContinue
       if ($hkcu) {
@@ -241,7 +253,7 @@ export class AdvancedService {
             Command = [string]$_.Value
             Scope = "User"
             Location = "HKCU\\...\\Run"
-            IsEnabled = $true
+            IsEnabled = (Test-Approved $hkcuApproved $_.Name)
           }
         }
       }
@@ -256,7 +268,7 @@ export class AdvancedService {
             Command = [string]$_.Value
             Scope = "System"
             Location = "HKLM\\...\\Run"
-            IsEnabled = $true
+            IsEnabled = (Test-Approved $hklmApproved $_.Name)
           }
         }
       }
@@ -271,7 +283,7 @@ export class AdvancedService {
             Command = $_.FullName
             Scope = "Folder"
             Location = "Startup-Ordner"
-            IsEnabled = (-not $_.Name.EndsWith(".disabled"))
+            IsEnabled = ((-not $_.Name.EndsWith(".disabled")) -and (Test-Approved $folderApproved $_.Name))
           }
         }
       }
@@ -309,17 +321,14 @@ export class AdvancedService {
    * Deletes an autostart item safely from registry or startup folder.
    */
   public async deleteStartupItem(itemId: string): Promise<{ success: boolean; message: string }> {
+    const target = parseStartupItemId(itemId)
+    if (!target) return { success: false, message: 'Unbekannter Autostart-Eintrag.' }
+
     try {
-      if (itemId.startsWith('hkcu_')) {
-        const name = itemId.replace('hkcu_', '')
-        const ps = `Remove-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" -Name "${name}" -Force`
-        await execAsync(`powershell.exe -NoProfile -Command "${ps}"`)
-      } else if (itemId.startsWith('hklm_')) {
-        const name = itemId.replace('hklm_', '')
-        const ps = `Remove-ItemProperty -Path "HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" -Name "${name}" -Force`
-        await execAsync(`powershell.exe -NoProfile -Command "${ps}"`)
-      } else if (itemId.startsWith('folder_')) {
-        const name = itemId.replace('folder_', '')
+      if (target.runKey) {
+        // reg.exe without a shell: names with spaces, quotes or $ are passed as-is
+        await execFileAsync('reg', ['delete', target.runKey, '/v', target.name, '/f'])
+      } else {
         const folder = path.join(
           process.env.APPDATA || '',
           'Microsoft',
@@ -328,7 +337,7 @@ export class AdvancedService {
           'Programs',
           'Startup'
         )
-        const targetFile = path.join(folder, name)
+        const targetFile = path.join(folder, target.name)
         if (fs.existsSync(targetFile)) {
           fs.unlinkSync(targetFile)
         }
@@ -337,6 +346,37 @@ export class AdvancedService {
       return { success: true, message: 'Autostart-Eintrag wurde erfolgreich entfernt.' }
     } catch (err: any) {
       return { success: false, message: `Fehler beim Löschen: ${err?.message || 'Unbekannt'}` }
+    }
+  }
+
+  /**
+   * Enables or disables an autostart item without removing it (StartupApproved, like Task Manager).
+   */
+  public async setStartupItemEnabled(
+    itemId: string,
+    enabled: boolean
+  ): Promise<{ success: boolean; message: string }> {
+    const target = parseStartupItemId(itemId)
+    if (!target) return { success: false, message: 'Unbekannter Autostart-Eintrag.' }
+
+    try {
+      await execFileAsync('reg', [
+        'add',
+        target.approvedKey,
+        '/v',
+        target.name,
+        '/t',
+        'REG_BINARY',
+        '/d',
+        startupApprovedHex(enabled === true),
+        '/f'
+      ])
+      return {
+        success: true,
+        message: enabled ? 'Autostart-Eintrag wurde aktiviert.' : 'Autostart-Eintrag wurde deaktiviert.'
+      }
+    } catch (err: any) {
+      return { success: false, message: `Fehler beim Ändern: ${err?.message || 'Unbekannt'}` }
     }
   }
 

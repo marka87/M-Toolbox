@@ -63,11 +63,7 @@ export const RAMGuardianPage: React.FC = () => {
   }, [processes, searchQuery])
 
   // Handle disable startup
-  const handleDisableStartup = async (itemKey: string, itemName: string) => {
-    // Generate id matching advancedService convention
-    const id = itemKey.startsWith('hkcu_') || itemKey.startsWith('hklm_') || itemKey.startsWith('folder_')
-      ? itemKey
-      : `hkcu_${itemName}`
+  const handleDisableStartup = async (id: string) => {
     setDisablingId(id)
     try {
       await disableStartup(id)
@@ -795,12 +791,12 @@ export const RAMGuardianPage: React.FC = () => {
                       </td>
                       <td className="py-2.5 px-4 text-right">
                         <button
-                          onClick={() => handleDisableStartup(app.name, app.name)}
-                          disabled={disablingId === app.name}
+                          onClick={() => handleDisableStartup(app.id)}
+                          disabled={disablingId === app.id}
                           className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-fluent-card border border-fluent-border hover:border-rose-500/40 hover:text-rose-400 text-fluent-text transition-all disabled:opacity-50"
                           title={t.ramGuardian.disableStartupTooltip}
                         >
-                          {disablingId === app.name ? '...' : t.ramGuardian.disableAction}
+                          {disablingId === app.id ? '...' : t.ramGuardian.disableAction}
                         </button>
                       </td>
                     </tr>

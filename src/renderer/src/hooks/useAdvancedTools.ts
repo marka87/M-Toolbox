@@ -111,6 +111,21 @@ export function useAdvancedTools() {
     }
   }, [loadStartupItems])
 
+  // Enable or disable a startup item without removing it
+  const toggleStartupItem = useCallback(async (itemId: string, enabled: boolean) => {
+    try {
+      const res = await window.mToolbox.advanced.setStartupItemEnabled(itemId, enabled)
+      if (res.success) {
+        showToast(res.message, 'success')
+        await loadStartupItems()
+      } else {
+        showToast(res.message, 'error')
+      }
+    } catch (err: any) {
+      showToast(`Fehler beim Ändern: ${err?.message || 'Unbekannt'}`, 'error')
+    }
+  }, [loadStartupItems])
+
   // Toggle or modify hosts entry
   const saveHostsEntries = useCallback(async (newEntries: HostsEntry[]) => {
     try {
@@ -185,6 +200,7 @@ export function useAdvancedTools() {
     loadingStartup,
     loadStartupItems,
     deleteStartupItem,
+    toggleStartupItem,
     hostsData,
     loadingHosts,
     savingHosts,

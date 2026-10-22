@@ -512,6 +512,13 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     return await advancedService.deleteStartupItem(itemId)
   })
 
+  ipcMain.handle(
+    IPC_CHANNELS.ADVANCED.TOGGLE_STARTUP_ITEM,
+    async (_, itemId: string, enabled: boolean) => {
+      return await advancedService.setStartupItemEnabled(itemId, enabled)
+    }
+  )
+
   ipcMain.handle(IPC_CHANNELS.ADVANCED.GET_HOSTS_FILE, async () => {
     return await advancedService.getHostsFile()
   })

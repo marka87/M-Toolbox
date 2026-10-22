@@ -261,7 +261,8 @@ export class RAMService {
    */
   public async getAppHygiene(): Promise<AppHygieneReport> {
     try {
-      const startupRaw = await advancedService.getStartupItems()
+      // Disabled entries do not start, so they cost no RAM
+      const startupRaw = (await advancedService.getStartupItems()).filter((item) => item.isEnabled)
       const topProcesses = await this.getTopProcesses(50)
       const processMap = new Map<string, RAMProcessItem>()
       topProcesses.forEach((p) => processMap.set(p.name.toLowerCase(), p))
@@ -296,6 +297,7 @@ export class RAMService {
           estimatedRAMMB > 250 ? 'high' : estimatedRAMMB > 100 ? 'medium' : 'low'
 
         return {
+          id: raw.id,
           name: raw.name,
           command: raw.command,
           location: raw.location,
@@ -674,10 +676,10 @@ export class RAMService {
   }
 
   /**
-   * Disables or removes an autostart item via AdvancedService.
+   * Disables an autostart item via AdvancedService (reversible, entry is kept).
    */
   public async disableStartupItem(itemId: string): Promise<{ success: boolean; message: string }> {
-    return await advancedService.deleteStartupItem(itemId)
+    return await advancedService.setStartupItemEnabled(itemId, false)
   }
 }
 

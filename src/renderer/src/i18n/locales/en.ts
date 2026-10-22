@@ -889,6 +889,8 @@ export const en: TranslationDict = {
     startupEmpty: 'No startup entries found in this category.',
     startupConfirmDelete: 'Are you sure you want to remove "{name}" from startup?',
     startupDeleteTooltip: 'Remove from startup',
+    startupEnabledTitle: 'Enabled (click to disable)',
+    startupDisabledTitle: 'Disabled (click to enable)',
     hostsTitle: 'Windows Hosts File Editor',
     hostsSubtitle: 'Manage local domain and IP redirects (automatic backup at hosts.bak)',
     hostsAddTitle: 'Add new host entry',

@@ -151,6 +151,10 @@ export interface MToolboxAPI {
     launchTool: (toolId: string) => Promise<{ success: boolean; message: string }>
     getStartupItems: () => Promise<StartupItem[]>
     deleteStartupItem: (itemId: string) => Promise<{ success: boolean; message: string }>
+    setStartupItemEnabled: (
+      itemId: string,
+      enabled: boolean
+    ) => Promise<{ success: boolean; message: string }>
     getHostsFile: () => Promise<HostsFileContent>
     saveHostsFile: (entries: HostsEntry[]) => Promise<{ success: boolean; message: string }>
   }
@@ -373,6 +377,8 @@ const api: MToolboxAPI = {
     getStartupItems: () => ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.GET_STARTUP_ITEMS),
     deleteStartupItem: (itemId: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.DELETE_STARTUP_ITEM, itemId),
+    setStartupItemEnabled: (itemId: string, enabled: boolean) =>
+      ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.TOGGLE_STARTUP_ITEM, itemId, enabled),
     getHostsFile: () => ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.GET_HOSTS_FILE),
     saveHostsFile: (entries: HostsEntry[]) =>
       ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.SAVE_HOSTS_FILE, entries)

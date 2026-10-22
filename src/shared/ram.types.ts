@@ -25,6 +25,7 @@ export interface RAMProcessItem {
 }
 
 export interface StartupApp {
+  id: string
   name: string
   command: string
   location: string

@@ -46,6 +46,7 @@ export const AdvancedPage: React.FC = () => {
     loadingStartup,
     loadStartupItems,
     deleteStartupItem,
+    toggleStartupItem,
     hostsData,
     loadingHosts,
     savingHosts,
@@ -278,6 +279,7 @@ export const AdvancedPage: React.FC = () => {
           loading={loadingStartup}
           onRefresh={loadStartupItems}
           onDelete={deleteStartupItem}
+          onToggle={toggleStartupItem}
         />
       )}
 

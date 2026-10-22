@@ -15,16 +15,28 @@ interface StartupManagerCardProps {
   loading: boolean
   onRefresh: () => void
   onDelete: (itemId: string) => void
+  onToggle: (itemId: string, enabled: boolean) => Promise<void>
 }
 
 export const StartupManagerCard: React.FC<StartupManagerCardProps> = ({
   items,
   loading,
   onRefresh,
-  onDelete
+  onDelete,
+  onToggle
 }) => {
   const { t } = useTranslation()
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+
+  const handleToggle = async (item: StartupItem) => {
+    setTogglingId(item.id)
+    try {
+      await onToggle(item.id, !item.isEnabled)
+    } finally {
+      setTogglingId(null)
+    }
+  }
   const [filter, setFilter] = useState<'all' | 'User' | 'System' | 'Folder'>('all')
 
   const handleDelete = (item: StartupItem) => {
@@ -104,7 +116,7 @@ export const StartupManagerCard: React.FC<StartupManagerCardProps> = ({
               key={item.id}
               className="flex items-center justify-between gap-3 p-3 rounded-xl bg-fluent-bg/60 border border-fluent-border/40 hover:border-fluent-border/70 transition-colors"
             >
-              <div className="flex items-start gap-3 min-w-0">
+              <div className={`flex items-start gap-3 min-w-0 ${item.isEnabled ? '' : 'opacity-50'}`}>
                 <div className="p-2 rounded-lg bg-fluent-card border border-fluent-border/40 mt-0.5 shrink-0">
                   {item.scope === 'User' ? (
                     <User className="w-3.5 h-3.5 text-blue-400" />
@@ -138,7 +150,15 @@ export const StartupManagerCard: React.FC<StartupManagerCardProps> = ({
                 </div>
               </div>
 
-              <div className="shrink-0">
+              <div className="shrink-0 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={item.isEnabled}
+                  disabled={togglingId === item.id}
+                  onChange={() => handleToggle(item)}
+                  title={item.isEnabled ? t.advanced.startupEnabledTitle : t.advanced.startupDisabledTitle}
+                  className="rounded border-fluent-border/80 text-fluent-accent focus:ring-fluent-accent w-4 h-4 cursor-pointer disabled:opacity-50"
+                />
                 <button
                   onClick={() => handleDelete(item)}
                   disabled={deletingId === item.id}
