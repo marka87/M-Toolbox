@@ -9,7 +9,6 @@ export const en: TranslationDict = {
     cancel: 'Cancel',
     close: 'Close',
     refresh: 'Refresh',
-    new: 'New',
     ok: 'OK',
     yes: 'Yes',
     no: 'No',

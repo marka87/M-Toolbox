@@ -20,7 +20,6 @@ import { useTranslation } from '../../i18n/LanguageContext'
 interface NavItemConfig {
   id: NavigationModule
   icon: React.ComponentType<{ className?: string }>
-  hasBadge?: boolean
 }
 
 const NAV_ITEMS: NavItemConfig[] = [
@@ -29,7 +28,7 @@ const NAV_ITEMS: NavItemConfig[] = [
   { id: 'backup', icon: Archive },
   { id: 'driver', icon: Cpu },
   { id: 'ram-guardian', icon: Activity },
-  { id: 'battery', icon: BatteryCharging, hasBadge: true },
+  { id: 'battery', icon: BatteryCharging },
   { id: 'cleanup', icon: Trash2 },
   { id: 'repair', icon: Wrench },
   { id: 'tweaks', icon: Sliders },
@@ -79,11 +78,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onSelectModule }
                   />
                   <span>{label}</span>
                 </div>
-                {item.hasBadge && (
-                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-fluent-border text-fluent-subtext">
-                    {t.common.new}
-                  </span>
-                )}
               </button>
             )
           })}

@@ -42,19 +42,11 @@ export interface SoftwareDuplicateGroup {
   description: string
 }
 
-export interface InactiveApp {
-  name: string
-  id?: string
-  lastUsedDays: number
-  installLocation?: string
-}
-
 export interface AppHygieneReport {
   startupApps: StartupApp[]
   totalStartupRAMMB: number
   startupAppCount: number
   duplicateGroups: SoftwareDuplicateGroup[]
-  inactiveApps: InactiveApp[]
   headline: string
 }
 

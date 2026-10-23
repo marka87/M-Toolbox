@@ -3,7 +3,6 @@ import * as path from 'path'
 import * as os from 'os'
 import { databaseService } from './database.service'
 import { advancedService } from './advanced.service'
-import { SoftwareService } from './software.service'
 import { powershellService } from './powershell.service'
 import { powerShellWorker } from './powershell-worker.service'
 import type {
@@ -12,7 +11,6 @@ import type {
   AppHygieneReport,
   StartupApp,
   SoftwareDuplicateGroup,
-  InactiveApp,
   RAMRecommendation,
   RAMHealthScore,
   RAMCleanupResult
@@ -183,11 +181,15 @@ export class RAMService {
         const workingSetMB = Math.round(workingSetBytes / (1024 * 1024))
         const privateMB = Math.round(Number(item.PM || 0) / (1024 * 1024))
 
-        // Update rolling sample history (keep last 12 samples)
+        // Update rolling sample history (keep last 12 samples). At most one sample per 30 s:
+        // this runs several times per refresh, and a leak must span minutes, not seconds
         const history = this.processSamples.get(pid) || []
-        history.push({ workingSetMB, privateMB, timestamp: now })
-        if (history.length > 12) {
-          history.shift()
+        const lastSample = history[history.length - 1]
+        if (!lastSample || now - lastSample.timestamp >= 30000) {
+          history.push({ workingSetMB, privateMB, timestamp: now })
+          if (history.length > 12) {
+            history.shift()
+          }
         }
         this.processSamples.set(pid, history)
 
@@ -318,7 +320,8 @@ export class RAMService {
         { name: 'Dropbox', pattern: /dropbox/i },
         { name: 'iCloud', pattern: /icloud/i },
         { name: 'Nextcloud', pattern: /nextcloud/i },
-        { name: 'Box', pattern: /box sync|box/i }
+        // Not just /box/: that matched Dropbox, Xbox and VirtualBox
+        { name: 'Box', pattern: /^box(ui)?(\s|$)|box drive|box sync/i }
       ]
       const runningAndStartupNames = [
         ...startupRaw.map((s) => s.name + ' ' + s.command),
@@ -380,23 +383,6 @@ export class RAMService {
         })
       }
 
-      // Inactive apps (sample from installed packages older than 90 days if available)
-      const inactiveApps: InactiveApp[] = []
-      try {
-        const installed = await SoftwareService.getInstance().getInstalledPackages()
-        // Highlight programs with older install footprints
-        installed.slice(0, 5).forEach((p) => {
-          inactiveApps.push({
-            name: p.name,
-            id: p.id,
-            lastUsedDays: 95,
-            installLocation: p.version
-          })
-        })
-      } catch {
-        // ignore
-      }
-
       const totalGB = (totalStartupRAMMB / 1024).toFixed(1)
       const headline = `Du hast ${startupApps.length} Programme im Autostart. Geschätzt ${totalGB} GB RAM werden direkt nach dem Start belegt.`
 
@@ -405,7 +391,6 @@ export class RAMService {
         totalStartupRAMMB,
         startupAppCount: startupApps.length,
         duplicateGroups,
-        inactiveApps,
         headline
       }
     } catch (err) {
@@ -415,7 +400,6 @@ export class RAMService {
         totalStartupRAMMB: 0,
         startupAppCount: 0,
         duplicateGroups: [],
-        inactiveApps: [],
         headline: 'Autostart-Analyse nicht verfügbar.'
       }
     }
@@ -657,12 +641,14 @@ export class RAMService {
       for (const file of files) {
         const fullPath = path.join(dirPath, file)
         try {
+          // Count only what was really deleted (locked files or missing rights must not show as freed)
           const stat = await fs.promises.stat(fullPath)
           if (stat.isDirectory()) {
-            await fs.promises.rm(fullPath, { recursive: true, force: true }).catch(() => {})
-            freed += stat.size
+            const size = await this.directorySize(fullPath)
+            await fs.promises.rm(fullPath, { recursive: true, force: true })
+            freed += size
           } else {
-            await fs.promises.unlink(fullPath).catch(() => {})
+            await fs.promises.unlink(fullPath)
             freed += stat.size
           }
         } catch {
@@ -673,6 +659,16 @@ export class RAMService {
       // Directory inaccessible: skip safely
     }
     return freed
+  }
+
+  private async directorySize(dirPath: string): Promise<number> {
+    let size = 0
+    for (const entry of await fs.promises.readdir(dirPath, { withFileTypes: true, recursive: true })) {
+      if (entry.isFile()) {
+        size += (await fs.promises.stat(path.join(entry.parentPath, entry.name))).size
+      }
+    }
+    return size
   }
 
   /**

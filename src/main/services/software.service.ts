@@ -1,4 +1,4 @@
-import { PowerShellService } from './powershell.service'
+import { PowerShellService, type PowerShellResult } from './powershell.service'
 import type {
   SoftwarePackage,
   InstalledPackage,
@@ -659,9 +659,30 @@ const CURATED_PACKAGES: CuratedPackageDef[] = [
 export class SoftwareService {
   private static instance: SoftwareService
   private ps: PowerShellService
+  // winget fails (exit 1, empty output) in ~30% of calls when several instances start at once,
+  // so every winget call runs one after another
+  private wingetQueue: Promise<unknown> = Promise.resolve()
+  // Identical read commands requested while one is still waiting share that run
+  private pendingReads = new Map<string, Promise<PowerShellResult>>()
 
   private constructor() {
     this.ps = PowerShellService.getInstance()
+  }
+
+  private runWinget<T>(task: () => Promise<T>): Promise<T> {
+    const result = this.wingetQueue.then(task, task)
+    this.wingetQueue = result.catch(() => undefined)
+    return result
+  }
+
+  private readWinget(command: string, timeoutMs: number): Promise<PowerShellResult> {
+    let pending = this.pendingReads.get(command)
+    if (!pending) {
+      pending = this.runWinget(() => this.ps.executeCommand(command, timeoutMs))
+      this.pendingReads.set(command, pending)
+      pending.finally(() => this.pendingReads.delete(command)).catch(() => undefined)
+    }
+    return pending
   }
 
   public static getInstance(): SoftwareService {
@@ -738,7 +759,7 @@ export class SoftwareService {
   public async getInstalledPackages(source?: string): Promise<InstalledPackage[]> {
     try {
       const sourceArgument = source ? ` --source ${source}` : ''
-      const res = await this.ps.executeCommand(`winget list${sourceArgument} --accept-source-agreements`, 60000)
+      const res = await this.readWinget(`winget list${sourceArgument} --accept-source-agreements`, 60000)
       const rows = this.parseWingetTable(res.stdout)
 
       const ignoredId = /(windowsappruntime|vclibs|dotnet|netcore|windowsdesktop|vcredist|xnaredist|redist|runtime|webview2|appinstaller|desktopappinstaller)/i
@@ -771,7 +792,7 @@ export class SoftwareService {
    */
   public async getAvailableUpdates(): Promise<PackageUpdate[]> {
     try {
-      const res = await this.ps.executeCommand('winget upgrade --include-unknown --accept-source-agreements', 60000)
+      const res = await this.readWinget('winget upgrade --include-unknown --accept-source-agreements', 60000)
       const rows = this.parseWingetTable(res.stdout)
 
       return rows
@@ -874,20 +895,26 @@ export class SoftwareService {
       }
     }
 
-    this.ps.streamCommand(
-      command,
-      (data) => emitClean('stdout', data),
-      (data) => emitClean('stderr', data),
-      (code) => {
-        const success = code === 0
-        onProgress({
-          type: 'exit',
-          line: success ? successMsg : `${failMsg} (Code: ${code}).`,
-          packageId,
-          exitCode: code ?? undefined
+    void this.runWinget(
+      () =>
+        new Promise<void>((done) => {
+          this.ps.streamCommand(
+            command,
+            (data) => emitClean('stdout', data),
+            (data) => emitClean('stderr', data),
+            (code) => {
+              const success = code === 0
+              onProgress({
+                type: 'exit',
+                line: success ? successMsg : `${failMsg} (Code: ${code}).`,
+                packageId,
+                exitCode: code ?? undefined
+              })
+              resolve({ success, error: success ? undefined : `${failMsg} mit Exit-Code ${code}` })
+              done()
+            }
+          )
         })
-        resolve({ success, error: success ? undefined : `${failMsg} mit Exit-Code ${code}` })
-      }
     )
   }
 
@@ -985,7 +1012,7 @@ export class SoftwareService {
     if (cleanQuery.length < 2) return []
 
     try {
-      const res = await this.ps.executeCommand(
+      const res = await this.readWinget(
         `winget search "${cleanQuery}" --accept-source-agreements`,
         25000
       )

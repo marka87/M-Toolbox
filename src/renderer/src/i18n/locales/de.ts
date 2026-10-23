@@ -7,7 +7,6 @@ export const de = {
     cancel: 'Abbrechen',
     close: 'Schließen',
     refresh: 'Aktualisieren',
-    new: 'Neu',
     ok: 'OK',
     yes: 'Ja',
     no: 'Nein',
