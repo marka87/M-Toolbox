@@ -204,7 +204,7 @@ M-Toolbox/
 - **`window.mToolbox.network`:** `getDiagnostics()`, `getWanIp()`, `pingTargets()`, `benchmarkDns()`, `scanPorts()`, `flushDns()`, `renewIp()`, `openNetworkConnections()`
 - **`window.mToolbox.advanced`:** `getTools()`, `launchTool()`, `getStartupItems()`, `toggleStartupItem()`, `deleteStartupItem()`, `getHostsFile()`, `saveHostsFile()`
 - **`window.mToolbox.ram`:** `getStats()`, `getTopProcesses()`, `getHygiene()`, `getRecommendations()`, `getHealthScore()`, `getHistory24h()`, `cleanWindows()`, `disableStartup()`
-- **`window.mToolbox.battery`:** `getInfo()`, `getPowerProfiles()`, `setPowerProfile(mode)`, `setPowerPlan()`, `generateReport()`, `killProcess()`
+- **`window.mToolbox.battery`:** `getInfo()`, `setPowerPlan()`, `generateReport()`, `killProcess()`
 - **`window.mToolbox.settings`:** `getSettings()`, `saveSettings()`, `checkUpdates()`, `getAppInfo()`, `openUserDataFolder()`, `clearCache()`, `resetSettings()`
 - **`window.mToolbox.widget`:** `toggle()`, `getState()`, `setAlwaysOnTop()`, `restoreMainWindow()`, `close()`
 - **`window.mToolbox.system`:** `minimize()`, `maximize()`, `close()`, `openExternal()`

@@ -708,21 +708,3 @@ export interface PerformanceModeResult {
   isActive: boolean
   message: string
 }
-
-// -------------------------------------------------------------
-// Modul: Energie-Profile Typen
-// -------------------------------------------------------------
-
-export type PowerProfileMode = 'eco' | 'balanced' | 'performance'
-
-export interface PowerProfileInfo {
-  mode: PowerProfileMode
-  title: string
-  description: string
-  planGuid: string
-  cpuMaxPercentBattery: number
-  cpuMaxPercentAc: number
-  screenTimeoutMinutesBattery: number
-  screenTimeoutMinutesAc: number
-  isActive: boolean
-}

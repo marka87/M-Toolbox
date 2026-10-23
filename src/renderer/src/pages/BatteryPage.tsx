@@ -16,9 +16,7 @@ import {
   Activity,
   X,
   Skull,
-  Leaf,
-  Gauge,
-  Loader2
+  ExternalLink
 } from 'lucide-react'
 import { useBattery } from '../hooks/useBattery'
 import { Card } from '../components/ui/Card'
@@ -35,10 +33,8 @@ export const BatteryPage: React.FC = () => {
   const { t, language } = useTranslation()
   const {
     info,
-    powerProfiles,
     isLoading,
     isSwitchingPlan,
-    switchingMode,
     isGeneratingReport,
     isLiveMonitoring,
     liveIntervalSec,
@@ -53,7 +49,6 @@ export const BatteryPage: React.FC = () => {
     dismissAlert,
     killDrainProcess,
     setPowerPlan,
-    setPowerProfile,
     generateReport
   } = useBattery()
 
@@ -700,114 +695,26 @@ export const BatteryPage: React.FC = () => {
         </>
       )}
 
-      {/* 3 Interactive Curated Energy Profiles */}
-      {powerProfiles && powerProfiles.length > 0 && (
-        <Card className="p-6 space-y-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-fluent-accent" />
-              <h3 className="text-sm font-semibold text-slate-100">
-                {t.battery.quickProfilesTitle}
-              </h3>
-            </div>
-            <p className="text-xs text-fluent-muted">
-              {t.battery.quickProfilesSubtitle}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {powerProfiles.map((p) => {
-              const isEco = p.mode === 'eco'
-              const isPerf = p.mode === 'performance'
-
-              const borderClass = p.isActive
-                ? isEco
-                  ? 'border-emerald-500/80 bg-emerald-950/20 shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500/50'
-                  : isPerf
-                  ? 'border-purple-500/80 bg-purple-950/20 shadow-lg shadow-purple-500/10 ring-1 ring-purple-500/50'
-                  : 'border-fluent-accent/80 bg-fluent-accent/10 shadow-lg shadow-fluent-accent/10 ring-1 ring-fluent-accent/50'
-                : 'border-fluent-border bg-fluent-card/70 hover:border-fluent-border-hover'
-
-              const badgeBg = isEco
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                : isPerf
-                ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
-                : 'bg-fluent-accent/20 text-fluent-accent border-fluent-accent/30'
-
-              const Icon = isEco ? Leaf : isPerf ? Flame : Gauge
-
-              return (
-                <div
-                  key={p.mode}
-                  onClick={() => !p.isActive && !isSwitchingPlan && setPowerProfile(p.mode)}
-                  className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-4 ${borderClass}`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`p-2 rounded-xl border ${badgeBg}`}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <span className="text-sm font-bold text-slate-100">{p.title}</span>
-                      </div>
-                      {p.isActive && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-fluent-accent text-white shadow-sm">
-                          {t.battery.activeBadge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-fluent-muted leading-relaxed">
-                      {p.description}
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5 pt-2 border-t border-fluent-border/40 text-[11px] text-fluent-muted">
-                    <div className="flex justify-between">
-                      <span>{t.battery.cpuLimitBattery}</span>
-                      <span className="font-semibold text-fluent-text">{p.cpuMaxPercentBattery}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{t.battery.displayTimeout}</span>
-                      <span className="font-semibold text-fluent-text">{p.screenTimeoutMinutesBattery} Min.</span>
-                    </div>
-
-                    <button
-                      disabled={p.isActive || isSwitchingPlan}
-                      className={`w-full mt-2 py-2 rounded-xl text-xs font-semibold transition-all ${
-                        p.isActive
-                          ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 cursor-default'
-                          : 'bg-fluent-card border border-fluent-border hover:bg-fluent-accent hover:text-white hover:border-transparent text-fluent-text disabled:opacity-50 disabled:cursor-not-allowed'
-                      }`}
-                    >
-                      {p.isActive ? (
-                        t.battery.profileIsActive
-                      ) : switchingMode === p.mode ? (
-                        <span className="flex items-center justify-center gap-1.5">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>{t.battery.activating}</span>
-                        </span>
-                      ) : (
-                        t.battery.activateBtn
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </Card>
-      )}
-
       {/* Windows Power Schemes (Available on both Laptop & Desktop) */}
       <Card className="p-6 space-y-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-fluent-accent" />
-            <h3 className="text-sm font-semibold text-slate-100">{t.battery.powerSchemesTitle}</h3>
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-fluent-accent" />
+              <h3 className="text-sm font-semibold text-slate-100">{t.battery.powerSchemesTitle}</h3>
+            </div>
+            <p className="text-xs text-fluent-muted">
+              {t.battery.powerSchemesSubtitle}
+            </p>
           </div>
-          <p className="text-xs text-fluent-muted">
-            {t.battery.powerSchemesSubtitle}
-          </p>
+          {/* Windows' own power mode (slider) is what the OS and OEM tune on modern laptops */}
+          <button
+            onClick={() => window.mToolbox.system.openExternal('ms-settings:powersleep')}
+            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-fluent-card border border-fluent-border hover:bg-fluent-card-hover text-fluent-text transition-all"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>{t.battery.openPowerModeBtn}</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

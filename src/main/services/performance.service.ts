@@ -67,7 +67,9 @@ export class PerformanceService {
           gameModeEnabled,
           searchIndexerPaused,
           highPerformancePlanActive,
-          previousPowerPlanGuid: this.state.previousPowerPlanGuid || data.ActivePowerGuid
+          // Never remember a high performance plan as the one to go back to (e.g. after an app restart)
+          previousPowerPlanGuid:
+            this.state.previousPowerPlanGuid || (highPerformancePlanActive ? undefined : data.ActivePowerGuid)
         }
       }
     } catch (err) {
@@ -109,20 +111,15 @@ export class PerformanceService {
 
       await powershellService.runPowerShell(enableScript, 15000)
 
-      // 3. Switch to High Performance plan
-      try {
-        await execAsync('powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c', { timeout: 3000 })
-      } catch {
-        // If locked on Windows 11 Modern Standby, duplicate and activate
-        try {
-          const { stdout: dupOut } = await execAsync('powercfg -duplicatescheme 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c', { timeout: 4000 })
-          const dupMatch = dupOut.match(/:\s+([a-f0-9-]+)/i)
-          if (dupMatch && dupMatch[1]) {
-            await execAsync(`powercfg /setactive ${dupMatch[1].trim()}`, { timeout: 3000 })
-          }
-        } catch {
-          // Keep current plan
-        }
+      // 3. Switch to High Performance only where Windows offers it. Modern Standby laptops hide it on purpose:
+      //    there Windows and the OEM tune performance via the power mode, which the hidden plan would override
+      const { stdout: planList } = await execAsync('powercfg /list', { timeout: 3000 })
+      const highPerfOffered = planList.toLowerCase().includes('8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c')
+      let switchedPlan = false
+      if (highPerfOffered) {
+        switchedPlan = await execAsync('powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c', { timeout: 3000 })
+          .then(() => true)
+          .catch(() => false)
       }
 
       this.state.isActive = true
@@ -130,12 +127,14 @@ export class PerformanceService {
       this.state.gameDvrDisabled = true
       this.state.gameModeEnabled = true
       this.state.searchIndexerPaused = true
-      this.state.highPerformancePlanActive = true
+      this.state.highPerformancePlanActive = switchedPlan
 
       return {
         success: true,
         isActive: true,
-        message: 'Performance-Modus erfolgreich aktiviert! Grafikeffekte, Game DVR und Indexer wurden für maximale Leistung optimiert.'
+        message: switchedPlan
+          ? 'Performance-Modus erfolgreich aktiviert! Grafikeffekte, Game DVR und Indexer wurden für maximale Leistung optimiert.'
+          : 'Performance-Modus aktiviert! Grafikeffekte, Game DVR und Indexer wurden optimiert. Das Energieschema bleibt unverändert: Windows steuert die Leistung hier über den Energiemodus.'
       }
     } catch (err: any) {
       console.error('[PerformanceService] Error enabling performance mode:', err)
@@ -163,13 +162,16 @@ export class PerformanceService {
 
       await powershellService.runPowerShell(disableScript, 15000)
 
-      // Restore power plan
-      const targetPlan = this.state.previousPowerPlanGuid || '381b4222-f694-41f0-9685-ff5bb260df2e'
-      try {
-        await execAsync(`powercfg /setactive ${targetPlan}`, { timeout: 3000 })
-      } catch {
-        // Fallback to balanced
-        await execAsync('powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e', { timeout: 3000 }).catch(() => {})
+      // Restore power plan, but only if we are on a high performance plan (else the user's own plan choice stays)
+      const { highPerformancePlanActive } = await this.getState()
+      if (highPerformancePlanActive) {
+        const targetPlan = this.state.previousPowerPlanGuid || '381b4222-f694-41f0-9685-ff5bb260df2e'
+        try {
+          await execAsync(`powercfg /setactive ${targetPlan}`, { timeout: 3000 })
+        } catch {
+          // Fallback to balanced
+          await execAsync('powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e', { timeout: 3000 }).catch(() => {})
+        }
       }
 
       this.state.isActive = false

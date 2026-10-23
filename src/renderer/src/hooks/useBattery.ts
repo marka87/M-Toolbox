@@ -1,16 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { BatteryInfo, BatteryReportResult, BatteryDrainProcess } from '@shared/battery.types'
-import type { PowerProfileInfo, PowerProfileMode } from '@shared/types'
 
 export function useBattery() {
   const [info, setInfo] = useState<BatteryInfo | null>(null)
-  const [powerProfiles, setPowerProfiles] = useState<PowerProfileInfo[]>([])
   const [drainProcesses, setDrainProcesses] = useState<BatteryDrainProcess[]>([])
   const [lastDrainScanTime, setLastDrainScanTime] = useState<number | null>(null)
   const [isScanningDrain, setIsScanningDrain] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSwitchingPlan, setIsSwitchingPlan] = useState(false)
-  const [switchingMode, setSwitchingMode] = useState<PowerProfileMode | null>(null)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const [reportResult, setReportResult] = useState<BatteryReportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -43,19 +40,13 @@ export function useBattery() {
 
   const isMounted = useRef(true)
 
-  const fetchInfo = useCallback(async (forceProfiles = false) => {
+  const fetchInfo = useCallback(async () => {
     if (!window.mToolbox?.battery) return
     try {
       const data = await window.mToolbox.battery.getInfo()
       if (isMounted.current) {
         setInfo(data)
         setError(null)
-      }
-      if (window.mToolbox.battery.getPowerProfiles) {
-        const profiles = await window.mToolbox.battery.getPowerProfiles(forceProfiles)
-        if (isMounted.current) {
-          setPowerProfiles(profiles)
-        }
       }
     } catch (err: any) {
       if (isMounted.current) {
@@ -128,12 +119,12 @@ export function useBattery() {
 
     if (!isVisible) return
 
-    // Immediately fetch fresh snapshot when becoming visible/active (force profiles refresh)
-    fetchInfo(true)
+    // Immediately fetch fresh snapshot when becoming visible/active
+    fetchInfo()
 
-    // Poll live battery status every X seconds only while visible (use 60s cached profiles)
+    // Poll live battery status every X seconds only while visible
     const interval = setInterval(() => {
-      fetchInfo(false)
+      fetchInfo()
     }, liveIntervalSec * 1000)
 
     return () => {
@@ -232,51 +223,14 @@ export function useBattery() {
     }
   }, [])
 
-  const setPowerProfile = useCallback(
-    async (mode: PowerProfileMode) => {
-      if (!window.mToolbox?.battery?.setPowerProfile) return { success: false, message: 'API nicht verfügbar' }
-      setIsSwitchingPlan(true)
-      setSwitchingMode(mode)
-
-      // Optimistic instant UI update: mark clicked profile active immediately
-      setPowerProfiles((prev) =>
-        prev.map((p) => ({
-          ...p,
-          isActive: p.mode === mode
-        }))
-      )
-
-      try {
-        const res = await window.mToolbox.battery.setPowerProfile(mode)
-        if (isMounted.current) {
-          await fetchInfo()
-        }
-        return res
-      } catch (err: any) {
-        if (isMounted.current) {
-          await fetchInfo()
-        }
-        return { success: false, message: err?.message || 'Fehler beim Wechseln des Profils.' }
-      } finally {
-        if (isMounted.current) {
-          setIsSwitchingPlan(false)
-          setSwitchingMode(null)
-        }
-      }
-    },
-    [fetchInfo]
-  )
-
   const refresh = useCallback(async () => {
-    await Promise.all([fetchInfo(true), fetchDrainScan()])
+    await Promise.all([fetchInfo(), fetchDrainScan()])
   }, [fetchInfo, fetchDrainScan])
 
   return {
     info,
-    powerProfiles,
     isLoading,
     isSwitchingPlan,
-    switchingMode,
     isGeneratingReport,
     isLiveMonitoring,
     liveIntervalSec,
@@ -294,7 +248,6 @@ export function useBattery() {
     dismissAlert,
     killDrainProcess,
     setPowerPlan,
-    setPowerProfile,
     generateReport
   }
 }

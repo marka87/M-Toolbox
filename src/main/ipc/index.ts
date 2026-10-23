@@ -20,7 +20,7 @@ import { WidgetService } from '../services/widget.service'
 import { telemetryService } from '../services/telemetry.service'
 import { trayService } from '../services/tray.service'
 import { isAllowedExternalUrl } from '../utils/external-url'
-import type { PowerProfileMode, AppSettings, TelemetryMetric } from '../../shared/types'
+import type { AppSettings, TelemetryMetric } from '../../shared/types'
 import type { ReinstallRestoreOptions } from '../../shared/reinstall.types'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
@@ -602,14 +602,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.BATTERY.SET_POWER_PLAN, async (_, guid: string) => {
     return await batteryService.setPowerPlan(guid)
-  })
-
-  ipcMain.handle(IPC_CHANNELS.BATTERY.GET_POWER_PROFILES, async (_, force?: boolean) => {
-    return await batteryService.getPowerProfiles(force ?? false)
-  })
-
-  ipcMain.handle(IPC_CHANNELS.BATTERY.SET_POWER_PROFILE, async (_, mode: PowerProfileMode) => {
-    return await batteryService.setPowerProfile(mode)
   })
 
   ipcMain.handle(IPC_CHANNELS.BATTERY.GENERATE_REPORT, async () => {

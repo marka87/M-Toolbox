@@ -45,9 +45,7 @@ import type {
   BloatwareRemovalResult,
   BloatwareBatchProgress,
   PerformanceModeState,
-  PerformanceModeResult,
-  PowerProfileInfo,
-  PowerProfileMode
+  PerformanceModeResult
 } from '../shared/types'
 import type {
   ReinstallArchiveSummary,
@@ -180,8 +178,6 @@ export interface MToolboxAPI {
   battery: {
     getInfo: (includeDrainProcesses?: boolean) => Promise<BatteryInfo>
     setPowerPlan: (guid: string) => Promise<{ success: boolean; message: string }>
-    getPowerProfiles: (force?: boolean) => Promise<PowerProfileInfo[]>
-    setPowerProfile: (mode: PowerProfileMode) => Promise<{ success: boolean; message: string }>
     generateReport: () => Promise<BatteryReportResult>
     killProcess: (pid: number) => Promise<{ success: boolean; message: string }>
     scanDrainProcesses: () => Promise<BatteryDrainProcess[]>
@@ -406,8 +402,6 @@ const api: MToolboxAPI = {
   battery: {
     getInfo: (includeDrainProcesses?: boolean) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GET_INFO, includeDrainProcesses),
     setPowerPlan: (guid: string) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SET_POWER_PLAN, guid),
-    getPowerProfiles: (force?: boolean) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GET_POWER_PROFILES, force),
-    setPowerProfile: (mode: PowerProfileMode) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SET_POWER_PROFILE, mode),
     generateReport: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GENERATE_REPORT),
     killProcess: (pid: number) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.KILL_PROCESS, pid),
     scanDrainProcesses: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SCAN_DRAIN_PROCESSES)

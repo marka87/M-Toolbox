@@ -18,11 +18,11 @@ M-Toolbox bündelt native Windows-Werkzeuge, PowerShell, Winget und eine moderne
 - **Backup & Migration** – Vollständige Systemmigration & Reinstall-Archiv (`.mtoolbox`), Winget-Pakete, Registry, App-Daten, Browser-Profile und Wiederherstellungs-Assistent.
 - **Driver Center** – Treiberinventar, Problemgeräte, Export, GPU-Informationen und Online-Suche.
 - **RAM Guardian** – Echtzeit-RAM-Monitoring, Standby-List/Working-Set-Bereinigung, Hygiene-Score, 24h-Verlauf und RAM-Fresser-Inspektor.
-- **Batterie-Manager & Energie-Profile** – Laptop-Akku-Management, 3 kuratierte Schnellprofile (🌱 Eco mit 80% CPU-Drossel auf Akku, ⚖️ Ausbalanciert, 🚀 Höchstleistung), Echtzeit-Watt-Überwachung (Entlade-/Laderate in W), Zellspannung, Kapazitäts- und Verschleißgradanalyse (Wh / mWh), Drain-Inspektor (Top Energie-Fresser), automatische Akku-Drain-Warnungen, interaktiver HTML-Akkubericht und Windows-Energieschemas.
+- **Batterie-Manager** – Laptop-Akku-Management, Echtzeit-Watt-Überwachung (Entlade-/Laderate in W), Zellspannung, Kapazitäts- und Verschleißgradanalyse (Wh / mWh), Drain-Inspektor (Top Energie-Fresser), automatische Akku-Drain-Warnungen, interaktiver HTML-Akkubericht, Windows-Energieschemas und Direktlink zum Windows-Energiemodus.
 - **Desktop Mini-HUD Widget** – Schwebendes, transparentes 2×2 Desktop-Overlay für CPU, RAM (inkl. 1-Klick-Bereinigung), GPU und Akku (inkl. Entlade-Wattage), Always-on-Top und Drag & Drop.
 - **Cleanup Center & Bloatware-Entfernung** – Temporäre Dateien, Windows Update Cache Bereinigung mit UAC-Dienststeuerung, Browser-Caches, Crash Dumps und integrierte **Windows Bloatware-Erkennung & Deinstallation** mit Sicherheitsbewertung (Ampelsystem).
 - **Repair Center** – SFC, DISM, Windows-Update-, Netzwerk-, Spooler- und AppX-Reparaturen.
-- **Tweaks & 1-Klick Gaming-Modus** – Explorer-, Datenschutz-, Gaming- und Windows-11-Oberflächenanpassungen sowie **1-Klick Performance & Gaming Master-Modus** (deaktiviert Effekte, Transparenzen & Xbox DVR, pausiert Indexer, schaltet auf Höchstleistung).
+- **Tweaks & 1-Klick Gaming-Modus** – Explorer-, Datenschutz-, Gaming- und Windows-11-Oberflächenanpassungen sowie **1-Klick Performance & Gaming Master-Modus** (deaktiviert Effekte, Transparenzen & Xbox DVR, pausiert Indexer, schaltet auf Höchstleistung, wo Windows diesen Plan anbietet).
 - **Network Toolkit** – Adapterdiagnose, WAN-IP, Ping-Matrix, DNS-Benchmark und Port-Scanner.
 - **Advanced Tools** – Windows-Tools, Autostart-Verwaltung und Hosts-Datei-Editor.
 - **Settings** – Themes, Akzentfarben, Autostart, Updates, Cache und Systeminformationen.
