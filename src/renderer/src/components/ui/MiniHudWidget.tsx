@@ -8,7 +8,6 @@ import {
   Plug,
   Pin,
   PinOff,
-  Sparkles,
   X,
   MousePointer,
   Eye
@@ -194,8 +193,6 @@ export const MiniHudWidget: React.FC = () => {
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(true)
   const [isClickThrough, setIsClickThrough] = useState(false)
   const [opacity, setOpacity] = useState(0.92)
-  const [isCleaningRam, setIsCleaningRam] = useState(false)
-  const [cleanFeedback, setCleanFeedback] = useState<string | null>(null)
 
   // Demo mode state
   const isDemoMode = useMemo(() => {
@@ -378,7 +375,7 @@ export const MiniHudWidget: React.FC = () => {
     }).catch(() => {})
 
     // Initial battery fetch
-    window.mToolbox?.battery?.getInfo(false).then((info) => {
+    window.mToolbox?.battery?.getInfo().then((info) => {
       if (info && isMounted.current) {
         setBattery({
           hasBattery: info.hasBattery,
@@ -444,27 +441,6 @@ export const MiniHudWidget: React.FC = () => {
     }
   }, [isClickThrough])
 
-  const handleCleanRam = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (isCleaningRam) return
-    setIsCleaningRam(true)
-    try {
-      const res = await window.mToolbox?.ram?.cleanWindows()
-      const freedMB = res && res.freedBytes ? Math.round(res.freedBytes / (1024 * 1024)) : 0
-      if (freedMB > 0) {
-        setCleanFeedback(`+${freedMB}M`)
-      } else {
-        setCleanFeedback('OK')
-      }
-      setTimeout(() => setCleanFeedback(null), 2200)
-    } catch {
-      setCleanFeedback('!')
-      setTimeout(() => setCleanFeedback(null), 2000)
-    } finally {
-      setIsCleaningRam(false)
-    }
-  }, [isCleaningRam])
-
   const handleClose = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     window.mToolbox?.widget?.close()
@@ -522,21 +498,6 @@ export const MiniHudWidget: React.FC = () => {
 
         {/* Action Buttons (Non-draggable) */}
         <div className="flex items-center gap-0.5" style={noDragStyle}>
-          {/* Quick RAM Clean */}
-          <button
-            onClick={handleCleanRam}
-            disabled={isCleaningRam}
-            className="p-0.5 rounded text-slate-400 hover:text-cyan-300 hover:bg-slate-800 relative transition-colors"
-            title={t.hud.cleanRam}
-          >
-            <Sparkles className={`w-3.5 h-3.5 ${isCleaningRam ? 'animate-spin text-cyan-400' : ''}`} />
-            {cleanFeedback && (
-              <span className="absolute -bottom-5 right-0 text-[10px] font-bold font-mono text-cyan-400 bg-slate-900 px-1.5 py-0.5 rounded border border-cyan-500/50 whitespace-nowrap shadow-md z-10">
-                {cleanFeedback}
-              </span>
-            )}
-          </button>
-
           {/* Opacity Cycle */}
           <button
             onClick={handleCycleOpacity}

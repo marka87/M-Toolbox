@@ -2,15 +2,12 @@ import React from 'react'
 import {
   LayoutDashboard,
   Package,
-  Cpu,
   Trash2,
   Wrench,
   Sliders,
-  Network,
   Terminal,
   Settings,
   ShieldCheck,
-  Activity,
   Archive,
   BatteryCharging
 } from 'lucide-react'
@@ -26,13 +23,10 @@ const NAV_ITEMS: NavItemConfig[] = [
   { id: 'dashboard', icon: LayoutDashboard },
   { id: 'software', icon: Package },
   { id: 'backup', icon: Archive },
-  { id: 'driver', icon: Cpu },
-  { id: 'ram-guardian', icon: Activity },
   { id: 'battery', icon: BatteryCharging },
   { id: 'cleanup', icon: Trash2 },
   { id: 'repair', icon: Wrench },
   { id: 'tweaks', icon: Sliders },
-  { id: 'network', icon: Network },
   { id: 'advanced', icon: Terminal },
   { id: 'settings', icon: Settings },
 ]

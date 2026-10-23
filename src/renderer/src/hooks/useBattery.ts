@@ -1,11 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { BatteryInfo, BatteryReportResult, BatteryDrainProcess } from '@shared/battery.types'
+import type { BatteryInfo, BatteryReportResult } from '@shared/battery.types'
 
 export function useBattery() {
   const [info, setInfo] = useState<BatteryInfo | null>(null)
-  const [drainProcesses, setDrainProcesses] = useState<BatteryDrainProcess[]>([])
-  const [lastDrainScanTime, setLastDrainScanTime] = useState<number | null>(null)
-  const [isScanningDrain, setIsScanningDrain] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSwitchingPlan, setIsSwitchingPlan] = useState(false)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
@@ -35,10 +32,7 @@ export function useBattery() {
     }
   }, [])
 
-  const [killingPid, setKillingPid] = useState<number | null>(null)
-  const [alertDismissed, setAlertDismissed] = useState(false)
-
-  const isMounted = useRef(true)
+const isMounted = useRef(true)
 
   const fetchInfo = useCallback(async () => {
     if (!window.mToolbox?.battery) return
@@ -56,26 +50,6 @@ export function useBattery() {
     } finally {
       if (isMounted.current) {
         setIsLoading(false)
-      }
-    }
-  }, [])
-
-  const fetchDrainScan = useCallback(async () => {
-    if (!window.mToolbox?.battery?.scanDrainProcesses) return
-    setIsScanningDrain(true)
-    try {
-      const procs = await window.mToolbox.battery.scanDrainProcesses()
-      if (isMounted.current) {
-        setDrainProcesses(procs)
-        const now = Date.now()
-        setLastDrainScanTime(now)
-        setInfo((prev) => (prev ? { ...prev, drainProcesses: procs, lastDrainScanTimestamp: now } : prev))
-      }
-    } catch (err) {
-      console.warn('[useBattery] scanDrainProcesses error:', err)
-    } finally {
-      if (isMounted.current) {
-        setIsScanningDrain(false)
       }
     }
   }, [])
@@ -132,52 +106,9 @@ export function useBattery() {
     }
   }, [fetchInfo, isLiveMonitoring, isDocVisible, isWindowVisible, liveIntervalSec])
 
-  // Decoupled drain inspector polling every 30s only while visible
-  useEffect(() => {
-    const isVisible = isLiveMonitoring && isDocVisible && isWindowVisible
-
-    if (!isVisible) return
-
-    // Immediately trigger drain scan when page becomes visible
-    fetchDrainScan()
-
-    const drainInterval = setInterval(() => {
-      fetchDrainScan()
-    }, 30000)
-
-    return () => {
-      clearInterval(drainInterval)
-    }
-  }, [fetchDrainScan, isLiveMonitoring, isDocVisible, isWindowVisible])
-
   const toggleLiveMonitoring = useCallback(() => {
     setIsLiveMonitoring((prev) => !prev)
   }, [])
-
-  const dismissAlert = useCallback(() => {
-    setAlertDismissed(true)
-  }, [])
-
-  const killDrainProcess = useCallback(
-    async (pid: number) => {
-      if (!window.mToolbox?.battery) return { success: false, message: 'API nicht verfügbar' }
-      setKillingPid(pid)
-      try {
-        const res = await window.mToolbox.battery.killProcess(pid)
-        if (isMounted.current) {
-          await Promise.all([fetchInfo(), fetchDrainScan()])
-        }
-        return res
-      } catch (err: any) {
-        return { success: false, message: err?.message || 'Fehler beim Beenden des Prozesses.' }
-      } finally {
-        if (isMounted.current) {
-          setKillingPid(null)
-        }
-      }
-    },
-    [fetchInfo, fetchDrainScan]
-  )
 
   const setPowerPlan = useCallback(
     async (guid: string) => {
@@ -224,8 +155,8 @@ export function useBattery() {
   }, [])
 
   const refresh = useCallback(async () => {
-    await Promise.all([fetchInfo(), fetchDrainScan()])
-  }, [fetchInfo, fetchDrainScan])
+    await fetchInfo()
+  }, [fetchInfo])
 
   return {
     info,
@@ -235,21 +166,12 @@ export function useBattery() {
     isLiveMonitoring,
     liveIntervalSec,
     setPollInterval,
-    killingPid,
-    alertDismissed,
     reportResult,
     error,
-    drainProcesses,
-    lastDrainScanTime,
-    isScanningDrain,
-    scanDrainProcesses: fetchDrainScan,
     refresh,
     toggleLiveMonitoring,
-    dismissAlert,
-    killDrainProcess,
     setPowerPlan,
     generateReport
   }
 }
-
 

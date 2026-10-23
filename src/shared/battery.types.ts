@@ -4,28 +4,6 @@ export interface PowerPlanItem {
   isCurrent: boolean
 }
 
-export type BatteryDrainImpact = 'Sehr hoch' | 'Hoch' | 'Moderat' | 'Niedrig'
-
-export interface BatteryDrainProcess {
-  id: number
-  name: string
-  cpuPercent: number
-  memoryMb: number
-  impactLevel: BatteryDrainImpact
-  estimatedDrainText?: string
-  isSelf?: boolean
-}
-
-export interface BatteryDrainAlert {
-  title: string
-  message: string
-  processName: string
-  pid: number
-  severity: 'warning' | 'critical'
-  cpuPercent: number
-  dischargeWattage: number
-}
-
 export interface BatteryInfo {
   hasBattery: boolean
   chargePercent: number
@@ -49,9 +27,6 @@ export interface BatteryInfo {
   dischargeRateWatts: number
   chargeRateWatts: number
   currentWattage: number
-  drainProcesses: BatteryDrainProcess[]
-  drainAlert: BatteryDrainAlert | null
-  lastDrainScanTimestamp?: number
   activePowerPlan: PowerPlanItem | null
   availablePowerPlans: PowerPlanItem[]
 }
@@ -61,5 +36,4 @@ export interface BatteryReportResult {
   filePath?: string
   error?: string
 }
-
 

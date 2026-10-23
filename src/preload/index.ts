@@ -14,10 +14,6 @@ import type {
   DeviceItem,
   DriverPackage,
   DriverStats,
-  DriverExportResult,
-  DriverOperationResult,
-  GpuInfo,
-  WindowsUpdateDriver,
   CleanupScanResult,
   CleanupProgressEvent,
   CleanupResult,
@@ -28,12 +24,6 @@ import type {
   TweakItem,
   TweakApplyResult,
   BatchTweakResult,
-  NetworkDiagnosticsData,
-  WanIpInfo,
-  PingResultItem,
-  DnsBenchmarkItem,
-  PortScanReport,
-  AdvancedToolItem,
   StartupItem,
   HostsEntry,
   HostsFileContent,
@@ -43,9 +33,7 @@ import type {
   WidgetState,
   BloatwareApp,
   BloatwareRemovalResult,
-  BloatwareBatchProgress,
-  PerformanceModeState,
-  PerformanceModeResult
+  BloatwareBatchProgress
 } from '../shared/types'
 import type {
   ReinstallArchiveSummary,
@@ -54,16 +42,7 @@ import type {
   ReinstallRestoreOptions,
   ReinstallResult
 } from '../shared/reinstall.types'
-import type {
-  RAMLiveStats,
-  RAMProcessItem,
-  AppHygieneReport,
-  RAMRecommendation,
-  RAMHealthScore,
-  RAMHistoryPoint,
-  RAMCleanupResult
-} from '../shared/ram.types'
-import type { BatteryInfo, BatteryReportResult, BatteryDrainProcess } from '../shared/battery.types'
+import type { BatteryInfo, BatteryReportResult } from '../shared/battery.types'
 
 export interface MToolboxAPI {
   dashboard: {
@@ -104,18 +83,6 @@ export interface MToolboxAPI {
     history: () => Promise<Array<{ createdAt: string; status: string; details?: string }>>
     onProgress: (callback: (event: ReinstallProgress) => void) => () => void
   }
-  driver: {
-    getData: () => Promise<{ devices: DeviceItem[]; packages: DriverPackage[]; stats: DriverStats }>
-    exportDrivers: (targetDir: string, infName?: string) => Promise<DriverExportResult>
-    selectExportDir: () => Promise<string | null>
-    scanHardware: () => Promise<DriverOperationResult>
-    openDeviceManager: () => Promise<void>
-    restartDevice: (instanceId: string) => Promise<DriverOperationResult>
-    getGpuInfo: () => Promise<GpuInfo | null>
-    checkWindowsUpdate: () => Promise<WindowsUpdateDriver[]>
-    searchOnline: (query: string) => Promise<string>
-    onProgress: (callback: (log: string) => void) => () => void
-  }
   cleanup: {
     scan: () => Promise<CleanupScanResult>
     clean: (categoryIds: string[]) => Promise<CleanupResult>
@@ -134,19 +101,7 @@ export interface MToolboxAPI {
     applyRecommended: () => Promise<BatchTweakResult>
     restartExplorer: () => Promise<{ success: boolean; message: string }>
   }
-  network: {
-    getDiagnostics: () => Promise<NetworkDiagnosticsData>
-    getWanIp: () => Promise<WanIpInfo>
-    pingTargets: (customHost?: string) => Promise<PingResultItem[]>
-    benchmarkDns: (domain?: string) => Promise<DnsBenchmarkItem[]>
-    scanPorts: (target: string, ports: number[]) => Promise<PortScanReport>
-    flushDns: () => Promise<{ success: boolean; message: string }>
-    renewIp: () => Promise<{ success: boolean; message: string }>
-    openNetworkConnections: () => Promise<void>
-  }
   advanced: {
-    getTools: () => Promise<AdvancedToolItem[]>
-    launchTool: (toolId: string) => Promise<{ success: boolean; message: string }>
     getStartupItems: () => Promise<StartupItem[]>
     deleteStartupItem: (itemId: string) => Promise<{ success: boolean; message: string }>
     setStartupItemEnabled: (
@@ -165,33 +120,16 @@ export interface MToolboxAPI {
     clearCache: () => Promise<{ success: boolean; message: string }>
     resetSettings: () => Promise<AppSettings>
   }
-  ram: {
-    getStats: () => Promise<RAMLiveStats>
-    getTopProcesses: () => Promise<RAMProcessItem[]>
-    getHygiene: () => Promise<AppHygieneReport>
-    getRecommendations: () => Promise<RAMRecommendation[]>
-    getHealthScore: () => Promise<RAMHealthScore>
-    getHistory24h: () => Promise<RAMHistoryPoint[]>
-    cleanWindows: () => Promise<RAMCleanupResult>
-    disableStartup: (itemId: string) => Promise<{ success: boolean; message: string }>
-  }
   battery: {
-    getInfo: (includeDrainProcesses?: boolean) => Promise<BatteryInfo>
+    getInfo: () => Promise<BatteryInfo>
     setPowerPlan: (guid: string) => Promise<{ success: boolean; message: string }>
     generateReport: () => Promise<BatteryReportResult>
-    killProcess: (pid: number) => Promise<{ success: boolean; message: string }>
-    scanDrainProcesses: () => Promise<BatteryDrainProcess[]>
   }
   bloatware: {
     scan: () => Promise<BloatwareApp[]>
     uninstall: (appId: string) => Promise<BloatwareRemovalResult>
     batchUninstall: (appIds: string[]) => Promise<{ succeeded: string[]; failed: string[] }>
     onProgress: (callback: (event: BloatwareBatchProgress) => void) => () => void
-  }
-  performance: {
-    getState: () => Promise<PerformanceModeState>
-    toggle: () => Promise<PerformanceModeResult>
-    setActive: (active: boolean) => Promise<PerformanceModeResult>
   }
   system: {
     minimize: () => Promise<void>
@@ -295,28 +233,6 @@ const api: MToolboxAPI = {
       return () => ipcRenderer.removeListener(IPC_CHANNELS.REINSTALL.PROGRESS_EVENT, listener)
     }
   },
-  driver: {
-    getData: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.GET_DATA),
-    exportDrivers: (targetDir: string, infName?: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.DRIVER.EXPORT_DRIVERS, targetDir, infName),
-    selectExportDir: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.SELECT_EXPORT_DIR),
-    scanHardware: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.SCAN_HARDWARE),
-    openDeviceManager: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.OPEN_DEVICE_MANAGER),
-    restartDevice: (instanceId: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.DRIVER.RESTART_DEVICE, instanceId),
-    getGpuInfo: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.GET_GPU_INFO),
-    checkWindowsUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.CHECK_WINDOWS_UPDATE),
-    searchOnline: (query: string) => ipcRenderer.invoke(IPC_CHANNELS.DRIVER.SEARCH_ONLINE, query),
-    onProgress: (callback: (log: string) => void) => {
-      const listener = (_event: Electron.IpcRendererEvent, log: string) => {
-        callback(log)
-      }
-      ipcRenderer.on(IPC_CHANNELS.DRIVER.PROGRESS_EVENT, listener)
-      return () => {
-        ipcRenderer.removeListener(IPC_CHANNELS.DRIVER.PROGRESS_EVENT, listener)
-      }
-    }
-  },
   cleanup: {
     scan: () => ipcRenderer.invoke(IPC_CHANNELS.CLEANUP.SCAN),
     clean: (categoryIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.CLEANUP.CLEAN, categoryIds),
@@ -352,24 +268,7 @@ const api: MToolboxAPI = {
     applyRecommended: () => ipcRenderer.invoke(IPC_CHANNELS.TWEAKS.APPLY_RECOMMENDED),
     restartExplorer: () => ipcRenderer.invoke(IPC_CHANNELS.TWEAKS.RESTART_EXPLORER)
   },
-  network: {
-    getDiagnostics: () => ipcRenderer.invoke(IPC_CHANNELS.NETWORK.GET_DIAGNOSTICS),
-    getWanIp: () => ipcRenderer.invoke(IPC_CHANNELS.NETWORK.GET_WAN_IP),
-    pingTargets: (customHost?: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.NETWORK.PING_TARGETS, customHost),
-    benchmarkDns: (domain?: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.NETWORK.BENCHMARK_DNS, domain),
-    scanPorts: (target: string, ports: number[]) =>
-      ipcRenderer.invoke(IPC_CHANNELS.NETWORK.SCAN_PORTS, target, ports),
-    flushDns: () => ipcRenderer.invoke(IPC_CHANNELS.NETWORK.FLUSH_DNS),
-    renewIp: () => ipcRenderer.invoke(IPC_CHANNELS.NETWORK.RENEW_IP),
-    openNetworkConnections: () =>
-      ipcRenderer.invoke(IPC_CHANNELS.NETWORK.OPEN_NETWORK_CONNECTIONS)
-  },
   advanced: {
-    getTools: () => ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.GET_TOOLS),
-    launchTool: (toolId: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.LAUNCH_TOOL, toolId),
     getStartupItems: () => ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.GET_STARTUP_ITEMS),
     deleteStartupItem: (itemId: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.ADVANCED.DELETE_STARTUP_ITEM, itemId),
@@ -389,22 +288,10 @@ const api: MToolboxAPI = {
     clearCache: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.CLEAR_CACHE),
     resetSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS.RESET_SETTINGS)
   },
-  ram: {
-    getStats: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_STATS),
-    getTopProcesses: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_TOP_PROCESSES),
-    getHygiene: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_HYGIENE),
-    getRecommendations: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_RECOMMENDATIONS),
-    getHealthScore: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_HEALTH_SCORE),
-    getHistory24h: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.GET_HISTORY_24H),
-    cleanWindows: () => ipcRenderer.invoke(IPC_CHANNELS.RAM.CLEAN_WINDOWS),
-    disableStartup: (itemId: string) => ipcRenderer.invoke(IPC_CHANNELS.RAM.DISABLE_STARTUP, itemId)
-  },
   battery: {
-    getInfo: (includeDrainProcesses?: boolean) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GET_INFO, includeDrainProcesses),
+    getInfo: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GET_INFO),
     setPowerPlan: (guid: string) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SET_POWER_PLAN, guid),
-    generateReport: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GENERATE_REPORT),
-    killProcess: (pid: number) => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.KILL_PROCESS, pid),
-    scanDrainProcesses: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.SCAN_DRAIN_PROCESSES)
+    generateReport: () => ipcRenderer.invoke(IPC_CHANNELS.BATTERY.GENERATE_REPORT)
   },
   bloatware: {
     scan: () => ipcRenderer.invoke(IPC_CHANNELS.BLOATWARE.SCAN),
@@ -419,11 +306,6 @@ const api: MToolboxAPI = {
         ipcRenderer.removeListener(IPC_CHANNELS.BLOATWARE.PROGRESS_EVENT, listener)
       }
     }
-  },
-  performance: {
-    getState: () => ipcRenderer.invoke(IPC_CHANNELS.PERFORMANCE.GET_STATE),
-    toggle: () => ipcRenderer.invoke(IPC_CHANNELS.PERFORMANCE.TOGGLE),
-    setActive: (active: boolean) => ipcRenderer.invoke(IPC_CHANNELS.PERFORMANCE.SET_ACTIVE, active)
   },
   system: {
     minimize: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.MINIMIZE_WINDOW),

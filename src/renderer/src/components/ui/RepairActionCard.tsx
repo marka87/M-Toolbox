@@ -61,11 +61,6 @@ export const RepairActionCard: React.FC<RepairActionCardProps> = ({
       desc: t.repair.act_dism_restore_desc,
       dur: language === 'de' ? '5-20 Min.' : '5-20 min.'
     },
-    dism_scanhealth: {
-      title: t.repair.act_dism_scan_title,
-      desc: t.repair.act_dism_scan_desc,
-      dur: language === 'de' ? '3-10 Min.' : '3-10 min.'
-    },
     windows_update_reset: {
       title: t.repair.act_wu_reset_title,
       desc: t.repair.act_wu_reset_desc,
@@ -105,11 +100,6 @@ export const RepairActionCard: React.FC<RepairActionCardProps> = ({
       title: t.repair.act_store_reset_title,
       desc: t.repair.act_store_reset_desc,
       dur: language === 'de' ? '15-30 Sek.' : '15-30 sec.'
-    },
-    appx_re_register: {
-      title: t.repair.act_appx_rereg_title,
-      desc: t.repair.act_appx_rereg_desc,
-      dur: language === 'de' ? '1-3 Min.' : '1-3 min.'
     }
   }
 

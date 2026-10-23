@@ -5,7 +5,6 @@ import {
   Zap,
   Plug,
   Clock,
-  ShieldCheck,
   AlertTriangle,
   RefreshCw,
   FileText,
@@ -14,8 +13,6 @@ import {
   Laptop,
   Flame,
   Activity,
-  X,
-  Skull,
   ExternalLink
 } from 'lucide-react'
 import { useBattery } from '../hooks/useBattery'
@@ -39,15 +36,9 @@ export const BatteryPage: React.FC = () => {
     isLiveMonitoring,
     liveIntervalSec,
     setPollInterval,
-    killingPid,
-    alertDismissed,
     reportResult,
-    lastDrainScanTime,
-    isScanningDrain,
     refresh,
     toggleLiveMonitoring,
-    dismissAlert,
-    killDrainProcess,
     setPowerPlan,
     generateReport
   } = useBattery()
@@ -61,19 +52,6 @@ export const BatteryPage: React.FC = () => {
     }
     return language === 'en' ? `${minutes}m` : `${minutes} Min.`
   }
-
-  const [secondsAgo, setSecondsAgo] = React.useState<number | null>(null)
-  React.useEffect(() => {
-    const update = () => {
-      const ts = lastDrainScanTime || info?.lastDrainScanTimestamp
-      if (ts) {
-        setSecondsAgo(Math.max(0, Math.round((Date.now() - ts) / 1000)))
-      }
-    }
-    update()
-    const timer = setInterval(update, 1000)
-    return () => clearInterval(timer)
-  }, [lastDrainScanTime, info?.lastDrainScanTimestamp])
 
   if (isLoading && !info) {
     return (
@@ -177,69 +155,6 @@ export const BatteryPage: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* Battery Drain Alert Banner */}
-      {hasBattery && info?.drainAlert && !alertDismissed && (
-        <div
-          className={`p-4 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all shadow-lg animate-in fade-in duration-300 ${
-            info.drainAlert.severity === 'critical'
-              ? 'bg-rose-500/15 border-rose-500/40 text-rose-100 shadow-rose-950/20'
-              : 'bg-amber-500/15 border-amber-500/40 text-amber-100 shadow-amber-950/20'
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            <div
-              className={`p-2.5 rounded-xl shrink-0 ${
-                info.drainAlert.severity === 'critical'
-                  ? 'bg-rose-500/25 text-rose-400'
-                  : 'bg-amber-500/25 text-amber-400'
-              }`}
-            >
-              <Flame className="w-5 h-5 animate-bounce" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-sm text-fluent-text">{info.drainAlert.title}</span>
-                {info.drainAlert.dischargeWattage > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/30 text-rose-200 border border-rose-500/40">
-                    {t.battery.drainSeverityDischarge.replace('{watt}', info.drainAlert.dischargeWattage.toFixed(1))}
-                  </span>
-                )}
-                {info.drainAlert.cpuPercent > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/30 text-amber-200 border border-amber-500/40">
-                    {t.battery.drainSeverityCpu.replace('{percent}', String(info.drainAlert.cpuPercent))}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-fluent-muted leading-relaxed max-w-3xl">
-                {info.drainAlert.message}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-            {info.drainAlert.pid > 0 && (
-              <button
-                onClick={() => killDrainProcess(info.drainAlert!.pid)}
-                disabled={killingPid === info.drainAlert.pid}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-all shadow-sm disabled:opacity-50"
-              >
-                <Skull className={`w-3.5 h-3.5 ${killingPid === info.drainAlert.pid ? 'animate-spin' : ''}`} />
-                {killingPid === info.drainAlert.pid
-                  ? t.battery.killingProcess
-                  : t.battery.killProcessBtn.replace('{name}', info.drainAlert.processName)}
-              </button>
-            )}
-            <button
-              onClick={dismissAlert}
-              className="p-1.5 rounded-lg text-fluent-muted hover:text-fluent-text hover:bg-fluent-card-hover transition-all"
-              title={t.battery.dismissAlertTooltip}
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* HTML Report Feedback */}
       {reportResult && (
@@ -525,173 +440,6 @@ export const BatteryPage: React.FC = () => {
               </div>
             </Card>
           </div>
-
-          {/* Energy Drain Inspector (Top Processes) */}
-          <Card className="p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
-                    <Flame className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-bold text-fluent-text">
-                    {t.battery.drainInspectorTitle}
-                  </h3>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-fluent-muted">
-                  <span>{t.battery.drainInspectorSubtitle}</span>
-                  {isScanningDrain ? (
-                    <span className="text-fluent-accent flex items-center gap-1 font-medium">
-                      <RefreshCw className="w-3 h-3 animate-spin" /> {t.battery.analyzing}
-                    </span>
-                  ) : secondsAgo !== null ? (
-                    <span className="text-[11px] text-slate-400">
-                      {t.battery.updatedAgo.replace('{sec}', String(secondsAgo))}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-
-              {info.isDischarging && info.dischargeRateWatts > 0 ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs self-start sm:self-auto">
-                  <span className="text-amber-200/80">{t.battery.measuredDischarge}</span>
-                  <span className="font-extrabold text-amber-300">
-                    -{info.dischargeRateWatts.toFixed(1)} W
-                  </span>
-                </div>
-              ) : info.isCharging && info.chargeRateWatts > 0 ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/25 text-xs self-start sm:self-auto">
-                  <span className="text-cyan-200/80">{t.battery.measuredCharge}</span>
-                  <span className="font-extrabold text-cyan-300">
-                    +{info.chargeRateWatts.toFixed(1)} W
-                  </span>
-                </div>
-              ) : null}
-            </div>
-
-            {info.drainProcesses && info.drainProcesses.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-fluent-border text-fluent-muted">
-                      <th className="pb-2.5 font-semibold">{t.battery.tableProcess}</th>
-                      <th className="pb-2.5 font-semibold">{t.battery.tableCpu}</th>
-                      <th className="pb-2.5 font-semibold">{t.battery.tableMemory}</th>
-                      <th className="pb-2.5 font-semibold">{t.battery.tableImpact}</th>
-                      <th className="pb-2.5 font-semibold text-right">{t.battery.tableAction}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-fluent-border-subtle">
-                    {info.drainProcesses.map((proc) => {
-                      const isTargetKilling = killingPid === proc.id
-                      return (
-                        <tr
-                          key={proc.id}
-                          className="hover:bg-fluent-card-hover/40 transition-colors"
-                        >
-                          <td className="py-3 pr-4">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-lg bg-fluent-card border border-fluent-border flex items-center justify-center text-fluent-accent font-mono font-bold text-[10px]">
-                                {proc.name.slice(0, 2).toUpperCase()}
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-semibold text-fluent-text">
-                                    {proc.name}
-                                  </span>
-                                  {proc.isSelf && (
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                                      {t.battery.thisApp}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-[10px] font-mono text-fluent-muted">
-                                  PID: {proc.id}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="py-3 pr-4">
-                            <div className="space-y-1 w-32">
-                              <div className="flex items-center justify-between text-[11px]">
-                                <span className="font-semibold text-fluent-text">
-                                  {proc.cpuPercent} %
-                                </span>
-                              </div>
-                              <div className="w-full h-1.5 bg-fluent-card-hover rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all duration-300 ${
-                                    proc.cpuPercent >= 15
-                                      ? 'bg-rose-500'
-                                      : proc.cpuPercent >= 7
-                                      ? 'bg-amber-500'
-                                      : proc.cpuPercent >= 2
-                                      ? 'bg-yellow-500'
-                                      : 'bg-emerald-500'
-                                  }`}
-                                  style={{
-                                    width: `${Math.min(100, Math.max(8, proc.cpuPercent * 2.5))}%`
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="py-3 pr-4 text-fluent-text font-medium">
-                            {proc.memoryMb} MB
-                          </td>
-
-                          <td className="py-3 pr-4">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
-                                proc.impactLevel === 'Sehr hoch'
-                                  ? 'bg-rose-500/15 border-rose-500/30 text-rose-300'
-                                  : proc.impactLevel === 'Hoch'
-                                  ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
-                                  : proc.impactLevel === 'Moderat'
-                                  ? 'bg-yellow-500/15 border-yellow-500/30 text-yellow-300'
-                                  : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
-                              }`}
-                            >
-                              {proc.impactLevel}
-                            </span>
-                          </td>
-
-                          <td className="py-3 text-right">
-                            {proc.isSelf ? (
-                              <span
-                                className="text-[11px] text-cyan-300/70 italic px-2"
-                                title={t.battery.cannotKillSelf}
-                              >
-                                {t.battery.activeProtected}
-                              </span>
-                            ) : (
-                              <button
-                                onClick={() => killDrainProcess(proc.id)}
-                                disabled={isTargetKilling}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-fluent-card border border-fluent-border hover:bg-rose-500/20 hover:border-rose-500/40 hover:text-rose-200 text-fluent-muted transition-all disabled:opacity-50"
-                                title={t.battery.killProcessTooltip.replace('{name}', proc.name).replace('{pid}', String(proc.id))}
-                              >
-                                <Skull
-                                  className={`w-3 h-3 ${isTargetKilling ? 'animate-spin' : ''}`}
-                                />
-                                {isTargetKilling ? t.battery.killingProcess : t.battery.killBtn}
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="p-6 rounded-xl border border-fluent-border bg-fluent-card/40 text-center text-xs text-fluent-muted">
-                {t.battery.noDrainProcesses}
-              </div>
-            )}
-          </Card>
         </>
       )}
 
@@ -755,37 +503,6 @@ export const BatteryPage: React.FC = () => {
               </div>
             )
           })}
-        </div>
-      </Card>
-
-      {/* Battery Hygiene & Best Practices Guide */}
-      <Card className="p-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-sm font-semibold text-slate-100">{t.battery.hygieneTitle}</h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-          <div className="p-3.5 rounded-xl border border-fluent-border bg-fluent-card/50 space-y-1">
-            <span className="font-semibold text-fluent-text">{t.battery.hygieneChargeWindow}</span>
-            <p className="text-fluent-muted text-[11px] leading-relaxed">
-              {t.battery.hygieneChargeWindowDesc}
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-xl border border-fluent-border bg-fluent-card/50 space-y-1">
-            <span className="font-semibold text-fluent-text">{t.battery.hygieneHeat}</span>
-            <p className="text-fluent-muted text-[11px] leading-relaxed">
-              {t.battery.hygieneHeatDesc}
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-xl border border-fluent-border bg-fluent-card/50 space-y-1">
-            <span className="font-semibold text-fluent-text">{t.battery.hygieneDisplay}</span>
-            <p className="text-fluent-muted text-[11px] leading-relaxed">
-              {t.battery.hygieneDisplayDesc}
-            </p>
-          </div>
         </div>
       </Card>
     </div>

@@ -4,14 +4,11 @@ import { Sidebar } from './components/layout/Sidebar'
 import { DashboardPage } from './pages/DashboardPage'
 import { SoftwarePage } from './pages/SoftwarePage'
 import { BackupMigrationPage } from './pages/BackupMigrationPage'
-import { DriverPage } from './pages/DriverPage'
 import { CleanupPage } from './pages/CleanupPage'
 import { RepairPage } from './pages/RepairPage'
 import { TweaksPage } from './pages/TweaksPage'
-import { NetworkPage } from './pages/NetworkPage'
 import { AdvancedPage } from './pages/AdvancedPage'
 import { SettingsPage } from './pages/SettingsPage'
-import { RAMGuardianPage } from './pages/RAMGuardianPage'
 import { BatteryPage } from './pages/BatteryPage'
 import { MiniHudWidget } from './components/ui/MiniHudWidget'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
@@ -45,10 +42,6 @@ export const App: React.FC = () => {
       case 'backup':
       case 'reinstall':
         return <BackupMigrationPage />
-      case 'driver':
-        return <DriverPage />
-      case 'ram-guardian':
-        return <RAMGuardianPage />
       case 'battery':
         return <BatteryPage />
       case 'cleanup':
@@ -57,8 +50,6 @@ export const App: React.FC = () => {
         return <RepairPage />
       case 'tweaks':
         return <TweaksPage />
-      case 'network':
-        return <NetworkPage />
       case 'advanced':
         return <AdvancedPage />
       case 'settings':

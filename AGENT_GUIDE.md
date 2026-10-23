@@ -13,7 +13,7 @@ Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler
   - **Frontend:** React 18, TypeScript 5.7, Tailwind CSS, Framer Motion, Lucide Icons
   - **Bundler:** Vite 6
   - **Datenbank:** SQLite (`better-sqlite3`) für persistente 24h-RAM-Historie und Telemetrie
-  - **Betriebssystem-Integration:** Windows 11 APIs, PowerShell, WMI/CIM, ACPI (`root/wmi:BatteryStatus`), Win32 PSAPI (`EmptyWorkingSet`), PnPUtil, Winget
+  - **Betriebssystem-Integration:** Windows 11 APIs, PowerShell, WMI/CIM, ACPI (`root/wmi:BatteryStatus`), PnPUtil, Winget
   - **Design-System:** Windows 11 Fluent Dark UI 2.0 (angepasst an Windows-Designsprache mit Mica/Akryl-Look)
 
 ---
@@ -53,14 +53,11 @@ Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler
 - **Kontext:** Das Akku- und Watt-Monitoring (`battery.service.ts`) greift auf WMI (`root/wmi:BatteryStatus`) und Performance-Counter zu.
 - **Verbindliche Regeln:**
   - **Messintervall:** Das Polling-Intervall darf **niemals** unter 5–8 Sekunden liegen. Das Standardintervall ist fest auf **8000 ms (8 Sekunden)** eingestellt, um CPU-Leerlaufzeiten von über 97 % zu garantieren.
-  - **CPU-Sampling:** Das Messfenster für Prozess-CPU-Auslastung im Drain-Inspektor darf maximal **250 ms** betragen.
   - **Hardware-Caching & Fehlerbehandlung:** Desktop-Systeme ohne Akku dürfen WMI nicht in Endlosschleifen abfragen. `hasBatteryHardware` wird gecacht; alle WMI-Calls müssen in globalen `try/catch`-Blöcken gekapselt sein, damit niemals ein unbehandelter Fehler den IPC-Kanal blockiert.
-  - **M-Toolbox-Selbstschutz (Self-Protection):** Eigene Prozesse von M-Toolbox (`electron.exe`, `m-toolbox.exe` etc.) werden im Drain-Inspektor als `isSelf = true` markiert, mit dem Label `Diese App` versehen und dürfen **niemals beendet werden (Kill-Schutz)**.
 
 ### ⚠️ TABU 6: Windows PowerShell & Native API Besonderheiten
 - **Befehlsketten:** In Windows PowerShell **immer Semikolon (`;`)** zur Verkettung von Befehlen nutzen, niemals bash-artiges `&&` (führt unter Windows PowerShell 5.1 zu Syntax- und Abbruchfehlern).
 - **Executable Extensions:** Node- und npm-Tools im Windows Terminal immer mit `.cmd` ansprechen (`npm.cmd run typecheck`).
-- **RAM-Bereinigung:** Working-Set-Bereinigung (`EmptyWorkingSet`) wird direkt über die Win32 PSAPI (`psapi.dll::EmptyWorkingSet`) via C# Inline-Type in PowerShell aufgerufen – keine externen Drittanbieter-Tools verwenden.
 
 ---
 
@@ -71,16 +68,15 @@ Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler
 | **Modul 1** | **Dashboard** | `v1.0.0` | ✅ Fertig | System-Specs (CPU, RAM, GPU, OS), Echtzeit-Metriken-Stream ohne Polling-Overhead, Fluent Cards |
 | **Modul 2** | **Software Center** | `v1.1.0` | ✅ Fertig | Kuratierter Katalog (88 Pakete, 7 Kategorien), Winget Package List, Update-Erkennung, Silent Batch Install/Uninstall |
 | **Modul 3** | **Backup & Migration** | `v2.2.0` | ✅ Fertig | Vollständige Systemmigration & Reinstall-Archiv (`.mtoolbox`), Winget-Pakete, Registry, App-Daten, Browser-Profile, Preview & Restore-Assistent |
-| **Modul 4** | **Driver Center** | `v1.3.1` | ✅ Fertig | Geräte- & OEM-Treiberinventar, Problemcode-Diagnose, 1-Klick Export, GPU-Check, Windows Update Treibersuche |
 | **Modul 5** | **Cleanup Center** | `v1.4.0` | ✅ Fertig | Temp-Files, Windows Update Cache, Crash Dumps, Browser Caches, Papierkorb, Speicher-Analyse |
-| **Modul 6** | **Repair Center** | `v1.5.0` | ✅ Fertig | SFC /scannow, DISM Health Restore, Win Update Reset, Print Spooler Repair, Network Stack Reset, AppX Re-Register |
+| **Modul 6** | **Repair Center** | `v1.5.0` | ✅ Fertig | SFC /scannow, DISM RestoreHealth, Win Update Reset, Print Spooler Repair, Network Stack Reset, Explorer/Search/Store |
 | **Modul 7** | **Tweaks** | `v1.6.0` | ✅ Fertig | Windows 11 Explorer Tweaks, Telemetrie minimieren, Kontextmenü klassisch, Gaming Tweaks, Taskbar-Ausrichtung |
-| **Modul 8** | **Netzwerk Toolkit**| `v1.7.0` | ✅ Fertig | Adapter & WAN-IP, Ping/Latency Matrix, DNS Benchmark, TCP Port-Scanner, Flush DNS |
-| **Modul 9** | **Advanced Tools** | `v1.8.0` | ✅ Fertig | God Mode Shortcuts, Windows Tools Launcher, Startup Manager, Hosts File Editor |
+| **Modul 9** | **Advanced Tools** | `v1.8.0` | ✅ Fertig | Startup Manager (StartupApproved an/aus), Hosts File Editor |
 | **Modul 10**| **Settings** | `v1.9.0` | ✅ Fertig | Fluent Design (Dark/Light/System), 5 Akzentfarben, Windows-Autostart, GitHub Updates API, AppData & Cache-Verwaltung, System-Info |
-| **Modul 11**| **RAM Guardian** | `v2.1.0` | ✅ Fertig | Echtzeit-RAM-Monitoring, Standby-List/Working-Set-Bereinigung (`EmptyWorkingSet`), Hygiene-Score, 24h-Verlaufshistorie in SQLite, Autostart-Empfehlungen |
-| **Modul 12**| **Batterie-Manager** | `v2.3.0` | ✅ Fertig | ACPI Live-Wattage (Lade-/Entladerate in W), Zellspannung, Kapazitäts- und Verschleißgrad (Wh), Energieschemas, HTML-Akkubericht, Top-Drain-Inspektor, Drain-Alerts mit Kill-Option, akkuschonender 8s-Timer, Selbstschutz |
-| **Modul 13**| **Desktop Mini-HUD** | `v2.4.0` | ✅ Fertig | Transparentes 2×2 Overlay-Fenster, Live-CPU/RAM/GPU/Akku (Wattage), Always-on-Top, Drag & Drop, 1-Klick RAM-Clean |
+| **Modul 12**| **Batterie-Manager** | `v2.3.0` | ✅ Fertig | ACPI Live-Wattage (Lade-/Entladerate in W), Zellspannung, Kapazitäts- und Verschleißgrad (Wh), Energieschemas, HTML-Akkubericht, akkuschonender 8s-Timer |
+| **Modul 13**| **Desktop Mini-HUD** | `v2.4.0` | ✅ Fertig | Transparentes 2×2 Overlay-Fenster, Live-CPU/RAM/GPU/Akku (Wattage), Always-on-Top, Drag & Drop |
+
+Entfernt (zu wenig Nutzen gegenüber Windows-Bordmitteln): Driver Center (Treiber-Export bleibt in Backup & Migration), Netzwerk Toolkit, RAM Guardian, Gaming-Master-Modus, Tools-Launcher, Drain-Inspektor.
 
 ---
 
@@ -123,14 +119,12 @@ M-Toolbox/
 │   │   └── services/          # Backend-Dienste (Native System-Logik)
 │   │       ├── advanced.service.ts
 │   │       ├── backup.service.ts
-│   │       ├── battery.service.ts        # ACPI Watt-Monitoring, Health, Drain-Inspektor
+│   │       ├── battery.service.ts        # ACPI Watt-Monitoring, Health, Energieschemas
 │   │       ├── cleanup.service.ts
 │   │       ├── dashboard.service.ts
 │   │       ├── database.service.ts       # SQLite better-sqlite3 Instanz & Schemas
-│   │       ├── driver.service.ts
-│   │       ├── network.service.ts
+│   │       ├── driver.service.ts         # Treiber-Inventar & Export für Backup/Reinstall
 │   │       ├── powershell.service.ts     # Gekapselte sichere PowerShell-Pipeline
-│   │       ├── ram.service.ts            # RAM Guardian, EmptyWorkingSet, Hygiene-Score
 │   │       ├── reinstall.service.ts      # Migration & .mtoolbox Reinstall-Archive
 │   │       ├── repair.service.ts
 │   │       ├── settings.service.ts
@@ -195,16 +189,12 @@ M-Toolbox/
 - **`window.mToolbox.software`:** `getCatalog()`, `getInstalled()`, `getUpdates()`, `install()`, `uninstall()`, `upgrade()`, `upgradeAll()`, `search()`, `onProgress()`
 - **`window.mToolbox.backup`:** `createBackup()`, `restoreBackup()`, `previewBackup()`, `listLocalBackups()`, `selectBackupFile()`, `saveBackupDialog()`, `onProgress()`
 - **`window.mToolbox.reinstall`:** `discover()`, `create()`, `preview()`, `restore()`, `selectFile()`, `saveDialog()`, `history()`, `onProgress()`
-- **`window.mToolbox.driver`:** `getData()`, `exportDrivers()`, `selectExportDir()`, `scanHardware()`, `openDeviceManager()`, `restartDevice()`, `getGpuInfo()`, `checkWindowsUpdate()`, `searchOnline()`, `onProgress()`
 - **`window.mToolbox.cleanup`:** `scan()`, `clean()`, `openStorageSense()`, `onProgress()`
 - **`window.mToolbox.bloatware`:** `scan()`, `uninstallSingle(appId)`, `uninstallBatch(appIds)`, `onProgress()`
-- **`window.mToolbox.performance`:** `getState()`, `toggle()`, `setActive(boolean)`
 - **`window.mToolbox.repair`:** `getHealth()`, `runAction()`, `restartAsAdmin()`, `onProgress()`
 - **`window.mToolbox.tweaks`:** `getAll()`, `setTweak()`, `applyRecommended()`, `restartExplorer()`
-- **`window.mToolbox.network`:** `getDiagnostics()`, `getWanIp()`, `pingTargets()`, `benchmarkDns()`, `scanPorts()`, `flushDns()`, `renewIp()`, `openNetworkConnections()`
-- **`window.mToolbox.advanced`:** `getTools()`, `launchTool()`, `getStartupItems()`, `toggleStartupItem()`, `deleteStartupItem()`, `getHostsFile()`, `saveHostsFile()`
-- **`window.mToolbox.ram`:** `getStats()`, `getTopProcesses()`, `getHygiene()`, `getRecommendations()`, `getHealthScore()`, `getHistory24h()`, `cleanWindows()`, `disableStartup()`
-- **`window.mToolbox.battery`:** `getInfo()`, `setPowerPlan()`, `generateReport()`, `killProcess()`
+- **`window.mToolbox.advanced`:** `getStartupItems()`, `setStartupItemEnabled()`, `deleteStartupItem()`, `getHostsFile()`, `saveHostsFile()`
+- **`window.mToolbox.battery`:** `getInfo()`, `setPowerPlan()`, `generateReport()`
 - **`window.mToolbox.settings`:** `getSettings()`, `saveSettings()`, `checkUpdates()`, `getAppInfo()`, `openUserDataFolder()`, `clearCache()`, `resetSettings()`
 - **`window.mToolbox.widget`:** `toggle()`, `getState()`, `setAlwaysOnTop()`, `restoreMainWindow()`, `close()`
 - **`window.mToolbox.system`:** `minimize()`, `maximize()`, `close()`, `openExternal()`

@@ -3,19 +3,14 @@ import { IPC_CHANNELS } from '../../shared/channels'
 import { DashboardService } from '../services/dashboard.service'
 import { SoftwareService } from '../services/software.service'
 import { BackupService } from '../services/backup.service'
-import { driverService } from '../services/driver.service'
 import { cleanupService } from '../services/cleanup.service'
 import { repairService, REPAIR_ACTIONS } from '../services/repair.service'
 import { tweakService } from '../services/tweak.service'
-import { networkService } from '../services/network.service'
 import { advancedService } from '../services/advanced.service'
 import { settingsService } from '../services/settings.service'
 import { reinstallService } from '../services/reinstall.service'
-import { ramService } from '../services/ram.service'
-import { databaseService } from '../services/database.service'
 import { batteryService } from '../services/battery.service'
 import { bloatwareService } from '../services/bloatware.service'
-import { performanceService } from '../services/performance.service'
 import { WidgetService } from '../services/widget.service'
 import { telemetryService } from '../services/telemetry.service'
 import { trayService } from '../services/tray.service'
@@ -353,60 +348,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     return result.filePath
   })
 
-  // Driver Center IPC
-  ipcMain.handle(IPC_CHANNELS.DRIVER.GET_DATA, async () => {
-    return await driverService.getDevicesAndDrivers()
-  })
-
-  ipcMain.handle(
-    IPC_CHANNELS.DRIVER.EXPORT_DRIVERS,
-    async (_, targetDir: string, infName?: string) => {
-      return await driverService.exportDrivers(targetDir, infName, (log) => {
-        if (!mainWindow.isDestroyed()) {
-          mainWindow.webContents.send(IPC_CHANNELS.DRIVER.PROGRESS_EVENT, log)
-        }
-      })
-    }
-  )
-
-  ipcMain.handle(IPC_CHANNELS.DRIVER.SELECT_EXPORT_DIR, async () => {
-    const isEn = settingsService.getSettings().language === 'en'
-    const result = await dialog.showOpenDialog(mainWindow, {
-      title: isEn ? 'Select Target Directory for Driver Export' : 'Zielordner für Treiber-Export auswählen',
-      properties: ['openDirectory', 'createDirectory']
-    })
-    if (result.canceled || result.filePaths.length === 0) {
-      return null
-    }
-    return result.filePaths[0]
-  })
-
-  ipcMain.handle(IPC_CHANNELS.DRIVER.SCAN_HARDWARE, async () => {
-    return await driverService.scanHardware()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.DRIVER.OPEN_DEVICE_MANAGER, async () => {
-    driverService.openDeviceManager()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.DRIVER.RESTART_DEVICE, async (_, instanceId: string) => {
-    return await driverService.restartDevice(instanceId)
-  })
-
-  ipcMain.handle(IPC_CHANNELS.DRIVER.GET_GPU_INFO, async () => {
-    return await driverService.getGpuInfo()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.DRIVER.CHECK_WINDOWS_UPDATE, async () => {
-    return await driverService.checkWindowsUpdateDrivers()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.DRIVER.SEARCH_ONLINE, async (_, query: string) => {
-    const url = driverService.getDriverSearchUrl(query)
-    await shell.openExternal(url)
-    return url
-  })
-
   // Cleanup Center IPC
   ipcMain.handle(IPC_CHANNELS.CLEANUP.SCAN, async () => {
     return await cleanupService.scan()
@@ -462,48 +403,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     return await tweakService.restartExplorer()
   })
 
-  // Network Toolkit IPC
-  ipcMain.handle(IPC_CHANNELS.NETWORK.GET_DIAGNOSTICS, async () => {
-    return await networkService.getDiagnostics()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.NETWORK.GET_WAN_IP, async () => {
-    return await networkService.getWanIp()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.NETWORK.PING_TARGETS, async (_, customHost?: string) => {
-    return await networkService.pingTargets(customHost)
-  })
-
-  ipcMain.handle(IPC_CHANNELS.NETWORK.BENCHMARK_DNS, async (_, domain?: string) => {
-    return await networkService.benchmarkDns(domain)
-  })
-
-  ipcMain.handle(IPC_CHANNELS.NETWORK.SCAN_PORTS, async (_, target: string, ports: number[]) => {
-    return await networkService.scanPorts(target, ports)
-  })
-
-  ipcMain.handle(IPC_CHANNELS.NETWORK.FLUSH_DNS, async () => {
-    return await networkService.flushDns()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.NETWORK.RENEW_IP, async () => {
-    return await networkService.renewIp()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.NETWORK.OPEN_NETWORK_CONNECTIONS, async () => {
-    await networkService.openNetworkConnections()
-  })
-
   // Advanced Tools IPC
-  ipcMain.handle(IPC_CHANNELS.ADVANCED.GET_TOOLS, async () => {
-    return advancedService.getTools()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.ADVANCED.LAUNCH_TOOL, async (_, toolId: string) => {
-    return await advancedService.launchTool(toolId)
-  })
-
   ipcMain.handle(IPC_CHANNELS.ADVANCED.GET_STARTUP_ITEMS, async () => {
     return await advancedService.getStartupItems()
   })
@@ -562,42 +462,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     return res
   })
 
-  // RAM Guardian IPC
-  ipcMain.handle(IPC_CHANNELS.RAM.GET_STATS, async () => {
-    return await ramService.getLiveStats()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.RAM.GET_TOP_PROCESSES, async () => {
-    return await ramService.getTopProcesses()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.RAM.GET_HYGIENE, async () => {
-    return await ramService.getAppHygiene()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.RAM.GET_RECOMMENDATIONS, async () => {
-    return await ramService.getRecommendations()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.RAM.GET_HEALTH_SCORE, async () => {
-    return await ramService.getHealthScore()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.RAM.GET_HISTORY_24H, async () => {
-    return databaseService.getRamHistory24h()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.RAM.CLEAN_WINDOWS, async () => {
-    return await ramService.cleanWindows()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.RAM.DISABLE_STARTUP, async (_, itemId: string) => {
-    return await ramService.disableStartupItem(itemId)
-  })
-
   // Battery Manager IPC
-  ipcMain.handle(IPC_CHANNELS.BATTERY.GET_INFO, async (_, includeDrainProcesses?: boolean) => {
-    return await batteryService.getBatteryInfo(includeDrainProcesses ?? true)
+  ipcMain.handle(IPC_CHANNELS.BATTERY.GET_INFO, async () => {
+    return await batteryService.getBatteryInfo()
   })
 
   ipcMain.handle(IPC_CHANNELS.BATTERY.SET_POWER_PLAN, async (_, guid: string) => {
@@ -606,14 +473,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.BATTERY.GENERATE_REPORT, async () => {
     return await batteryService.generateHtmlReport()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.BATTERY.KILL_PROCESS, async (_, pid: number) => {
-    return await batteryService.killProcess(pid)
-  })
-
-  ipcMain.handle(IPC_CHANNELS.BATTERY.SCAN_DRAIN_PROCESSES, async () => {
-    return await batteryService.scanDrainProcesses()
   })
 
   // Bloatware IPC
@@ -631,23 +490,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
         mainWindow.webContents.send(IPC_CHANNELS.BLOATWARE.PROGRESS_EVENT, event)
       }
     })
-  })
-
-  // Performance Mode IPC
-  ipcMain.handle(IPC_CHANNELS.PERFORMANCE.GET_STATE, async () => {
-    return await performanceService.getState()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.PERFORMANCE.TOGGLE, async () => {
-    return await performanceService.toggle()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.PERFORMANCE.SET_ACTIVE, async (_, active: boolean) => {
-    if (active) {
-      return await performanceService.enablePerformanceMode()
-    } else {
-      return await performanceService.disablePerformanceMode()
-    }
   })
 
   // Desktop Widget IPC

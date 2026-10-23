@@ -1,19 +1,11 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type {
-  AdvancedToolItem,
   StartupItem,
   HostsEntry,
-  HostsFileContent,
-  ToolCategory
+  HostsFileContent
 } from '@shared/types'
 
 export function useAdvancedTools() {
-  const [tools, setTools] = useState<AdvancedToolItem[]>([])
-  const [loadingTools, setLoadingTools] = useState<boolean>(true)
-  const [activeCategory, setActiveCategory] = useState<ToolCategory>('all')
-  const [searchQuery, setSearchQuery] = useState<string>('')
-  const [launchingId, setLaunchingId] = useState<string | null>(null)
-
   // Startup Manager State
   const [startupItems, setStartupItems] = useState<StartupItem[]>([])
   const [loadingStartup, setLoadingStartup] = useState<boolean>(false)
@@ -34,20 +26,6 @@ export function useAdvancedTools() {
     const t = setTimeout(() => setToastMessage(null), 4000)
     return () => clearTimeout(t)
   }, [toastMessage])
-
-  // Load tools catalog
-  const loadTools = useCallback(async () => {
-    try {
-      setLoadingTools(true)
-      const data = await window.mToolbox.advanced.getTools()
-      setTools(data)
-    } catch (err) {
-      console.error('Failed to load tools:', err)
-      showToast('Fehler beim Laden der Tools.', 'error')
-    } finally {
-      setLoadingTools(false)
-    }
-  }, [])
 
   // Load Startup items
   const loadStartupItems = useCallback(async () => {
@@ -78,23 +56,9 @@ export function useAdvancedTools() {
   }, [])
 
   useEffect(() => {
-    loadTools()
     loadStartupItems()
     loadHostsFile()
-  }, [loadTools, loadStartupItems, loadHostsFile])
-
-  // Launch a Windows tool
-  const launchTool = useCallback(async (toolId: string) => {
-    try {
-      setLaunchingId(toolId)
-      const res = await window.mToolbox.advanced.launchTool(toolId)
-      showToast(res.message, res.success ? 'success' : 'error')
-    } catch (err: any) {
-      showToast(`Fehler beim Starten: ${err?.message || 'Unbekannt'}`, 'error')
-    } finally {
-      setLaunchingId(null)
-    }
-  }, [])
+  }, [loadStartupItems, loadHostsFile])
 
   // Delete a startup item
   const deleteStartupItem = useCallback(async (itemId: string) => {
@@ -172,30 +136,7 @@ export function useAdvancedTools() {
     saveHostsEntries(updated)
   }, [hostsData, saveHostsEntries])
 
-  // Filtered tools
-  const filteredTools = useMemo(() => {
-    return tools.filter((t) => {
-      const matchesCategory = activeCategory === 'all' || t.category === activeCategory
-      const q = searchQuery.toLowerCase().trim()
-      const matchesSearch =
-        !q ||
-        t.name.toLowerCase().includes(q) ||
-        t.description.toLowerCase().includes(q) ||
-        t.command.toLowerCase().includes(q)
-      return matchesCategory && matchesSearch
-    })
-  }, [tools, activeCategory, searchQuery])
-
   return {
-    tools: filteredTools,
-    allTools: tools,
-    loadingTools,
-    activeCategory,
-    setActiveCategory,
-    searchQuery,
-    setSearchQuery,
-    launchingId,
-    launchTool,
     startupItems,
     loadingStartup,
     loadStartupItems,

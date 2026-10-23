@@ -37,18 +37,6 @@ export const IPC_CHANNELS = {
     HISTORY: 'reinstall:history',
     PROGRESS_EVENT: 'reinstall:progress-event',
   },
-  DRIVER: {
-    GET_DATA: 'driver:get-data',
-    EXPORT_DRIVERS: 'driver:export',
-    SELECT_EXPORT_DIR: 'driver:select-export-dir',
-    SCAN_HARDWARE: 'driver:scan-hardware',
-    OPEN_DEVICE_MANAGER: 'driver:open-device-manager',
-    RESTART_DEVICE: 'driver:restart-device',
-    GET_GPU_INFO: 'driver:get-gpu-info',
-    CHECK_WINDOWS_UPDATE: 'driver:check-windows-update',
-    SEARCH_ONLINE: 'driver:search-online',
-    PROGRESS_EVENT: 'driver:progress-event',
-  },
   CLEANUP: {
     SCAN: 'cleanup:scan',
     CLEAN: 'cleanup:clean',
@@ -67,19 +55,7 @@ export const IPC_CHANNELS = {
     APPLY_RECOMMENDED: 'tweaks:apply-recommended',
     RESTART_EXPLORER: 'tweaks:restart-explorer',
   },
-  NETWORK: {
-    GET_DIAGNOSTICS: 'network:get-diagnostics',
-    GET_WAN_IP: 'network:get-wan-ip',
-    PING_TARGETS: 'network:ping-targets',
-    BENCHMARK_DNS: 'network:benchmark-dns',
-    SCAN_PORTS: 'network:scan-ports',
-    FLUSH_DNS: 'network:flush-dns',
-    RENEW_IP: 'network:renew-ip',
-    OPEN_NETWORK_CONNECTIONS: 'network:open-connections'
-  },
   ADVANCED: {
-    GET_TOOLS: 'advanced:get-tools',
-    LAUNCH_TOOL: 'advanced:launch-tool',
     GET_STARTUP_ITEMS: 'advanced:get-startup-items',
     TOGGLE_STARTUP_ITEM: 'advanced:toggle-startup-item',
     DELETE_STARTUP_ITEM: 'advanced:delete-startup-item',
@@ -95,33 +71,16 @@ export const IPC_CHANNELS = {
     CLEAR_CACHE: 'settings:clear-cache',
     RESET_SETTINGS: 'settings:reset-settings',
   },
-  RAM: {
-    GET_STATS: 'ram:get-stats',
-    GET_TOP_PROCESSES: 'ram:get-top-processes',
-    GET_HYGIENE: 'ram:get-hygiene',
-    GET_RECOMMENDATIONS: 'ram:get-recommendations',
-    GET_HEALTH_SCORE: 'ram:get-health-score',
-    GET_HISTORY_24H: 'ram:get-history-24h',
-    CLEAN_WINDOWS: 'ram:clean-windows',
-    DISABLE_STARTUP: 'ram:disable-startup'
-  },
   BATTERY: {
     GET_INFO: 'battery:get-info',
     SET_POWER_PLAN: 'battery:set-power-plan',
-    GENERATE_REPORT: 'battery:generate-report',
-    KILL_PROCESS: 'battery:kill-process',
-    SCAN_DRAIN_PROCESSES: 'battery:scan-drain-processes'
+    GENERATE_REPORT: 'battery:generate-report'
   },
   BLOATWARE: {
     SCAN: 'bloatware:scan',
     UNINSTALL: 'bloatware:uninstall',
     BATCH_UNINSTALL: 'bloatware:batch-uninstall',
     PROGRESS_EVENT: 'bloatware:progress-event'
-  },
-  PERFORMANCE: {
-    GET_STATE: 'performance:get-state',
-    TOGGLE: 'performance:toggle',
-    SET_ACTIVE: 'performance:set-active'
   },
   SYSTEM: {
     OPEN_EXTERNAL: 'system:open-external',

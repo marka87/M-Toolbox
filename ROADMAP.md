@@ -5,14 +5,11 @@
 - [x] Dashboard mit Live-Systemmetriken
 - [x] Winget-basiertes Software Center
 - [x] Backup & Migration (.mtoolbox-Archive)
-- [x] Driver Center
-- [x] RAM Guardian (Live-RAM-Optimierung, 24h-Verlauf, Hygiene-Score)
-- [x] Batterie-Manager & Energy Drain-Inspector (Echtzeit-Watt, Entladerate, Top-Verbraucher, Akku-Report)
+- [x] Batterie-Manager (Echtzeit-Watt, Entladerate, Akku-Report)
 - [x] Cleanup Center
 - [x] Repair Center
 - [x] Windows-11-Tweaks
-- [x] Netzwerk Toolkit
-- [x] Advanced Tools
+- [x] Advanced Tools (Autostart, Hosts)
 - [x] Settings und Update-Prüfung
 - [x] Kuratierter Katalog mit 88 Softwarepaketen
 - [x] Desktop Mini-HUD Widget (Kompakt-Kachel 2x2, Live-Metriken, Always-on-Top, Drag & Drop)
@@ -26,7 +23,6 @@
 
 - [ ] Erweiterte Filter und Sortierung im Software Center
 - [ ] Mehrere Backup-Profile
-- [ ] Verbesserte Hardware- und Treiberberichte
 - [ ] Automatisierte Tests für Parser und UI-Hilfsfunktionen
 
 ## Future Ideas

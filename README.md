@@ -16,15 +16,12 @@ M-Toolbox bündelt native Windows-Werkzeuge, PowerShell, Winget und eine moderne
 - **Dashboard** – CPU, RAM, GPU, Speicher, Betriebssystem und Live-Metriken.
 - **Software Center** – Kuratierter Winget-Katalog, Suche, Kategorien, Batch-Installation und Updates.
 - **Backup & Migration** – Vollständige Systemmigration & Reinstall-Archiv (`.mtoolbox`), Winget-Pakete, Registry, App-Daten, Browser-Profile und Wiederherstellungs-Assistent.
-- **Driver Center** – Treiberinventar, Problemgeräte, Export, GPU-Informationen und Online-Suche.
-- **RAM Guardian** – Echtzeit-RAM-Monitoring, Standby-List/Working-Set-Bereinigung, Hygiene-Score, 24h-Verlauf und RAM-Fresser-Inspektor.
-- **Batterie-Manager** – Laptop-Akku-Management, Echtzeit-Watt-Überwachung (Entlade-/Laderate in W), Zellspannung, Kapazitäts- und Verschleißgradanalyse (Wh / mWh), Drain-Inspektor (Top Energie-Fresser), automatische Akku-Drain-Warnungen, interaktiver HTML-Akkubericht, Windows-Energieschemas und Direktlink zum Windows-Energiemodus.
-- **Desktop Mini-HUD Widget** – Schwebendes, transparentes 2×2 Desktop-Overlay für CPU, RAM (inkl. 1-Klick-Bereinigung), GPU und Akku (inkl. Entlade-Wattage), Always-on-Top und Drag & Drop.
+- **Batterie-Manager** – Laptop-Akku-Management, Echtzeit-Watt-Überwachung (Entlade-/Laderate in W), Zellspannung, Kapazitäts- und Verschleißgradanalyse (Wh / mWh), interaktiver HTML-Akkubericht, Windows-Energieschemas und Direktlink zum Windows-Energiemodus.
+- **Desktop Mini-HUD Widget** – Schwebendes, transparentes 2×2 Desktop-Overlay für CPU, RAM, GPU und Akku (inkl. Entlade-Wattage), Always-on-Top und Drag & Drop.
 - **Cleanup Center & Bloatware-Entfernung** – Temporäre Dateien, Windows Update Cache Bereinigung mit UAC-Dienststeuerung, Browser-Caches, Crash Dumps und integrierte **Windows Bloatware-Erkennung & Deinstallation** mit Sicherheitsbewertung (Ampelsystem).
-- **Repair Center** – SFC, DISM, Windows-Update-, Netzwerk-, Spooler- und AppX-Reparaturen.
-- **Tweaks & 1-Klick Gaming-Modus** – Explorer-, Datenschutz-, Gaming- und Windows-11-Oberflächenanpassungen sowie **1-Klick Performance & Gaming Master-Modus** (deaktiviert Effekte, Transparenzen & Xbox DVR, pausiert Indexer, schaltet auf Höchstleistung, wo Windows diesen Plan anbietet).
-- **Network Toolkit** – Adapterdiagnose, WAN-IP, Ping-Matrix, DNS-Benchmark und Port-Scanner.
-- **Advanced Tools** – Windows-Tools, Autostart-Verwaltung und Hosts-Datei-Editor.
+- **Repair Center** – SFC, DISM RestoreHealth, Windows-Update-Reset, Netzwerk (DNS, Winsock, IP), Druckwarteschlange, Explorer, Windows Search und Microsoft Store.
+- **Tweaks** – Explorer-, Taskleisten-, Datenschutz-, Gaming- und System-Anpassungen, jeweils einzeln schaltbar und rückgängig zu machen.
+- **Advanced Tools** – Autostart-Verwaltung (aktivieren/deaktivieren wie im Task-Manager) und Hosts-Datei-Editor.
 - **Settings** – Themes, Akzentfarben, Autostart, Updates, Cache und Systeminformationen.
 
 ## Screenshots
@@ -36,7 +33,6 @@ M-Toolbox bündelt native Windows-Werkzeuge, PowerShell, Winget und eine moderne
 | Cleanup Center | Tweaks |
 | --- | --- |
 | ![Cleanup Center](docs/screenshots/cleanup-center.png) | ![Tweaks Center](docs/screenshots/tweaks-center.png) |
-
 
 ## Installation
 

@@ -32,15 +32,6 @@ export const REPAIR_ACTIONS: RepairActionItem[] = [
     riskLevel: 'safe'
   },
   {
-    id: 'dism_scanhealth',
-    title: 'DISM Komponenten-Scan (ScanHealth)',
-    description: 'Überprüft den Komponentenspeicher auf Beschädigungen, nimmt jedoch noch keine Modifikationen vor.',
-    category: 'system',
-    requiresAdmin: true,
-    estimatedDuration: '3-10 Min.',
-    riskLevel: 'safe'
-  },
-  {
     id: 'windows_update_reset',
     title: 'Windows Update Komponenten-Reset',
     description: 'Beendet Update-Dienste, bereinigt SoftwareDistribution/Catroot2, registriert DLLs neu und startet Dienste.',
@@ -110,15 +101,6 @@ export const REPAIR_ACTIONS: RepairActionItem[] = [
     category: 'store',
     requiresAdmin: false,
     estimatedDuration: '15-30 Sek.',
-    riskLevel: 'safe'
-  },
-  {
-    id: 'appx_re_register',
-    title: 'Windows Standard-Apps neu registrieren',
-    description: 'Repariert Windows 11 Standard-Apps durch Neu-Registrierung der AppX-Manifeste über PowerShell.',
-    category: 'store',
-    requiresAdmin: false,
-    estimatedDuration: '1-3 Min.',
     riskLevel: 'safe'
   }
 ]
@@ -433,8 +415,6 @@ export class RepairService {
         return { type: 'cmd', command: 'sfc /scannow' }
       case 'dism_restorehealth':
         return { type: 'cmd', command: 'dism /online /cleanup-image /restorehealth' }
-      case 'dism_scanhealth':
-        return { type: 'cmd', command: 'dism /online /cleanup-image /scanhealth' }
       case 'windows_update_reset':
         return {
           type: 'powershell',
@@ -492,19 +472,6 @@ export class RepairService {
         }
       case 'store_reset':
         return { type: 'cmd', command: 'wsreset.exe' }
-      case 'appx_re_register':
-        return {
-          type: 'powershell',
-          command: `
-            Write-Host 'Registriere Standard-AppX-Pakete neu...'
-            Get-AppXPackage -AllUsers | Foreach {
-              if ($_.InstallLocation) {
-                Add-AppxPackage -DisableDevelopmentMode -Register "$($_.InstallLocation)\\AppXManifest.xml" -ErrorAction SilentlyContinue
-              }
-            }
-            Write-Host 'AppX-Registrierung abgeschlossen.'
-          `.trim()
-        }
       default:
         return { type: 'cmd', command: 'echo Unbekannte Aktion' }
     }
