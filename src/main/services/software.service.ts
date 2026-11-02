@@ -1,4 +1,4 @@
-import { PowerShellService, type PowerShellResult } from './powershell.service'
+import { PowerShellService, psQuote, type PowerShellResult } from './powershell.service'
 import type {
   SoftwarePackage,
   InstalledPackage,
@@ -926,7 +926,7 @@ export class SoftwareService {
     onProgress: (event: OperationLogEvent) => void
   ): Promise<{ success: boolean; error?: string }> {
     return new Promise((resolve) => {
-      const command = `winget install --id "${packageId}" --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`
+      const command = `winget install --id ${psQuote(packageId)} --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`
       onProgress({ type: 'info', line: `> Starte Installation: ${packageId}...`, packageId })
       this.streamWinget(
         command,
@@ -950,7 +950,7 @@ export class SoftwareService {
       const cleanId = packageId.trim()
       const isExactWingetId = !cleanId.startsWith('ARP\\') && !cleanId.startsWith('MSIX\\') && !cleanId.includes('\\')
       const exactFlag = isExactWingetId ? '-e ' : ''
-      const command = `winget uninstall --id "${cleanId}" ${exactFlag}--silent --accept-source-agreements --nowarn --disable-interactivity`
+      const command = `winget uninstall --id ${psQuote(cleanId)} ${exactFlag}--silent --accept-source-agreements --nowarn --disable-interactivity`
       onProgress({ type: 'info', line: `> Starte Deinstallation: ${cleanId}...`, packageId: cleanId })
       this.streamWinget(
         command,
@@ -971,7 +971,7 @@ export class SoftwareService {
     onProgress: (event: OperationLogEvent) => void
   ): Promise<{ success: boolean; error?: string }> {
     return new Promise((resolve) => {
-      const command = `winget upgrade --id "${packageId}" --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`
+      const command = `winget upgrade --id ${psQuote(packageId)} --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`
       onProgress({ type: 'info', line: `> Starte Aktualisierung von ${packageId}...`, packageId })
       this.streamWinget(
         command,

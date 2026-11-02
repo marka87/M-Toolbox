@@ -63,6 +63,14 @@ describe('Software Center: winget calls run one at a time', () => {
     assert.equal(ps.calls.length, 3)
   })
 
+  test('package ids from backup files cannot inject PowerShell code', async () => {
+    const s = SoftwareService.getInstance()
+    const ps = fakePowerShell()
+    s.ps = ps
+    await s.installPackage("x$(calc)'; calc; '’", () => {})
+    assert.ok(ps.calls[0].startsWith("winget install --id 'x$(calc)''; calc; ''’’' "), ps.calls[0])
+  })
+
   test('a failed winget call does not block the next one', async () => {
     const s = SoftwareService.getInstance()
     const ps = fakePowerShell()

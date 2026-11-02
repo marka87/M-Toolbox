@@ -1,6 +1,9 @@
 import { spawn } from 'node:child_process'
 import * as fs from 'node:fs'
 
+/** Single-quoted PowerShell literal: nothing inside is expanded or executed. PowerShell also treats curly quotes as quotes, so they get doubled too. */
+export const psQuote = (value: string): string => `'${String(value).replace(/['‘’‚‛]/g, '$&$&')}'`
+
 export interface PowerShellResult {
   stdout: string
   stderr: string

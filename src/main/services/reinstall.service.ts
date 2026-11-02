@@ -3,7 +3,7 @@ import path from 'node:path'
 import os from 'node:os'
 import crypto from 'node:crypto'
 import { app } from 'electron'
-import { PowerShellService } from './powershell.service'
+import { PowerShellService, psQuote as quote } from './powershell.service'
 import { SoftwareService } from './software.service'
 import { driverService } from './driver.service'
 import { DatabaseService } from './database.service'
@@ -16,8 +16,6 @@ import type {
   ReinstallRestoreOptions,
   ReinstallResult
 } from '../../shared/reinstall.types'
-
-const quote = (value: string): string => `'${value.replace(/'/g, "''")}'`
 
 const readJson = async <T>(filePath: string, fallback: T): Promise<T> => {
   try {

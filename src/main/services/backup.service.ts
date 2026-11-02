@@ -1,7 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { app, shell } from 'electron'
-import { PowerShellService } from './powershell.service'
+import { PowerShellService, psQuote } from './powershell.service'
 import { SoftwareService } from './software.service'
 import type {
   BackupPayload,
@@ -305,7 +305,7 @@ export class BackupService {
         const regLines: string[] = []
         for (const [k, v] of Object.entries(payload.explorer)) {
           if (typeof v === 'number') {
-            regLines.push(`Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" -Name "${k}" -Value ${v} -Type DWord -Force`)
+            regLines.push(`Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" -Name ${psQuote(k)} -Value ${v} -Type DWord -Force`)
           }
         }
 
@@ -335,8 +335,8 @@ export class BackupService {
         const tile = payload.wallpaper.tile || '0'
 
         await this.ps.executeCommand(`
-          Set-ItemProperty -Path "HKCU:\\Control Panel\\Desktop" -Name WallpaperStyle -Value "${style}"
-          Set-ItemProperty -Path "HKCU:\\Control Panel\\Desktop" -Name TileWallpaper -Value "${tile}"
+          Set-ItemProperty -Path "HKCU:\\Control Panel\\Desktop" -Name WallpaperStyle -Value ${psQuote(String(style))}
+          Set-ItemProperty -Path "HKCU:\\Control Panel\\Desktop" -Name TileWallpaper -Value ${psQuote(String(tile))}
           Add-Type -TypeDefinition @"
             using System;
             using System.Runtime.InteropServices;
@@ -345,7 +345,7 @@ export class BackupService {
               public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
             }
 "@ -ErrorAction SilentlyContinue
-          [Wallpaper]::SystemParametersInfo(0x0014, 0, "${wpTargetPath.replace(/\\/g, '\\\\')}", 0x01 -bor 0x02)
+          [Wallpaper]::SystemParametersInfo(0x0014, 0, ${psQuote(wpTargetPath)}, 0x01 -bor 0x02)
         `)
         onProgress({ type: 'info', line: 'Desktop-Wallpaper erfolgreich wiederhergestellt und angewendet.' })
       }
@@ -361,14 +361,15 @@ export class BackupService {
         let installedCount = 0
         for (const font of payload.fonts) {
           if (font.dataBase64 && font.fileName) {
-            const fontPath = path.join(userFontsDir, font.fileName)
+            // basename: a backup file must never write outside the fonts folder (e.g. into Startup)
+            const fontPath = path.join(userFontsDir, path.basename(font.fileName))
             const buf = Buffer.from(font.dataBase64, 'base64')
             fs.writeFileSync(fontPath, buf)
 
             // Register in HKCU Fonts
             const fontRegName = font.fontName || font.fileName.replace(/\.(ttf|otf)$/i, ' (TrueType)')
             await this.ps.executeCommand(`
-              Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" -Name "${fontRegName}" -Value "${fontPath.replace(/\\/g, '\\\\')}" -Force
+              Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" -Name ${psQuote(fontRegName)} -Value ${psQuote(fontPath)} -Force
             `)
             installedCount++
           }
@@ -389,7 +390,7 @@ export class BackupService {
           onProgress({ type: 'info', line: `Installiere PowerShell-Modul: ${mod.name}...` })
           await new Promise<void>((res) => {
             this.ps.streamCommand(
-              `Install-Module -Name "${mod.name}" -Force -Scope CurrentUser -SkipPublisherCheck -AllowClobber`,
+              `Install-Module -Name ${psQuote(mod.name)} -Force -Scope CurrentUser -SkipPublisherCheck -AllowClobber`,
               (data) => onProgress({ type: 'stdout', line: data }),
               (data) => onProgress({ type: 'stderr', line: data }),
               (code) => {
