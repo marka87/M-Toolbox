@@ -1,13 +1,13 @@
 # M-Toolbox: Agent & Entwickler Leitfaden (AGENT_GUIDE.md)
 
-Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler**, die an **M-Toolbox** (aktuell **v2.5.0**) weiterarbeiten. Es dokumentiert den aktuellen Entwicklungsstand, die Architektur, strikte Entwicklungsregeln sowie kritische Systemdetails (**„Was man nicht anfassen darf!“**).
+Dieses Dokument dient als verbindliche Referenz für **KI-Agenten und Entwickler**, die an **M-Toolbox** (aktuelle Version: siehe `package.json`) weiterarbeiten. Es dokumentiert den aktuellen Entwicklungsstand, die Architektur, strikte Entwicklungsregeln sowie kritische Systemdetails (**„Was man nicht anfassen darf!“**).
 
 ---
 
 ## 1. Projektübersicht & Tech-Stack
 
 - **Projekt:** M-Toolbox – Moderne Windows 11 Desktop-System-Utility-Suite
-- **Aktuelle Version:** `v2.5.0`
+- **Aktuelle Version:** siehe `package.json`
 - **Technologie-Stack:**
   - **Electron:** Version 34 (Main Process, IPC, Node.js Integration)
   - **Frontend:** React 18, TypeScript 5.7, Tailwind CSS, Framer Motion, Lucide Icons
@@ -87,9 +87,11 @@ Das Projekt nutzt striktes **Semantic Versioning (SemVer)**:
 - **MINOR-Bump (`X.Y.0`):** Bei der Fertigstellung eines neuen Hauptmoduls (z. B. `2.1.0` für RAM Guardian, `2.2.0` für Batterie & Migration, `2.3.0` für Watt-Monitoring & Drain-Inspektor).
 - **PATCH-Bump (`X.Y.Z`):** Bei Fehlerbehebungen, Detailverbesserungen oder Zwischen-Features.
 
-### Standard-Release-Workflow nach Änderungen:
-1. Version in `package.json` anpassen.
-2. `CHANGELOG.md`, `README.md` und `ROADMAP.md` aktualisieren.
+**Verbindlich: Die Version wird bei jeder Änderung selbst angepasst, nicht erst bei einem Release.** Jeder Commit mit Code-Änderungen (fix/feat/refactor) erhöht die Version im selben Commit; reine Doku-/CI-Commits nicht. Nicht nachfragen, einfach nach dem Schema oben hochzählen.
+
+### Standard-Workflow nach Änderungen:
+1. Version anpassen: `npm version X.Y.Z --no-git-tag-version` (aktualisiert `package.json` **und** `package-lock.json`).
+2. Eintrag in `CHANGELOG.md` ergänzen; `README.md` und `ROADMAP.md` nur bei neuen Funktionen.
 3. TypeScript Validierung ausführen:
    ```powershell
    npm.cmd run typecheck
@@ -101,9 +103,10 @@ Das Projekt nutzt striktes **Semantic Versioning (SemVer)**:
 5. Git Commit & Push:
    ```powershell
    git add .
-   git commit -m "feat: release vX.Y.Z - <Beschreibung>"
+   git commit -m "fix: <Beschreibung>"
    git push origin main
    ```
+6. Ein Git-Tag `vX.Y.Z` startet den GitHub-Release-Workflow (`.github/workflows/release.yml`) und veröffentlicht die Version. Tags nur auf ausdrückliche Anweisung setzen (oder `release.cmd` nutzen).
 
 ---
 

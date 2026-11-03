@@ -2,6 +2,17 @@
 
 Alle wichtigen Änderungen an M-Toolbox werden hier dokumentiert. Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/) und Semantic Versioning.
 
+## [2.8.1] - 2026-11-03
+
+### Sicherheit
+
+- Werte aus Backup- und Reinstall-Dateien (winget-Paket-IDs, Registry-Namen, Modulnamen) werden in PowerShell-Befehlen jetzt sicher zitiert. Eine präparierte Datei konnte vorher über `$(...)` eigenen Code ausführen.
+- Schriftarten aus einem Backup werden nur noch in den Fonts-Ordner geschrieben (kein `..\` mehr möglich).
+
+### Behoben
+
+- Wiederhergestellte Schriftarten wurden mit doppelten Backslashes im Pfad in der Registry eingetragen.
+
 ## [2.5.0] - 2026-09-24
 
 ### Hinzugefügt
